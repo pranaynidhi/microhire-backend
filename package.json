@@ -1,0 +1,13 @@
+{
+  "name": "microhire-backend",
+  "version": "1.0.0",
+  "description": "Backend API for MicroHire - Micro-Internship Matching Platform",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "keywords": ["internship", "jobs", "nepal", "students", "business"],
+  "author": "Pranay Nidhi",
+  "license": "MIT"
+}
