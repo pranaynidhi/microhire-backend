@@ -78,6 +78,18 @@ const User = sequelize.define(
   },
   {
     timestamps: true,
+    hooks: {
+      beforeCreate: async (user) => {
+        if (user.password) {
+          user.password = await bcrypt.hash(user.password, 12);
+        }
+      },
+      beforeUpdate: async (user) => {
+        if (user.changed('password')) {
+          user.password = await bcrypt.hash(user.password, 12);
+        }
+      },
+    },
   }
 );
 
@@ -86,6 +98,10 @@ User.prototype.getPublicProfile = function () {
   const userObject = this.toJSON();
   delete userObject.password;
   return userObject;
+};
+
+User.prototype.comparePassword = async function (candidatePassword) {
+  return await bcrypt.compare(candidatePassword, this.password);
 };
 
 module.exports = User;
