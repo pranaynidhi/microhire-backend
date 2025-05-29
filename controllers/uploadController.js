@@ -206,7 +206,7 @@ const uploadController = {
       const files = await File.findAll({
         where: { 
           userId: req.user.id,
-          isActive: true 
+          isActive: true
         },
         order: [['createdAt', 'DESC']]
       });
@@ -219,7 +219,7 @@ const uploadController = {
       console.error('Get user files error:', error);
       res.status(500).json({
         success: false,
-        message: 'Failed to fetch files'
+        message: 'Failed to fetch user files'
       });
     }
   }
