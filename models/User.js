@@ -75,6 +75,10 @@ const User = sequelize.define(
       type: DataTypes.BOOLEAN,
       defaultValue: true,
     },
+    logoUrl: {
+      type: DataTypes.STRING,
+      allowNull: true
+    },
   },
   {
     timestamps: true,
