@@ -75,6 +75,12 @@ app.get('/api/health', (req, res) => {
       applications: '/api/applications',
       messages: '/api/messages',
       notifications: '/api/notifications',
+      upload: '/api/upload',
+      reviews: '/api/reviews',
+      certificates: '/api/certificates',
+      analytics: '/api/analytics',
+      admin: '/api/admin',
+      search: '/api/search',
     },
   });
 });
