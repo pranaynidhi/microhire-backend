@@ -1,4 +1,4 @@
-// controllers/searchController.js
+
 const Internship = require('../models/Internship');
 const User = require('../models/User');
 const Application = require('../models/Application');
