@@ -43,6 +43,11 @@ app.use('/api/applications', applicationRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/notifications', notificationRoutes);
 
+if (process.env.NODE_ENV === 'development') {
+  const testRoutes = require('./tests/communication.test');
+  app.use('/api/test', testRoutes);
+}
+
 // Health check endpoint
 app.get('/api/health', (req, res) => {
   res.json({
