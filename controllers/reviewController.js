@@ -1,4 +1,4 @@
-// controllers/reviewController.js
+
 const Review = require('../models/Review');
 const User = require('../models/User');
 const Internship = require('../models/Internship');
