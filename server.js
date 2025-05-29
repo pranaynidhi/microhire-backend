@@ -15,6 +15,12 @@ const internshipRoutes = require('./routes/internships');
 const applicationRoutes = require('./routes/applications');
 const messageRoutes = require('./routes/messages');
 const notificationRoutes = require('./routes/notifications');
+const uploadRoutes = require('./routes/upload');
+const reviewRoutes = require('./routes/reviews');
+const certificateRoutes = require('./routes/certificates');
+const analyticsRoutes = require('./routes/analytics');
+const adminRoutes = require('./routes/admin');
+const searchRoutes = require('./routes/search');
 
 const app = express();
 const server = http.createServer(app);
@@ -42,6 +48,14 @@ app.use('/api/internships', internshipRoutes);
 app.use('/api/applications', applicationRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/upload', uploadRoutes);
+app.use('/api/reviews', reviewRoutes);
+app.use('/api/certificates', certificateRoutes);
+app.use('/api/analytics', analyticsRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/search', searchRoutes);
+
+app.use('/uploads', express.static('uploads'));
 
 if (process.env.NODE_ENV === 'development') {
   const testRoutes = require('./tests/communication.test');
