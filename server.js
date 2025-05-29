@@ -7,9 +7,9 @@ const { syncDatabase } = require('./models');
 
 // Import routes
 const authRoutes = require('./routes/auth');
-const internshipRoutes = require('./routes/internship');
-const applicationRoutes = require('./routes/application');
 const userRoutes = require('./routes/users');
+const internshipRoutes = require('./routes/internships');
+const applicationRoutes = require('./routes/applications');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -25,15 +25,22 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/users', userRoutes);
 app.use('/api/internships', internshipRoutes);
 app.use('/api/applications', applicationRoutes);
-app.use('/api/users', userRoutes);
+
 // Health check endpoint
 app.get('/api/health', (req, res) => {
   res.json({
     success: true,
     message: 'MicroHire API is running!',
     timestamp: new Date().toISOString(),
+    endpoints: {
+      auth: '/api/auth',
+      users: '/api/users',
+      internships: '/api/internships',
+      applications: '/api/applications',
+    },
   });
 });
 
@@ -62,6 +69,7 @@ const startServer = async () => {
     app.listen(PORT, () => {
       console.log(`🚀 Server is running on port ${PORT}`);
       console.log(`📍 Health check: http://localhost:${PORT}/api/health`);
+      console.log(`📚 API Documentation: Check README.md`);
     });
   } catch (error) {
     console.error('Failed to start server:', error);
