@@ -8,6 +8,7 @@ const { syncDatabase } = require('./models');
 // Import routes
 const authRoutes = require('./routes/auth');
 const internshipRoutes = require('./routes/internship');
+const applicationRoutes = require('./routes/application');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -24,6 +25,7 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/internships', internshipRoutes);
+app.use('/api/applications', applicationRoutes);
 // Health check endpoint
 app.get('/api/health', (req, res) => {
   res.json({
