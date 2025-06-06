@@ -13,7 +13,6 @@ const { syncDatabase } = require('./models');
 const initializeSocket = require('./config/socket');
 const attachSocket = require('./middleware/socketMiddleware');
 const { securityMiddleware, authLimiter, apiLimiter } = require('./middleware/security');
-const { internshipController, applicationController, reviewController } = require('./controllers');
 
 // Import routes
 const authRoutes = require('./routes/auth');
@@ -96,7 +95,7 @@ app.use('/api/search', searchRoutes);
 app.use('/uploads', express.static('uploads'));
 
 if (process.env.NODE_ENV === 'development') {
-  const testRoutes = require('./tests/communication.test');
+  const testRoutes = require('../tests/communication.test');
   app.use('/api/test', testRoutes);
 }
 
