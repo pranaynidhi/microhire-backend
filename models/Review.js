@@ -53,7 +53,7 @@ const Review = sequelize.define('Review', {
     defaultValue: true
   }
 }, {
-  tableName: 'reviews',
+  tableName: 'Reviews',
   timestamps: true,
   indexes: [
     {

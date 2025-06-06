@@ -72,7 +72,7 @@ const Report = sequelize.define('Report', {
     }
   }
 }, {
-  tableName: 'reports',
+  tableName: 'Reports',
   timestamps: true
 });
 

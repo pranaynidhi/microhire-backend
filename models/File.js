@@ -44,7 +44,7 @@ const File = sequelize.define('File', {
     defaultValue: true
   }
 }, {
-  tableName: 'files',
+  tableName: 'Files',
   timestamps: true
 });
 

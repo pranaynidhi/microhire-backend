@@ -45,7 +45,7 @@ const Analytics = sequelize.define('Analytics', {
     allowNull: true
   }
 }, {
-  tableName: 'analytics',
+  tableName: 'Analytics',
   timestamps: true
 });
 

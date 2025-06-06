@@ -73,7 +73,7 @@ const Certificate = sequelize.define('Certificate', {
     defaultValue: true
   }
 }, {
-  tableName: 'certificates',
+  tableName: 'Certificates',
   timestamps: true
 });
 
