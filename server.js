@@ -7,6 +7,7 @@ require('dotenv').config();
 const { syncDatabase } = require('./models');
 const initializeSocket = require('./config/socket');
 const attachSocket = require('./middleware/socketMiddleware');
+const { securityMiddleware, authLimiter, apiLimiter } = require('./middleware/security');
 
 // Import routes
 const authRoutes = require('./routes/auth');
@@ -40,6 +41,23 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Attach Socket.io to requests
 app.use(attachSocket(io));
+
+// Apply security middleware
+app.use(securityMiddleware);
+
+// Apply rate limiters
+app.use('/api/auth', authLimiter);
+app.use('/api', apiLimiter);
+
+// Add CSRF protection
+const csrf = require('csurf');
+app.use(csrf({ cookie: true }));
+
+// Add CSRF token to all responses
+app.use((req, res, next) => {
+  res.cookie('XSRF-TOKEN', req.csrfToken());
+  next();
+});
 
 // Routes
 app.use('/api/auth', authRoutes);

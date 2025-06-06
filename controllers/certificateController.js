@@ -3,6 +3,10 @@ const User = require('../models/User');
 const Internship = require('../models/Internship');
 const Application = require('../models/Application');
 const crypto = require('crypto');
+const Notification = require('../models/Notification');
+const CertificateView = require('../models/CertificateView');
+const CertificateVerification = require('../models/CertificateVerification');
+const sequelize = require('../config/database');
 
 const certificateController = {
   generateCertificate: async (req, res) => {
@@ -229,6 +233,158 @@ const certificateController = {
       res.status(500).json({
         success: false,
         message: 'Failed to fetch certificates'
+      });
+    }
+  },
+
+  generateShareLink: async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { expiresIn } = req.body; // in hours
+
+      const certificate = await Certificate.findOne({
+        where: {
+          id,
+          studentId: req.user.id,
+          isValid: true,
+          isRevoked: false
+        }
+      });
+
+      if (!certificate) {
+        return res.status(404).json({
+          success: false,
+          message: 'Certificate not found or not authorized'
+        });
+      }
+
+      const shareToken = crypto.randomBytes(32).toString('hex');
+      const shareExpiresAt = new Date(Date.now() + (expiresIn || 24) * 60 * 60 * 1000);
+
+      await certificate.update({
+        shareToken,
+        shareExpiresAt
+      });
+
+      res.json({
+        success: true,
+        data: {
+          shareUrl: `${process.env.CLIENT_URL}/certificates/share/${shareToken}`
+        }
+      });
+    } catch (error) {
+      console.error('Generate share link error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to generate share link'
+      });
+    }
+  },
+
+  revokeCertificate: async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { reason } = req.body;
+
+      const certificate = await Certificate.findOne({
+        where: {
+          id,
+          companyId: req.user.id
+        }
+      });
+
+      if (!certificate) {
+        return res.status(404).json({
+          success: false,
+          message: 'Certificate not found or not authorized'
+        });
+      }
+
+      await certificate.update({
+        isRevoked: true,
+        revokedAt: new Date(),
+        revokedReason: reason,
+        isValid: false
+      });
+
+      // Notify student
+      await Notification.create({
+        userId: certificate.studentId,
+        title: 'Certificate Revoked',
+        message: `Your certificate for ${certificate.internshipTitle} has been revoked.`,
+        type: 'certificate_revoked',
+        metadata: {
+          certificateId: certificate.id,
+          reason
+        }
+      });
+
+      res.json({
+        success: true,
+        message: 'Certificate revoked successfully'
+      });
+    } catch (error) {
+      console.error('Revoke certificate error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to revoke certificate'
+      });
+    }
+  },
+
+  getCertificateAnalytics: async (req, res) => {
+    try {
+      const { id } = req.params;
+
+      const certificate = await Certificate.findOne({
+        where: {
+          id,
+          companyId: req.user.id
+        }
+      });
+
+      if (!certificate) {
+        return res.status(404).json({
+          success: false,
+          message: 'Certificate not found or not authorized'
+        });
+      }
+
+      // Get view statistics
+      const views = await CertificateView.findAll({
+        where: { certificateId: id },
+        attributes: [
+          [sequelize.fn('DATE', sequelize.col('viewedAt')), 'date'],
+          [sequelize.fn('COUNT', sequelize.col('id')), 'count']
+        ],
+        group: [sequelize.fn('DATE', sequelize.col('viewedAt'))],
+        order: [[sequelize.fn('DATE', sequelize.col('viewedAt')), 'ASC']]
+      });
+
+      // Get verification statistics
+      const verifications = await CertificateVerification.findAll({
+        where: { certificateId: id },
+        attributes: [
+          [sequelize.fn('DATE', sequelize.col('verifiedAt')), 'date'],
+          [sequelize.fn('COUNT', sequelize.col('id')), 'count']
+        ],
+        group: [sequelize.fn('DATE', sequelize.col('verifiedAt'))],
+        order: [[sequelize.fn('DATE', sequelize.col('verifiedAt')), 'ASC']]
+      });
+
+      res.json({
+        success: true,
+        data: {
+          totalViews: certificate.viewCount,
+          views,
+          verifications
+        }
+      });
+    } catch (error) {
+      console.error('Get certificate analytics error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to fetch certificate analytics'
       });
     }
   }

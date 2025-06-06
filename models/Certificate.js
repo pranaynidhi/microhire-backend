@@ -71,6 +71,31 @@ const Certificate = sequelize.define('Certificate', {
   isValid: {
     type: DataTypes.BOOLEAN,
     defaultValue: true
+  },
+  isRevoked: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
+  },
+  revokedAt: {
+    type: DataTypes.DATE,
+    allowNull: true
+  },
+  revokedReason: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
+  shareToken: {
+    type: DataTypes.STRING,
+    unique: true,
+    allowNull: true
+  },
+  shareExpiresAt: {
+    type: DataTypes.DATE,
+    allowNull: true
+  },
+  viewCount: {
+    type: DataTypes.INTEGER,
+    defaultValue: 0
   }
 }, {
   tableName: 'Certificates',

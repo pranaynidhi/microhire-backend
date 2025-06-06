@@ -30,7 +30,11 @@ const User = sequelize.define(
       type: DataTypes.STRING,
       allowNull: false,
       validate: {
-        len: [6, 255],
+        len: [8, 255],
+        is: {
+          args: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/,
+          msg: 'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character'
+        }
       },
     },
     role: {
@@ -79,6 +83,26 @@ const User = sequelize.define(
       type: DataTypes.STRING,
       allowNull: true
     },
+    emailVerified: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false
+    },
+    emailVerificationToken: {
+      type: DataTypes.STRING,
+      allowNull: true
+    },
+    passwordResetToken: {
+      type: DataTypes.STRING,
+      allowNull: true
+    },
+    passwordResetExpires: {
+      type: DataTypes.DATE,
+      allowNull: true
+    },
+    lastPasswordChange: {
+      type: DataTypes.DATE,
+      allowNull: true
+    }
   },
   {
     timestamps: true,

@@ -160,9 +160,33 @@ const getMyInternships = async (req, res) => {
   }
 };
 
+const updateFCMToken = async (req, res) => {
+  try {
+    const { fcmToken } = req.body;
+    const userId = req.user.id;
+
+    await User.update(
+      { fcmToken },
+      { where: { id: userId } }
+    );
+
+    res.json({
+      success: true,
+      message: 'FCM token updated successfully',
+    });
+  } catch (error) {
+    console.error('Update FCM token error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to update FCM token',
+    });
+  }
+};
+
 module.exports = {
   getProfile,
   updateProfile,
   getMyApplications,
   getMyInternships,
+  updateFCMToken,
 };

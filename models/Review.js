@@ -1,4 +1,3 @@
-
 const { DataTypes } = require('sequelize');
 const sequelize = require('../config/database');
 
@@ -51,6 +50,22 @@ const Review = sequelize.define('Review', {
   isVisible: {
     type: DataTypes.BOOLEAN,
     defaultValue: true
+  },
+  status: {
+    type: DataTypes.ENUM('pending', 'approved', 'rejected'),
+    defaultValue: 'pending'
+  },
+  adminNotes: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
+  reportCount: {
+    type: DataTypes.INTEGER,
+    defaultValue: 0
+  },
+  lastReportedAt: {
+    type: DataTypes.DATE,
+    allowNull: true
   }
 }, {
   tableName: 'Reviews',
@@ -59,6 +74,12 @@ const Review = sequelize.define('Review', {
     {
       unique: true,
       fields: ['reviewerId', 'revieweeId', 'internshipId']
+    },
+    {
+      fields: ['status']
+    },
+    {
+      fields: ['reportCount']
     }
   ]
 });

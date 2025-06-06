@@ -2,32 +2,28 @@ const nodemailer = require('nodemailer');
 
 class EmailService {
   constructor() {
-    this.transporter = nodemailer.createTransporter({
+    this.transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST,
       port: process.env.SMTP_PORT,
-      secure: false,
+      secure: process.env.SMTP_SECURE === 'true',
       auth: {
         user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
+        pass: process.env.SMTP_PASSWORD,
       },
     });
   }
 
-  async sendEmail(to, subject, html, text = null) {
+  async sendEmail(to, subject, html) {
     try {
-      const mailOptions = {
-        from: `"MicroHire" <${process.env.SMTP_USER}>`,
+      const info = await this.transporter.sendMail({
+        from: `"MicroHire" <${process.env.SMTP_FROM}>`,
         to,
         subject,
         html,
-        text: text || this.stripHtml(html),
-      };
-
-      const result = await this.transporter.sendMail(mailOptions);
-      console.log('Email sent successfully:', result.messageId);
-      return result;
+      });
+      return info;
     } catch (error) {
-      console.error('Email sending failed:', error);
+      console.error('Send email error:', error);
       throw error;
     }
   }
@@ -198,6 +194,45 @@ class EmailService {
     `;
 
     return this.sendEmail(student.email, subject, html);
+  }
+
+  async sendApplicationReceivedEmail(userEmail, studentName, internshipTitle) {
+    const subject = 'New Application Received';
+    const html = `
+      <h2>New Application Received</h2>
+      <p>${studentName} has applied for your internship: ${internshipTitle}</p>
+      <p>Login to your account to review the application.</p>
+    `;
+    return this.sendEmail(userEmail, subject, html);
+  }
+
+  async sendApplicationStatusEmail(userEmail, status, internshipTitle, companyName) {
+    const subject = 'Application Status Update';
+    const html = `
+      <h2>Application Status Update</h2>
+      <p>Your application for ${internshipTitle} at ${companyName} has been ${status}.</p>
+    `;
+    return this.sendEmail(userEmail, subject, html);
+  }
+
+  async sendNewMessageEmail(userEmail, senderName) {
+    const subject = 'New Message Received';
+    const html = `
+      <h2>New Message</h2>
+      <p>You have received a new message from ${senderName}.</p>
+      <p>Login to your account to view the message.</p>
+    `;
+    return this.sendEmail(userEmail, subject, html);
+  }
+
+  async sendDeadlineReminderEmail(userEmail, internshipTitle, daysLeft) {
+    const subject = 'Application Deadline Reminder';
+    const html = `
+      <h2>Application Deadline Reminder</h2>
+      <p>Only ${daysLeft} days left to apply for ${internshipTitle}.</p>
+      <p>Don't miss this opportunity!</p>
+    `;
+    return this.sendEmail(userEmail, subject, html);
   }
 }
 

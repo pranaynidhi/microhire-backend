@@ -1,9 +1,9 @@
-
 const Internship = require('../models/Internship');
 const User = require('../models/User');
 const Application = require('../models/Application');
 const { Op } = require('sequelize');
 const sequelize = require('../config/database');
+const SearchHistory = require('../models/SearchHistory');
 
 const searchController = {
   advancedSearch: async (req, res) => {
@@ -314,6 +314,141 @@ const searchController = {
       res.status(500).json({
         success: false,
         message: 'Failed to fetch search suggestions'
+      });
+    }
+  },
+
+  saveSearch: async (req, res) => {
+    try {
+      const { name } = req.body;
+      const searchId = req.params.id;
+
+      const search = await SearchHistory.findOne({
+        where: {
+          id: searchId,
+          userId: req.user.id
+        }
+      });
+
+      if (!search) {
+        return res.status(404).json({
+          success: false,
+          message: 'Search not found'
+        });
+      }
+
+      await search.update({
+        isSaved: true,
+        savedName: name
+      });
+
+      res.json({
+        success: true,
+        message: 'Search saved successfully',
+        data: { search }
+      });
+    } catch (error) {
+      console.error('Save search error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to save search'
+      });
+    }
+  },
+
+  getSearchHistory: async (req, res) => {
+    try {
+      const { page = 1, limit = 20 } = req.query;
+      const offset = (page - 1) * limit;
+
+      const searches = await SearchHistory.findAndCountAll({
+        where: { userId: req.user.id },
+        order: [['createdAt', 'DESC']],
+        limit: parseInt(limit),
+        offset: offset
+      });
+
+      res.json({
+        success: true,
+        data: {
+          searches: searches.rows,
+          pagination: {
+            currentPage: parseInt(page),
+            totalPages: Math.ceil(searches.count / limit),
+            totalItems: searches.count,
+            itemsPerPage: parseInt(limit)
+          }
+        }
+      });
+    } catch (error) {
+      console.error('Get search history error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to fetch search history'
+      });
+    }
+  },
+
+  getSavedSearches: async (req, res) => {
+    try {
+      const searches = await SearchHistory.findAll({
+        where: {
+          userId: req.user.id,
+          isSaved: true
+        },
+        order: [['createdAt', 'DESC']]
+      });
+
+      res.json({
+        success: true,
+        data: { searches }
+      });
+    } catch (error) {
+      console.error('Get saved searches error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to fetch saved searches'
+      });
+    }
+  },
+
+  trackSearchClick: async (req, res) => {
+    try {
+      const { searchId, internshipId } = req.body;
+
+      const search = await SearchHistory.findOne({
+        where: {
+          id: searchId,
+          userId: req.user.id
+        }
+      });
+
+      if (!search) {
+        return res.status(404).json({
+          success: false,
+          message: 'Search not found'
+        });
+      }
+
+      const clickedResults = search.clickedResults || [];
+      clickedResults.push({
+        internshipId,
+        clickedAt: new Date()
+      });
+
+      await search.update({
+        clickedResults
+      });
+
+      res.json({
+        success: true,
+        message: 'Search click tracked successfully'
+      });
+    } catch (error) {
+      console.error('Track search click error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to track search click'
       });
     }
   }

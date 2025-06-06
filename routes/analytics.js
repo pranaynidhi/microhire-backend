@@ -1,4 +1,3 @@
-
 const express = require('express');
 const router = express.Router();
 const auth = require('../middleware/auth');
@@ -9,5 +8,8 @@ router.get('/overview', auth.verifyToken, adminAuth, analyticsController.getOver
 router.get('/internships', auth.verifyToken, adminAuth, analyticsController.getInternshipAnalytics);
 router.get('/applications', auth.verifyToken, adminAuth, analyticsController.getApplicationAnalytics);
 router.get('/users', auth.verifyToken, adminAuth, analyticsController.getUserAnalytics);
+router.get('/realtime', auth.verifyToken, adminAuth, analyticsController.getRealTimeStats);
+router.get('/custom-range', auth.verifyToken, adminAuth, analyticsController.getCustomDateRangeStats);
+router.get('/export', auth.verifyToken, adminAuth, analyticsController.exportAnalytics);
 
 module.exports = router;

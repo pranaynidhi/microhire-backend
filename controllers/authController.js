@@ -1,10 +1,18 @@
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 const User = require('../models/User');
+const emailService = require('../services/emailService');
 
-const generateToken = (userId) => {
-  return jwt.sign({ userId }, process.env.JWT_SECRET, {
-    expiresIn: process.env.JWT_EXPIRES_IN,
+const generateTokens = (userId) => {
+  const accessToken = jwt.sign({ userId }, process.env.JWT_SECRET, {
+    expiresIn: process.env.JWT_ACCESS_EXPIRES_IN || '15m'
   });
+  
+  const refreshToken = jwt.sign({ userId }, process.env.JWT_REFRESH_SECRET, {
+    expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d'
+  });
+  
+  return { accessToken, refreshToken };
 };
 
 const register = async (req, res) => {
@@ -23,22 +31,18 @@ const register = async (req, res) => {
       phone,
     } = req.body;
 
-    // Check if user already exists
+    // Check if user exists
     const existingUser = await User.findOne({ where: { email } });
     if (existingUser) {
       return res.status(400).json({
         success: false,
-        message: 'User with this email already exists.',
+        message: 'User with this email already exists'
       });
     }
 
-    // Validate role-specific fields
-    if (role === 'business' && !companyName) {
-      return res.status(400).json({
-        success: false,
-        message: 'Company name is required for business accounts.',
-      });
-    }
+    // Generate email verification token
+    const emailVerificationToken = crypto.randomBytes(32).toString('hex');
+    const emailVerificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
 
     // Create user
     const userData = {
@@ -46,6 +50,8 @@ const register = async (req, res) => {
       email,
       password,
       role,
+      emailVerificationToken,
+      emailVerificationExpires
     };
 
     if (role === 'student') {
@@ -60,15 +66,21 @@ const register = async (req, res) => {
     }
 
     const user = await User.create(userData);
-    const token = generateToken(user.id);
+
+    // Send verification email
+    await emailService.sendVerificationEmail(user.email, emailVerificationToken);
+
+    // Generate tokens
+    const { accessToken, refreshToken } = generateTokens(user.id);
 
     res.status(201).json({
       success: true,
-      message: 'User registered successfully.',
+      message: 'User registered successfully. Please verify your email.',
       data: {
         user: user.getPublicProfile(),
-        token,
-      },
+        accessToken,
+        refreshToken
+      }
     });
   } catch (error) {
     console.error('Registration error:', error);
@@ -86,60 +98,89 @@ const register = async (req, res) => {
 
     res.status(500).json({
       success: false,
-      message: 'Internal server error.',
+      message: 'Internal server error'
     });
   }
 };
 
-const login = async (req, res) => {
+const verifyEmail = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { token } = req.params;
 
-    if (!email || !password) {
+    const user = await User.findOne({
+      where: {
+        emailVerificationToken: token,
+        emailVerificationExpires: { [Op.gt]: new Date() }
+      }
+    });
+
+    if (!user) {
       return res.status(400).json({
         success: false,
-        message: 'Email and password are required.',
+        message: 'Invalid or expired verification token'
       });
     }
 
-    // Find user
-    const user = await User.findOne({ where: { email } });
-    if (!user || !user.isActive) {
-      return res.status(401).json({
-        success: false,
-        message: 'Invalid email or password.',
-      });
-    }
-
-    // Check password
-    const isPasswordValid = await user.comparePassword(password);
-    if (!isPasswordValid) {
-      return res.status(401).json({
-        success: false,
-        message: 'Invalid email or password.',
-      });
-    }
-
-    const token = generateToken(user.id);
+    await user.update({
+      emailVerified: true,
+      emailVerificationToken: null,
+      emailVerificationExpires: null
+    });
 
     res.json({
       success: true,
-      message: 'Login successful.',
-      data: {
-        user: user.getPublicProfile(),
-        token,
-      },
+      message: 'Email verified successfully'
     });
   } catch (error) {
-    console.error('Login error:', error);
+    console.error('Email verification error:', error);
     res.status(500).json({
       success: false,
-      message: 'Internal server error.',
+      message: 'Internal server error'
+    });
+  }
+};
+
+const refreshToken = async (req, res) => {
+  try {
+    const { refreshToken } = req.body;
+
+    if (!refreshToken) {
+      return res.status(400).json({
+        success: false,
+        message: 'Refresh token is required'
+      });
+    }
+
+    const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
+    const user = await User.findByPk(decoded.userId);
+
+    if (!user || !user.isActive) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid refresh token'
+      });
+    }
+
+    const { accessToken, refreshToken: newRefreshToken } = generateTokens(user.id);
+
+    res.json({
+      success: true,
+      data: {
+        accessToken,
+        refreshToken: newRefreshToken
+      }
+    });
+  } catch (error) {
+    console.error('Refresh token error:', error);
+    res.status(401).json({
+      success: false,
+      message: 'Invalid refresh token'
     });
   }
 };
 
 module.exports = {
   register,
-  login,
+  verifyEmail,
+  refreshToken,
 };

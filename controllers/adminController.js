@@ -3,6 +3,8 @@ const User = require('../models/User');
 const Internship = require('../models/Internship');
 const Application = require('../models/Application');
 const Report = require('../models/Report');
+const Review = require('../models/Review');
+const SystemSettings = require('../models/SystemSettings');
 const { Op } = require('sequelize');
 
 const adminController = {
@@ -290,6 +292,121 @@ const adminController = {
       res.status(500).json({
         success: false,
         message: 'Failed to resolve report'
+      });
+    }
+  },
+
+  getDashboardOverview: async (req, res) => {
+    try {
+      // Get pending items counts
+      const pendingReports = await Report.count({
+        where: { status: 'pending' }
+      });
+
+      const pendingReviews = await Review.count({
+        where: { status: 'pending' }
+      });
+
+      const pendingInternships = await Internship.count({
+        where: { status: 'pending' }
+      });
+
+      // Get recent activities
+      const recentReports = await Report.findAll({
+        where: { status: 'pending' },
+        include: [
+          {
+            model: User,
+            as: 'reporter',
+            attributes: ['id', 'fullName', 'email']
+          }
+        ],
+        order: [['createdAt', 'DESC']],
+        limit: 5
+      });
+
+      const recentUsers = await User.findAll({
+        order: [['createdAt', 'DESC']],
+        limit: 5,
+        attributes: { exclude: ['password'] }
+      });
+
+      // Get system health metrics
+      const totalUsers = await User.count();
+      const activeUsers = await User.count({
+        where: { isActive: true }
+      });
+
+      const totalInternships = await Internship.count();
+      const activeInternships = await Internship.count({
+        where: { status: 'active' }
+      });
+
+      res.json({
+        success: true,
+        data: {
+          pendingItems: {
+            reports: pendingReports,
+            reviews: pendingReviews,
+            internships: pendingInternships
+          },
+          recentActivities: {
+            reports: recentReports,
+            users: recentUsers
+          },
+          systemHealth: {
+            totalUsers,
+            activeUsers,
+            totalInternships,
+            activeInternships
+          }
+        }
+      });
+    } catch (error) {
+      console.error('Get dashboard overview error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to fetch dashboard overview'
+      });
+    }
+  },
+
+  getSystemSettings: async (req, res) => {
+    try {
+      const settings = await SystemSettings.findAll();
+      res.json({
+        success: true,
+        data: { settings }
+      });
+    } catch (error) {
+      console.error('Get system settings error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to fetch system settings'
+      });
+    }
+  },
+
+  updateSystemSettings: async (req, res) => {
+    try {
+      const { settings } = req.body;
+
+      for (const [key, value] of Object.entries(settings)) {
+        await SystemSettings.upsert({
+          key,
+          value: JSON.stringify(value)
+        });
+      }
+
+      res.json({
+        success: true,
+        message: 'System settings updated successfully'
+      });
+    } catch (error) {
+      console.error('Update system settings error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to update system settings'
       });
     }
   }

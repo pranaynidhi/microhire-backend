@@ -21,9 +21,15 @@ const initializeSocket = (server) => {
       }
 
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      
+      // Check token expiration
+      if (Date.now() >= decoded.exp * 1000) {
+        return next(new Error('Token expired'));
+      }
+
       const user = await User.findByPk(decoded.userId);
       
-      if (!user || !user.isActive) {
+      if (!user || !user.isActive || !user.emailVerified) {
         return next(new Error('Authentication error'));
       }
 
@@ -31,6 +37,9 @@ const initializeSocket = (server) => {
       socket.user = user;
       next();
     } catch (error) {
+      if (error.name === 'TokenExpiredError') {
+        return next(new Error('Token expired'));
+      }
       next(new Error('Authentication error'));
     }
   });

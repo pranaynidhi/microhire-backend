@@ -1,8 +1,14 @@
 const { Notification, User } = require('../models');
 const { Op } = require('sequelize');
+const emailService = require('../services/emailService');
+const pushNotificationService = require('../services/pushNotificationService');
+const realtimeService = require('../services/realtimeService');
 
 const createNotification = async (userId, title, message, type, metadata = {}) => {
   try {
+    const user = await User.findByPk(userId);
+    if (!user) return null;
+
     const notification = await Notification.create({
       userId,
       title,
@@ -10,6 +16,36 @@ const createNotification = async (userId, title, message, type, metadata = {}) =
       type,
       metadata,
     });
+
+    // Send real-time notification
+    realtimeService.sendNotificationToUser(userId, notification);
+
+    // Send email notification if user has email
+    if (user.email) {
+      try {
+        await emailService.sendEmail(
+          user.email,
+          title,
+          `<h2>${title}</h2><p>${message}</p>`
+        );
+      } catch (error) {
+        console.error('Send email notification error:', error);
+      }
+    }
+
+    // Send push notification if user has FCM token
+    if (user.fcmToken) {
+      try {
+        await pushNotificationService.sendPushNotification(
+          user.fcmToken,
+          title,
+          message,
+          { type, ...metadata }
+        );
+      } catch (error) {
+        console.error('Send push notification error:', error);
+      }
+    }
 
     return notification;
   } catch (error) {

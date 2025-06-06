@@ -1,10 +1,10 @@
-
 const Analytics = require('../models/Analytics');
 const User = require('../models/User');
 const Internship = require('../models/Internship');
 const Application = require('../models/Application');
 const { Op } = require('sequelize');
 const sequelize = require('../config/database');
+const AnalyticsService = require('../services/analyticsService');
 
 const analyticsController = {
   getOverview: async (req, res) => {
@@ -279,6 +279,87 @@ const analyticsController = {
       res.status(500).json({
         success: false,
         message: 'Failed to fetch user analytics'
+      });
+    }
+  },
+
+  getRealTimeStats: async (req, res) => {
+    try {
+      const stats = await AnalyticsService.getRealTimeStats();
+      res.json({
+        success: true,
+        data: stats
+      });
+    } catch (error) {
+      console.error('Get real-time stats error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to fetch real-time statistics'
+      });
+    }
+  },
+
+  getCustomDateRangeStats: async (req, res) => {
+    try {
+      const { startDate, endDate } = req.query;
+      
+      if (!startDate || !endDate) {
+        return res.status(400).json({
+          success: false,
+          message: 'Start date and end date are required'
+        });
+      }
+
+      const stats = await AnalyticsService.getCustomDateRangeStats(
+        new Date(startDate),
+        new Date(endDate)
+      );
+
+      res.json({
+        success: true,
+        data: stats
+      });
+    } catch (error) {
+      console.error('Get custom date range stats error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to fetch custom date range statistics'
+      });
+    }
+  },
+
+  exportAnalytics: async (req, res) => {
+    try {
+      const { startDate, endDate, format = 'csv' } = req.query;
+
+      if (!startDate || !endDate) {
+        return res.status(400).json({
+          success: false,
+          message: 'Start date and end date are required'
+        });
+      }
+
+      const data = await AnalyticsService.exportAnalytics(
+        new Date(startDate),
+        new Date(endDate),
+        format
+      );
+
+      if (format === 'csv') {
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Disposition', 'attachment; filename=analytics.csv');
+        return res.send(data);
+      }
+
+      res.json({
+        success: true,
+        data
+      });
+    } catch (error) {
+      console.error('Export analytics error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to export analytics'
       });
     }
   }
