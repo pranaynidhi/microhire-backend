@@ -1,15 +1,37 @@
 const express = require('express');
 const router = express.Router();
-const auth = require('../middleware/auth');
-const adminAuth = require('../middleware/adminAuth');
-const analyticsController = require('../controllers/analyticsController');
+const { authenticate, isCompany, requireEmailVerification } = require('../middleware/auth');
+const { AppError } = require('../utils/errors');
+const logger = require('../utils/logger');
 
-router.get('/overview', auth.verifyToken, adminAuth, analyticsController.getOverview);
-router.get('/internships', auth.verifyToken, adminAuth, analyticsController.getInternshipAnalytics);
-router.get('/applications', auth.verifyToken, adminAuth, analyticsController.getApplicationAnalytics);
-router.get('/users', auth.verifyToken, adminAuth, analyticsController.getUserAnalytics);
-router.get('/realtime', auth.verifyToken, adminAuth, analyticsController.getRealTimeStats);
-router.get('/custom-range', auth.verifyToken, adminAuth, analyticsController.getCustomDateRangeStats);
-router.get('/export', auth.verifyToken, adminAuth, analyticsController.exportAnalytics);
+// Get user analytics
+router.get('/user', authenticate, requireEmailVerification, async (req, res, next) => {
+  try {
+    // Implementation here
+    res.json({ message: 'Get user analytics' });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Get company analytics (company only)
+router.get('/company', authenticate, isCompany, requireEmailVerification, async (req, res, next) => {
+  try {
+    // Implementation here
+    res.json({ message: 'Get company analytics' });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Get platform analytics (admin only)
+router.get('/platform', authenticate, requireEmailVerification, async (req, res, next) => {
+  try {
+    // Implementation here
+    res.json({ message: 'Get platform analytics' });
+  } catch (error) {
+    next(error);
+  }
+});
 
 module.exports = router;

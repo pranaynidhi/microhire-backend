@@ -1,27 +1,59 @@
 const express = require('express');
-const {
-  getNotifications,
-  markAsRead,
-  markAllAsRead,
-  getUnreadCount,
-} = require('../controllers/notificationController');
-const { verifyToken } = require('../middleware/auth');
-
 const router = express.Router();
+const { authenticate, requireEmailVerification } = require('../middleware/auth');
+const { AppError } = require('../utils/errors');
+const logger = require('../utils/logger');
 
-// All notification routes require authentication
-router.use(verifyToken);
+// Get all notifications
+router.get('/', authenticate, requireEmailVerification, async (req, res, next) => {
+  try {
+    // Implementation here
+    res.json({ message: 'Get all notifications' });
+  } catch (error) {
+    next(error);
+  }
+});
 
-// Get notifications for current user
-router.get('/', getNotifications);
-
-// Get unread count
-router.get('/unread-count', getUnreadCount);
-
-// Mark specific notification as read
-router.patch('/:id/read', markAsRead);
+// Mark notification as read
+router.patch('/:id/read', authenticate, requireEmailVerification, async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    // Implementation here
+    res.json({ message: `Mark notification ${id} as read` });
+  } catch (error) {
+    next(error);
+  }
+});
 
 // Mark all notifications as read
-router.patch('/mark-all-read', markAllAsRead);
+router.patch('/read-all', authenticate, requireEmailVerification, async (req, res, next) => {
+  try {
+    // Implementation here
+    res.json({ message: 'Mark all notifications as read' });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Delete notification
+router.delete('/:id', authenticate, requireEmailVerification, async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    // Implementation here
+    res.json({ message: `Delete notification ${id}` });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Delete all notifications
+router.delete('/', authenticate, requireEmailVerification, async (req, res, next) => {
+  try {
+    // Implementation here
+    res.json({ message: 'Delete all notifications' });
+  } catch (error) {
+    next(error);
+  }
+});
 
 module.exports = router;

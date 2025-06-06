@@ -1,7 +1,6 @@
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-const FileType = require('file-type');
 const { AppError } = require('../utils/errors');
 const logger = require('../utils/logger');
 
@@ -13,19 +12,7 @@ uploadDirs.forEach(dir => {
   }
 });
 
-// File type validation
-const allowedTypes = {
-  resume: ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
-  logo: ['image/jpeg', 'image/png', 'image/gif'],
-  portfolio: ['application/pdf', 'application/zip', 'image/jpeg', 'image/png']
-};
-
-const fileExtensions = {
-  resume: ['.pdf', '.doc', '.docx'],
-  logo: ['.jpg', '.jpeg', '.png', '.gif'],
-  portfolio: ['.pdf', '.jpg', '.jpeg', '.png', '.zip']
-};
-
+// Configure multer storage
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     let uploadPath = 'uploads/';
@@ -47,50 +34,128 @@ const storage = multer.diskStorage({
   }
 });
 
-const fileFilter = async (req, file, cb) => {
+// File filter
+const fileFilter = (req, file, cb) => {
   try {
+    // Define allowed file types
+    const allowedMimeTypes = {
+      'application/pdf': ['.pdf'],
+      'image/jpeg': ['.jpg', '.jpeg'],
+      'image/png': ['.png'],
+      'image/gif': ['.gif']
+    };
+
+    // Check file type
+    if (!allowedMimeTypes[file.mimetype]) {
+      return cb(new AppError('Invalid file type', 400), false);
+    }
+
     // Check file extension
     const ext = path.extname(file.originalname).toLowerCase();
-    const fieldAllowedTypes = fileExtensions[file.fieldname] || [];
-    
-    if (!fieldAllowedTypes.includes(ext)) {
-      return cb(new AppError(`Invalid file type for ${file.fieldname}. Allowed: ${fieldAllowedTypes.join(', ')}`), false);
+    if (!allowedMimeTypes[file.mimetype].includes(ext)) {
+      return cb(new AppError('Invalid file extension', 400), false);
     }
 
-    // Check file size
-    if (file.size > 5 * 1024 * 1024) { // 5MB
-      return cb(new AppError('File size too large. Maximum size is 5MB'), false);
-    }
-
-    // Check MIME type
-    const fileType = await FileType.fromBuffer(file.buffer);
-    const allowedMimeTypes = allowedTypes[file.fieldname] || [];
-    
-    if (!allowedMimeTypes.includes(fileType.mime)) {
-      return cb(new AppError(`Invalid file type for ${file.fieldname}`), false);
+    // Check file size (5MB limit)
+    if (file.size > 5 * 1024 * 1024) {
+      return cb(new AppError('File size too large. Maximum size is 5MB', 400), false);
     }
 
     cb(null, true);
   } catch (error) {
-    logger.error('File validation error:', error);
-    cb(new AppError('Error validating file'), false);
+    logger.error('Error in file filter:', error);
+    cb(error, false);
+  }
+};
+
+// Configure multer
+const upload = multer({
+  storage,
+  fileFilter,
+  limits: {
+    fileSize: 5 * 1024 * 1024 // 5MB
+  }
+});
+
+// Upload middleware
+const uploadMiddleware = (fieldName) => {
+  return async (req, res, next) => {
+    try {
+      // Handle single file upload
+      upload.single(fieldName)(req, res, (err) => {
+        if (err) {
+          if (err instanceof multer.MulterError) {
+            if (err.code === 'LIMIT_FILE_SIZE') {
+              return next(new AppError('File size too large. Maximum size is 5MB', 400));
+            }
+            return next(new AppError(err.message, 400));
+          }
+          return next(err);
+        }
+
+        if (!req.file) {
+          return next(new AppError('No file uploaded', 400));
+        }
+
+        // Add file information to request
+        req.fileInfo = {
+          filename: req.file.filename,
+          originalname: req.file.originalname,
+          mimetype: req.file.mimetype,
+          size: req.file.size,
+          path: req.file.path
+        };
+
+        next();
+      });
+    } catch (error) {
+      logger.error('Error in upload middleware:', error);
+      next(error);
+    }
+  };
+};
+
+// Delete file middleware
+const deleteFileMiddleware = async (req, res, next) => {
+  try {
+    const { filename } = req.params;
+
+    if (!filename) {
+      return next(new AppError('Filename is required', 400));
+    }
+
+    const filePath = path.join('uploads', filename);
+    
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+      logger.info(`File deleted: ${filePath}`);
+    } else {
+      logger.warn(`File not found: ${filePath}`);
+    }
+
+    next();
+  } catch (error) {
+    logger.error('Error in delete file middleware:', error);
+    next(error);
   }
 };
 
 // Cleanup old files
 const cleanupOldFiles = async () => {
   try {
-    const files = await fs.promises.readdir('uploads');
-    const now = Date.now();
-    
-    for (const file of files) {
-      const filePath = path.join('uploads', file);
-      const stats = await fs.promises.stat(filePath);
+    for (const dir of uploadDirs) {
+      const files = await fs.promises.readdir(dir);
+      const now = Date.now();
       
-      // Remove files older than 24 hours
-      if (now - stats.mtime.getTime() > 24 * 60 * 60 * 1000) {
-        await fs.promises.unlink(filePath);
-        logger.info(`Cleaned up old file: ${filePath}`);
+      for (const file of files) {
+        const filePath = path.join(dir, file);
+        const stats = await fs.promises.stat(filePath);
+        
+        // Remove files older than 24 hours
+        if (now - stats.mtime.getTime() > 24 * 60 * 60 * 1000) {
+          await fs.promises.unlink(filePath);
+          logger.info(`Cleaned up old file: ${filePath}`);
+        }
       }
     }
   } catch (error) {
@@ -101,33 +166,7 @@ const cleanupOldFiles = async () => {
 // Run cleanup every 24 hours
 setInterval(cleanupOldFiles, 24 * 60 * 60 * 1000);
 
-const uploadMiddleware = multer({
-  storage: storage,
-  limits: {
-    fileSize: 5 * 1024 * 1024, // 5MB
-    files: 1
-  },
-  fileFilter: fileFilter
-});
-
-// Error handling middleware
-const handleUploadError = (error, req, res, next) => {
-  if (error instanceof multer.MulterError) {
-    if (error.code === 'LIMIT_FILE_SIZE') {
-      return res.status(400).json({
-        success: false,
-        message: 'File size too large. Maximum size is 5MB'
-      });
-    }
-    return res.status(400).json({
-      success: false,
-      message: error.message
-    });
-  }
-  next(error);
-};
-
 module.exports = {
   uploadMiddleware,
-  handleUploadError
+  deleteFileMiddleware
 };

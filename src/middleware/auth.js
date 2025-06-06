@@ -1,119 +1,61 @@
-const jwt = require('jsonwebtoken');
-const User = require('../models/User');
+const { verifyIdToken } = require('../config/firebase');
 const { AppError } = require('../utils/errors');
 const logger = require('../utils/logger');
 
-const generateAccessToken = (user) => {
-  return jwt.sign(
-    { userId: user.id },
-    process.env.JWT_SECRET,
-    { expiresIn: process.env.JWT_ACCESS_EXPIRES_IN || '15m' }
-  );
-};
-
-const generateRefreshToken = (user) => {
-  return jwt.sign(
-    { userId: user.id },
-    process.env.JWT_REFRESH_SECRET,
-    { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d' }
-  );
-};
-
-const verifyToken = async (req, res, next) => {
+// Middleware to verify Firebase ID token
+const authenticate = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
     
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      throw new AppError('Access denied. No token provided.', 401);
+      throw new AppError('No token provided', 401);
     }
 
-    const token = authHeader.substring(7);
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    
-    const user = await User.findByPk(decoded.userId);
-    if (!user || !user.isActive) {
-      throw new AppError('Invalid token or user not found.', 401);
-    }
+    const idToken = authHeader.split('Bearer ')[1];
+    const decodedToken = await verifyIdToken(idToken);
 
-    req.user = user;
+    // Add user info to request
+    req.user = {
+      uid: decodedToken.uid,
+      email: decodedToken.email,
+      emailVerified: decodedToken.email_verified,
+      role: decodedToken.role || 'user'
+    };
+
     next();
   } catch (error) {
-    if (error.name === 'JsonWebTokenError') {
-      next(new AppError('Invalid token.', 401));
-    } else if (error.name === 'TokenExpiredError') {
-      next(new AppError('Token expired.', 401));
-    } else {
-      logger.error('Auth middleware error:', error);
-      next(new AppError('Internal server error.', 500));
-    }
+    logger.error('Authentication error:', error);
+    next(new AppError('Invalid or expired token', 401));
   }
 };
 
-const refreshToken = async (req, res, next) => {
-  try {
-    const { refreshToken } = req.body;
-    if (!refreshToken) {
-      throw new AppError('Refresh token is required', 400);
-    }
-
-    const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
-    const user = await User.findByPk(decoded.userId);
-    
-    if (!user || !user.isActive) {
-      throw new AppError('Invalid refresh token', 401);
-    }
-    
-    const newAccessToken = generateAccessToken(user);
-    const newRefreshToken = generateRefreshToken(user);
-
-    res.json({
-      success: true,
-      data: {
-        accessToken: newAccessToken,
-        refreshToken: newRefreshToken
-      }
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
-const requireEmailVerification = (req, res, next) => {
-  if (!req.user.emailVerified) {
-    return res.status(403).json({
-      success: false,
-      message: 'Please verify your email first'
-    });
-  }
-  next();
-};
-
+// Middleware to check if user is a company
 const isCompany = (req, res, next) => {
-  if (req.user.role !== 'business') {
-    return res.status(403).json({
-      success: false,
-      message: 'Access denied. Business account required.',
-    });
+  if (req.user.role !== 'company') {
+    return next(new AppError('Access denied. Company role required', 403));
   }
   next();
 };
 
+// Middleware to check if user is a student
 const isStudent = (req, res, next) => {
   if (req.user.role !== 'student') {
-    return res.status(403).json({
-      success: false,
-      message: 'Access denied. Student account required.',
-    });
+    return next(new AppError('Access denied. Student role required', 403));
+  }
+  next();
+};
+
+// Middleware to check if email is verified
+const requireEmailVerification = (req, res, next) => {
+  if (!req.user.emailVerified) {
+    return next(new AppError('Email verification required', 403));
   }
   next();
 };
 
 module.exports = {
-  verifyToken,
-  refreshToken,
-  requireEmailVerification,
+  authenticate,
   isCompany,
   isStudent,
-  generateAccessToken,
-  generateRefreshToken
+  requireEmailVerification
 };
