@@ -1,70 +1,37 @@
 const { Internship, User, Application } = require('../models');
 const { Op } = require('sequelize');
+const withTransaction = require('../utils/transaction');
+const cache = require('../utils/cache');
+const { AppError, ErrorTypes } = require('../utils/errors');
+const logger = require('../utils/logger');
 
 const createInternship = async (req, res) => {
   try {
-    const {
-      title,
-      description,
-      requirements,
-      location,
-      stipend,
-      duration,
-      deadline,
-      type,
-      category,
-      maxApplicants,
-    } = req.body;
+    const result = await withTransaction(async (transaction) => {
+      const internship = await Internship.create({
+        ...req.body,
+        companyId: req.user.id
+      }, { transaction });
 
-    const internship = await Internship.create({
-      title,
-      description,
-      requirements,
-      location,
-      stipend: stipend || 0,
-      duration,
-      deadline,
-      type: type || 'onsite',
-      category,
-      maxApplicants: maxApplicants || 50,
-      companyId: req.user.id,
-    });
+      // Invalidate cache
+      await cache.del(`company:${req.user.id}:internships`);
 
-    await internship.reload({
-      include: [
-        {
-          model: User,
-          as: 'company',
-          attributes: ['id', 'companyName', 'email'],
-        },
-      ],
+      return internship;
     });
 
     res.status(201).json({
       success: true,
-      message: 'Internship created successfully.',
-      data: {
-        internship,
-      },
+      message: 'Internship created successfully',
+      data: { internship: result }
     });
   } catch (error) {
-    console.error('Create internship error:', error);
+    logger.error('Create internship error:', error);
     
     if (error.name === 'SequelizeValidationError') {
-      return res.status(400).json({
-        success: false,
-        message: 'Validation error.',
-        errors: error.errors.map((err) => ({
-          field: err.path,
-          message: err.message,
-        })),
-      });
+      throw new AppError('Validation error', 400, error.errors);
     }
-
-    res.status(500).json({
-      success: false,
-      message: 'Internal server error.',
-    });
+    
+    throw error;
   }
 };
 
@@ -184,8 +151,51 @@ const getInternshipById = async (req, res) => {
   }
 };
 
+const getInternships = async (req, res) => {
+  try {
+    const cacheKey = `internships:${req.query.page}:${req.query.limit}`;
+    const cachedData = await cache.get(cacheKey);
+
+    if (cachedData) {
+      return res.json(cachedData);
+    }
+
+    const internships = await Internship.findAndCountAll({
+      where: { status: 'active' },
+      include: [{
+        model: User,
+        as: 'company',
+        attributes: ['id', 'companyName', 'email']
+      }],
+      limit: parseInt(req.query.limit) || 10,
+      offset: (parseInt(req.query.page) - 1) * (parseInt(req.query.limit) || 10)
+    });
+
+    const response = {
+      success: true,
+      data: {
+        internships: internships.rows,
+        pagination: {
+          currentPage: parseInt(req.query.page) || 1,
+          totalPages: Math.ceil(internships.count / (parseInt(req.query.limit) || 10)),
+          totalItems: internships.count,
+          itemsPerPage: parseInt(req.query.limit) || 10
+        }
+      }
+    };
+
+    await cache.set(cacheKey, response, 300); // Cache for 5 minutes
+
+    res.json(response);
+  } catch (error) {
+    logger.error('Get internships error:', error);
+    throw error;
+  }
+};
+
 module.exports = {
   createInternship,
   getAllInternships,
   getInternshipById,
+  getInternships,
 };

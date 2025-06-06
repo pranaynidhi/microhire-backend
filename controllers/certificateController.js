@@ -7,98 +7,96 @@ const Notification = require('../models/Notification');
 const CertificateView = require('../models/CertificateView');
 const CertificateVerification = require('../models/CertificateVerification');
 const sequelize = require('../config/database');
+const withTransaction = require('../utils/transaction');
+const cache = require('../utils/cache');
+const { AppError } = require('../utils/errors');
+const logger = require('../utils/logger');
+const PDFDocument = require('pdfkit');
+const fs = require('fs');
+const path = require('path');
 
 const certificateController = {
   generateCertificate: async (req, res) => {
     try {
-      const { 
-        studentId, 
-        internshipId, 
-        startDate, 
-        endDate, 
-        skills, 
-        performance 
-      } = req.body;
-
-      // Verify that the company owns the internship
-      const internship = await Internship.findOne({
-        where: { 
-          id: internshipId, 
-          companyId: req.user.id 
-        }
-      });
-
-      if (!internship) {
-        return res.status(404).json({
-          success: false,
-          message: 'Internship not found or you are not authorized'
+      const result = await withTransaction(async (transaction) => {
+        // Check if internship exists and is completed
+        const internship = await Internship.findOne({
+          where: { 
+            id: req.body.internshipId,
+            status: 'completed',
+            companyId: req.user.id
+          },
+          include: [{
+            model: User,
+            as: 'student',
+            attributes: ['id', 'fullName']
+          }],
+          transaction
         });
-      }
 
-      // Verify that the student completed the internship
-      const application = await Application.findOne({
-        where: {
-          internshipId,
-          userId: studentId,
-          status: 'accepted'
+        if (!internship) {
+          throw new AppError('Internship not found or not completed', 404);
         }
-      });
 
-      if (!application) {
-        return res.status(400).json({
-          success: false,
-          message: 'Student did not complete this internship'
+        // Check if certificate already exists
+        const existingCertificate = await Certificate.findOne({
+          where: {
+            internshipId: req.body.internshipId
+          },
+          transaction
         });
-      }
 
-      // Check if certificate already exists
-      const existingCertificate = await Certificate.findOne({
-        where: {
-          studentId,
-          internshipId,
-          companyId: req.user.id
+        if (existingCertificate) {
+          throw new AppError('Certificate already exists for this internship', 400);
         }
-      });
 
-      if (existingCertificate) {
-        return res.status(409).json({
-          success: false,
-          message: 'Certificate already exists for this internship'
-        });
-      }
+        // Generate certificate ID
+        const certificateId = `CERT-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
-      // Get student and company details
-      const student = await User.findByPk(studentId);
-      const company = await User.findByPk(req.user.id);
+        // Create certificate
+        const certificate = await Certificate.create({
+          certificateId,
+          studentId: internship.studentId,
+          companyId: req.user.id,
+          internshipId: req.body.internshipId,
+          studentName: internship.student.fullName,
+          companyName: req.user.companyName,
+          internshipTitle: internship.title,
+          startDate: internship.startDate,
+          endDate: internship.endDate,
+          performance: req.body.performance,
+          isValid: true
+        }, { transaction });
 
-      // Generate unique certificate ID
-      const certificateId = `MH-${Date.now()}-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
+        // Generate PDF
+        const doc = new PDFDocument();
+        const pdfPath = path.join(__dirname, '../certificates', `${certificateId}.pdf`);
+        
+        doc.pipe(fs.createWriteStream(pdfPath));
+        // Add certificate content
+        doc.text(`Certificate of Completion`, { align: 'center' });
+        doc.text(`This is to certify that`, { align: 'center' });
+        doc.text(certificate.studentName, { align: 'center' });
+        // ... Add more certificate content
+        doc.end();
 
-      const certificate = await Certificate.create({
-        certificateId,
-        studentId,
-        companyId: req.user.id,
-        internshipId,
-        studentName: student.fullName,
-        companyName: company.companyName,
-        internshipTitle: internship.title,
-        startDate,
-        endDate,
-        skills,
-        performance
+        // Invalidate caches
+        await Promise.all([
+          cache.del(`student:${certificate.studentId}:certificates`),
+          cache.del(`company:${certificate.companyId}:certificates`)
+        ]);
+
+        return certificate;
       });
 
       res.status(201).json({
         success: true,
         message: 'Certificate generated successfully',
-        data: { certificate }
+        data: { certificate: result }
       });
     } catch (error) {
-      console.error('Generate certificate error:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Failed to generate certificate'
-      });
+      logger.error('Generate certificate error:', error);
+      throw error;
     }
   },
 
@@ -145,61 +143,69 @@ const certificateController = {
 
   verifyCertificate: async (req, res) => {
     try {
-      const { certificateId } = req.params;
+      const cacheKey = `certificate:${req.params.certificateId}:verify`;
+      const cachedData = await cache.get(cacheKey);
 
-      const certificate = await Certificate.findOne({
-        where: { 
-          certificateId,
-          isValid: true 
-        },
-        include: [
-          {
-            model: User,
-            as: 'student',
-            attributes: ['id', 'fullName']
-          },
-          {
-            model: User,
-            as: 'company',
-            attributes: ['id', 'companyName']
-          },
-          {
-            model: Internship,
-            attributes: ['id', 'title']
-          }
-        ]
-      });
-
-      if (!certificate) {
-        return res.status(404).json({
-          success: false,
-          message: 'Certificate not found or invalid'
-        });
+      if (cachedData) {
+        return res.json(cachedData);
       }
 
-      res.json({
+      const result = await withTransaction(async (transaction) => {
+        const certificate = await Certificate.findOne({
+          where: { 
+            certificateId: req.params.certificateId,
+            isValid: true 
+          },
+          include: [
+            {
+              model: User,
+              as: 'student',
+              attributes: ['id', 'fullName']
+            },
+            {
+              model: User,
+              as: 'company',
+              attributes: ['id', 'companyName']
+            },
+            {
+              model: Internship,
+              attributes: ['id', 'title']
+            }
+          ],
+          transaction
+        });
+
+        if (!certificate) {
+          throw new AppError('Certificate not found or invalid', 404);
+        }
+
+        return certificate;
+      });
+
+      const response = {
         success: true,
         message: 'Certificate is valid',
         data: { 
           certificate: {
-            id: certificate.id,
-            certificateId: certificate.certificateId,
-            studentName: certificate.studentName,
-            companyName: certificate.companyName,
-            internshipTitle: certificate.internshipTitle,
-            startDate: certificate.startDate,
-            endDate: certificate.endDate,
-            performance: certificate.performance,
-            issuedAt: certificate.issuedAt
+            id: result.id,
+            certificateId: result.certificateId,
+            studentName: result.studentName,
+            companyName: result.companyName,
+            internshipTitle: result.internshipTitle,
+            startDate: result.startDate,
+            endDate: result.endDate,
+            performance: result.performance,
+            issuedAt: result.issuedAt
           }
         }
-      });
+      };
+
+      await cache.set(cacheKey, response, 3600); // Cache for 1 hour
+
+      res.json(response);
     } catch (error) {
-      console.error('Verify certificate error:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Failed to verify certificate'
-      });
+      logger.error('Verify certificate error:', error);
+      throw error;
     }
   },
 

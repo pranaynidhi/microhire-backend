@@ -8,6 +8,8 @@ const { syncDatabase } = require('./models');
 const initializeSocket = require('./config/socket');
 const attachSocket = require('./middleware/socketMiddleware');
 const { securityMiddleware, authLimiter, apiLimiter } = require('./middleware/security');
+const errorHandler = require('./middleware/errorHandler');
+const logger = require('./utils/logger');
 
 // Import routes
 const authRoutes = require('./routes/auth');
@@ -103,21 +105,23 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// 404 handler
-app.use('*', (req, res) => {
-  res.status(404).json({
-    success: false,
-    message: 'Route not found',
-  });
+// Error handling
+app.use((req, res, next) => {
+  next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));
 });
 
-// Global error handler
-app.use((error, req, res, next) => {
-  console.error('Global error handler:', error);
-  res.status(500).json({
-    success: false,
-    message: 'Something went wrong!',
-  });
+app.use(errorHandler);
+
+// Unhandled rejections
+process.on('unhandledRejection', (err) => {
+  logger.error('UNHANDLED REJECTION! Shutting down...', err);
+  process.exit(1);
+});
+
+// Uncaught exceptions
+process.on('uncaughtException', (err) => {
+  logger.error('UNCAUGHT EXCEPTION! Shutting down...', err);
+  process.exit(1);
 });
 
 // Start server

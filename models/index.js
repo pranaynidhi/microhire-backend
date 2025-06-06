@@ -129,6 +129,36 @@ const syncDatabase = async () => {
   }
 };
 
+// Add these indexes to the models
+
+// User model indexes
+User.addHook('afterSync', async () => {
+  await sequelize.query(`
+    CREATE INDEX IF NOT EXISTS idx_users_email ON Users(email);
+    CREATE INDEX IF NOT EXISTS idx_users_role ON Users(role);
+    CREATE INDEX IF NOT EXISTS idx_users_is_active ON Users(isActive);
+  `);
+});
+
+// Internship model indexes
+Internship.addHook('afterSync', async () => {
+  await sequelize.query(`
+    CREATE INDEX IF NOT EXISTS idx_internships_company ON Internships(companyId);
+    CREATE INDEX IF NOT EXISTS idx_internships_status ON Internships(status);
+    CREATE INDEX IF NOT EXISTS idx_internships_deadline ON Internships(deadline);
+    CREATE INDEX IF NOT EXISTS idx_internships_category ON Internships(category);
+  `);
+});
+
+// Application model indexes
+Application.addHook('afterSync', async () => {
+  await sequelize.query(`
+    CREATE INDEX IF NOT EXISTS idx_applications_student ON Applications(studentId);
+    CREATE INDEX IF NOT EXISTS idx_applications_internship ON Applications(internshipId);
+    CREATE INDEX IF NOT EXISTS idx_applications_status ON Applications(status);
+  `);
+});
+
 module.exports = {
   sequelize,
   User,

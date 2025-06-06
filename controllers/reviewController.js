@@ -5,89 +5,78 @@ const Application = require('../models/Application');
 const { Op } = require('sequelize');
 const ReviewReport = require('../models/ReviewReport');
 const sequelize = require('../config/database');
+const withTransaction = require('../utils/transaction');
+const cache = require('../utils/cache');
+const { AppError } = require('../utils/errors');
+const logger = require('../utils/logger');
 
 const reviewController = {
   createReview: async (req, res) => {
     try {
-      const { revieweeId, internshipId, rating, comment, type } = req.body;
-
-      // Validate that reviewer and reviewee had an internship relationship
-      const application = await Application.findOne({
-        where: {
-          internshipId,
-          userId: type === 'student_to_company' ? req.user.id : revieweeId,
-          status: 'accepted'
-        },
-        include: [{
-          model: Internship,
-          where: {
-            companyId: type === 'company_to_student' ? req.user.id : revieweeId
-          }
-        }]
-      });
-
-      if (!application) {
-        return res.status(400).json({
-          success: false,
-          message: 'You can only review users you have worked with'
+      const result = await withTransaction(async (transaction) => {
+        // Check if internship exists and is completed
+        const internship = await Internship.findOne({
+          where: { 
+            id: req.body.internshipId,
+            status: 'completed'
+          },
+          transaction
         });
-      }
 
-      // Check if review already exists
-      const existingReview = await Review.findOne({
-        where: {
-          reviewerId: req.user.id,
-          revieweeId,
-          internshipId
+        if (!internship) {
+          throw new AppError('Internship not found or not completed', 404);
         }
-      });
 
-      if (existingReview) {
-        return res.status(409).json({
-          success: false,
-          message: 'You have already reviewed this user for this internship'
+        // Check if user is authorized to review
+        if (req.user.role === 'student' && internship.studentId !== req.user.id) {
+          throw new AppError('Not authorized to review this internship', 403);
+        }
+
+        if (req.user.role === 'business' && internship.companyId !== req.user.id) {
+          throw new AppError('Not authorized to review this internship', 403);
+        }
+
+        // Check if review already exists
+        const existingReview = await Review.findOne({
+          where: {
+            reviewerId: req.user.id,
+            internshipId: req.body.internshipId
+          },
+          transaction
         });
-      }
 
-      const review = await Review.create({
-        reviewerId: req.user.id,
-        revieweeId,
-        internshipId,
-        rating,
-        comment,
-        type
-      });
+        if (existingReview) {
+          throw new AppError('You have already reviewed this internship', 400);
+        }
 
-      const reviewWithDetails = await Review.findByPk(review.id, {
-        include: [
-          {
-            model: User,
-            as: 'reviewer',
-            attributes: ['id', 'fullName', 'email']
-          },
-          {
-            model: User,
-            as: 'reviewee',
-            attributes: ['id', 'fullName', 'email']
-          },
-          {
-            model: Internship,
-            attributes: ['id', 'title']
-          }
-        ]
+        // Create review
+        const review = await Review.create({
+          reviewerId: req.user.id,
+          revieweeId: req.user.role === 'student' ? internship.companyId : internship.studentId,
+          internshipId: req.body.internshipId,
+          rating: req.body.rating,
+          comment: req.body.comment,
+          type: req.user.role
+        }, { transaction });
+
+        // Invalidate caches
+        await Promise.all([
+          cache.del(`internship:${req.body.internshipId}:reviews`),
+          cache.del(`user:${review.revieweeId}:reviews`),
+          cache.del(`user:${review.reviewerId}:reviews`)
+        ]);
+
+        return review;
       });
 
       res.status(201).json({
         success: true,
-        message: 'Review created successfully',
-        data: { review: reviewWithDetails }
+        message: 'Review submitted successfully',
+        data: { review: result }
       });
     } catch (error) {
-      console.error('Create review error:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Failed to create review'
-      });
+      logger.error('Create review error:', error);
+      throw error;
     }
   },
 
@@ -511,6 +500,57 @@ const reviewController = {
         success: false,
         message: 'Failed to moderate review'
       });
+    }
+  },
+
+  getReviews: async (req, res) => {
+    try {
+      const cacheKey = `user:${req.params.userId}:reviews:${req.query.page}:${req.query.limit}`;
+      const cachedData = await cache.get(cacheKey);
+
+      if (cachedData) {
+        return res.json(cachedData);
+      }
+
+      const result = await withTransaction(async (transaction) => {
+        const reviews = await Review.findAndCountAll({
+          where: { 
+            revieweeId: req.params.userId,
+            isVisible: true
+          },
+          include: [{
+            model: User,
+            as: 'reviewer',
+            attributes: ['id', 'fullName', 'role']
+          }],
+          order: [['createdAt', 'DESC']],
+          limit: parseInt(req.query.limit) || 10,
+          offset: (parseInt(req.query.page) - 1) * (parseInt(req.query.limit) || 10),
+          transaction
+        });
+
+        return reviews;
+      });
+
+      const response = {
+        success: true,
+        data: {
+          reviews: result.rows,
+          pagination: {
+            currentPage: parseInt(req.query.page) || 1,
+            totalPages: Math.ceil(result.count / (parseInt(req.query.limit) || 10)),
+            totalItems: result.count,
+            itemsPerPage: parseInt(req.query.limit) || 10
+          }
+        }
+      };
+
+      await cache.set(cacheKey, response, 300); // Cache for 5 minutes
+
+      res.json(response);
+    } catch (error) {
+      logger.error('Get reviews error:', error);
+      throw error;
     }
   }
 };

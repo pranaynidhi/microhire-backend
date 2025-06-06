@@ -1,223 +1,194 @@
 const { Application, Internship, User } = require('../models');
+const { Op } = require('sequelize');
+const withTransaction = require('../utils/transaction');
+const cache = require('../utils/cache');
+const { AppError } = require('../utils/errors');
+const logger = require('../utils/logger');
+const notificationHelpers = require('../controllers/notificationController').notificationHelpers;
 
 const createApplication = async (req, res) => {
   try {
-    const { internshipId, coverLetter } = req.body;
-
-    // Check if internship exists and is active
-    const internship = await Internship.findByPk(internshipId);
-    if (!internship) {
-      return res.status(404).json({
-        success: false,
-        message: 'Internship not found.',
-      });
-    }
-
-    if (internship.status !== 'active') {
-      return res.status(400).json({
-        success: false,
-        message: 'This internship is no longer accepting applications.',
-      });
-    }
-
-    if (new Date() > new Date(internship.deadline)) {
-      return res.status(400).json({
-        success: false,
-        message: 'Application deadline has passed.',
-      });
-    }
-
-    // Check if user already applied
-    const existingApplication = await Application.findOne({
-      where: {
-        internshipId,
-        userId: req.user.id,
-      },
-    });
-
-    if (existingApplication) {
-      return res.status(400).json({
-        success: false,
-        message: 'You have already applied for this internship.',
-      });
-    }
-
-    // Check if max applicants reached
-    const applicationCount = await Application.count({
-      where: { internshipId },
-    });
-
-    if (applicationCount >= internship.maxApplicants) {
-      return res.status(400).json({
-        success: false,
-        message: 'Maximum number of applications reached for this internship.',
-      });
-    }
-
-    // Create application
-    const application = await Application.create({
-      internshipId,
-      userId: req.user.id,
-      coverLetter,
-    });
-
-    await application.reload({
-      include: [
-        {
-          model: Internship,
-          as: 'internship',
-          include: [
-            {
-              model: User,
-              as: 'company',
-              attributes: ['id', 'companyName', 'email'],
-            },
-          ],
+    const result = await withTransaction(async (transaction) => {
+      // Check if internship exists and is active
+      const internship = await Internship.findOne({
+        where: { 
+          id: req.body.internshipId,
+          status: 'active',
+          deadline: { [Op.gt]: new Date() }
         },
-      ],
+        transaction
+      });
+
+      if (!internship) {
+        throw new AppError('Internship not found or deadline has passed', 404);
+      }
+
+      // Check if user has already applied
+      const existingApplication = await Application.findOne({
+        where: {
+          studentId: req.user.id,
+          internshipId: req.body.internshipId
+        },
+        transaction
+      });
+
+      if (existingApplication) {
+        throw new AppError('You have already applied for this internship', 400);
+      }
+
+      // Check if max applicants reached
+      const applicationCount = await Application.count({
+        where: { internshipId: req.body.internshipId },
+        transaction
+      });
+
+      if (applicationCount >= internship.maxApplicants) {
+        throw new AppError('Maximum number of applicants reached', 400);
+      }
+
+      // Create application
+      const application = await Application.create({
+        studentId: req.user.id,
+        internshipId: req.body.internshipId,
+        coverLetter: req.body.coverLetter,
+        status: 'pending'
+      }, { transaction });
+
+      // Invalidate caches
+      await Promise.all([
+        cache.del(`internship:${req.body.internshipId}:applications`),
+        cache.del(`student:${req.user.id}:applications`),
+        cache.del(`company:${internship.companyId}:applications`)
+      ]);
+
+      // Send notification
+      await notificationHelpers.applicationReceived(
+        internship.companyId,
+        req.user.fullName,
+        internship.title
+      );
+
+      return application;
     });
 
     res.status(201).json({
       success: true,
-      message: 'Application submitted successfully.',
-      data: {
-        application,
-      },
+      message: 'Application submitted successfully',
+      data: { application: result }
     });
   } catch (error) {
-    console.error('Create application error:', error);
-    
-    if (error.name === 'SequelizeValidationError') {
-      return res.status(400).json({
-        success: false,
-        message: 'Validation error.',
-        errors: error.errors.map((err) => ({
-          field: err.path,
-          message: err.message,
-        })),
-      });
-    }
-
-    res.status(500).json({
-      success: false,
-      message: 'Internal server error.',
-    });
+    logger.error('Create application error:', error);
+    throw error;
   }
 };
 
 const getApplicationsByInternship = async (req, res) => {
   try {
-    const { id } = req.params;
+    const cacheKey = `internship:${req.params.internshipId}:applications:${req.query.page}:${req.query.limit}`;
+    const cachedData = await cache.get(cacheKey);
 
-    // Check if internship exists and belongs to the user
-    const internship = await Internship.findByPk(id);
-    if (!internship) {
-      return res.status(404).json({
-        success: false,
-        message: 'Internship not found.',
-      });
+    if (cachedData) {
+      return res.json(cachedData);
     }
 
-    if (internship.companyId !== req.user.id) {
-      return res.status(403).json({
-        success: false,
-        message: 'You can only view applications for your own internships.',
-      });
-    }
-
-    const applications = await Application.findAll({
-      where: { internshipId: id },
-      include: [
-        {
-          model: User,
-          as: 'applicant',
-          attributes: [
-            'id',
-            'fullName',
-            'email',
-            'bio',
-            'skills',
-            'resumeUrl',
-          ],
+    const result = await withTransaction(async (transaction) => {
+      const internship = await Internship.findOne({
+        where: { 
+          id: req.params.internshipId,
+          companyId: req.user.id
         },
-      ],
-      order: [['createdAt', 'DESC']],
+        transaction
+      });
+
+      if (!internship) {
+        throw new AppError('Internship not found', 404);
+      }
+
+      const applications = await Application.findAndCountAll({
+        where: { internshipId: req.params.internshipId },
+        include: [{
+          model: User,
+          as: 'student',
+          attributes: ['id', 'fullName', 'email', 'resumeUrl']
+        }],
+        order: [['createdAt', 'DESC']],
+        limit: parseInt(req.query.limit) || 10,
+        offset: (parseInt(req.query.page) - 1) * (parseInt(req.query.limit) || 10),
+        transaction
+      });
+
+      return applications;
     });
 
-    res.json({
+    const response = {
       success: true,
       data: {
-        applications,
-        internship: {
-          id: internship.id,
-          title: internship.title,
-        },
-      },
-    });
+        applications: result.rows,
+        pagination: {
+          currentPage: parseInt(req.query.page) || 1,
+          totalPages: Math.ceil(result.count / (parseInt(req.query.limit) || 10)),
+          totalItems: result.count,
+          itemsPerPage: parseInt(req.query.limit) || 10
+        }
+      }
+    };
+
+    await cache.set(cacheKey, response, 300); // Cache for 5 minutes
+
+    res.json(response);
   } catch (error) {
-    console.error('Get applications error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Internal server error.',
-    });
+    logger.error('Get applications error:', error);
+    throw error;
   }
 };
 
 const updateApplicationStatus = async (req, res) => {
   try {
-    const { id } = req.params;
-    const { status, notes } = req.body;
-
-    if (!['pending', 'accepted', 'rejected'].includes(status)) {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid status. Must be pending, accepted, or rejected.',
-      });
-    }
-
-    const application = await Application.findByPk(id, {
-      include: [
-        {
+    const result = await withTransaction(async (transaction) => {
+      const application = await Application.findOne({
+        where: { id: req.params.id },
+        include: [{
           model: Internship,
-          as: 'internship',
-        },
-      ],
-    });
-
-    if (!application) {
-      return res.status(404).json({
-        success: false,
-        message: 'Application not found.',
+          where: { companyId: req.user.id }
+        }],
+        transaction
       });
-    }
 
-    // Check if the internship belongs to the current user
-    if (application.internship.companyId !== req.user.id) {
-      return res.status(403).json({
-        success: false,
-        message: 'You can only update applications for your own internships.',
-      });
-    }
+      if (!application) {
+        throw new AppError('Application not found', 404);
+      }
 
-    await application.update({
-      status,
-      notes,
-      reviewedAt: new Date(),
+      await application.update({
+        status: req.body.status,
+        reviewedAt: new Date()
+      }, { transaction });
+
+      // Invalidate caches
+      await Promise.all([
+        cache.del(`internship:${application.internshipId}:applications`),
+        cache.del(`student:${application.studentId}:applications`),
+        cache.del(`company:${req.user.id}:applications`)
+      ]);
+
+      // Send notification
+      await notificationHelpers.applicationStatusChanged(
+        application.studentId,
+        req.body.status,
+        application.Internship.title,
+        req.user.companyName
+      );
+
+      return application;
     });
 
     res.json({
       success: true,
-      message: 'Application status updated successfully.',
-      data: {
-        application,
-      },
+      message: 'Application status updated successfully',
+      data: { application: result }
     });
   } catch (error) {
-    console.error('Update application status error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Internal server error.',
-    });
+    logger.error('Update application status error:', error);
+    throw error;
   }
 };
 
