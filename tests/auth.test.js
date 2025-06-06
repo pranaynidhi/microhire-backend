@@ -1,101 +1,109 @@
 const request = require('supertest');
-const app = require('../server');
-const { User } = require('../models');
+const app = require('../src/app');
+const { getFirebaseAdmin } = require('../src/config/firebase');
+const { AppError } = require('../src/utils/errors');
 
-describe('Authentication', () => {
-  describe('POST /api/auth/register', () => {
-    it('should register a new student', async () => {
-      const res = await request(app)
-        .post('/api/auth/register')
-        .send({
-          fullName: 'Test Student',
-          email: 'student@test.com',
-          password: 'Test123!@#',
-          role: 'student',
-          bio: 'Test bio',
-          skills: 'JavaScript, React'
-        });
+describe('Authentication Tests', () => {
+  let testStudent;
+  let testCompany;
+  let studentToken;
+  let companyToken;
 
-      expect(res.status).toBe(201);
-      expect(res.body.success).toBe(true);
-      expect(res.body.data.user).toHaveProperty('id');
-      expect(res.body.data.token).toBeDefined();
+  beforeAll(async () => {
+    // Create test users in Firebase
+    const admin = getFirebaseAdmin();
+    
+    // Create test student
+    testStudent = await admin.auth().createUser({
+      email: 'student@test.com',
+      password: 'Test123!@#',
+      displayName: 'Test Student',
+      emailVerified: true
     });
 
-    it('should register a new business', async () => {
-      const res = await request(app)
-        .post('/api/auth/register')
-        .send({
-          fullName: 'Test Company',
-          email: 'company@test.com',
-          password: 'Test123!@#',
-          role: 'business',
-          companyName: 'Test Company',
-          contactPerson: 'John Doe',
-          companyDescription: 'Test description'
-        });
-
-      expect(res.status).toBe(201);
-      expect(res.body.success).toBe(true);
-      expect(res.body.data.user).toHaveProperty('id');
-      expect(res.body.data.token).toBeDefined();
+    // Create test company
+    testCompany = await admin.auth().createUser({
+      email: 'company@test.com',
+      password: 'Test123!@#',
+      displayName: 'Test Company',
+      emailVerified: true
     });
 
-    it('should not register with existing email', async () => {
-      await User.create({
-        fullName: 'Existing User',
-        email: 'existing@test.com',
-        password: 'Test123!@#',
-        role: 'student'
-      });
+    // Set custom claims for roles
+    await admin.auth().setCustomUserClaims(testStudent.uid, { role: 'student' });
+    await admin.auth().setCustomUserClaims(testCompany.uid, { role: 'company' });
 
-      const res = await request(app)
-        .post('/api/auth/register')
-        .send({
-          fullName: 'New User',
-          email: 'existing@test.com',
-          password: 'Test123!@#',
-          role: 'student'
-        });
+    // Get custom tokens for testing
+    studentToken = await admin.auth().createCustomToken(testStudent.uid);
+    companyToken = await admin.auth().createCustomToken(testCompany.uid);
+  });
 
-      expect(res.status).toBe(400);
-      expect(res.body.success).toBe(false);
+  afterAll(async () => {
+    // Clean up test users
+    const admin = getFirebaseAdmin();
+    await admin.auth().deleteUser(testStudent.uid);
+    await admin.auth().deleteUser(testCompany.uid);
+  });
+
+  describe('GET /api/auth/me', () => {
+    it('should get current user info with valid token', async () => {
+      const response = await request(app)
+        .get('/api/auth/me')
+        .set('Authorization', `Bearer ${studentToken}`);
+
+      expect(response.status).toBe(200);
+      expect(response.body.user).toHaveProperty('uid');
+      expect(response.body.user).toHaveProperty('email');
+      expect(response.body.user).toHaveProperty('role');
+    });
+
+    it('should return 401 with invalid token', async () => {
+      const response = await request(app)
+        .get('/api/auth/me')
+        .set('Authorization', 'Bearer invalid-token');
+
+      expect(response.status).toBe(401);
     });
   });
 
-  describe('POST /api/auth/login', () => {
-    beforeEach(async () => {
-      await User.create({
-        fullName: 'Test User',
-        email: 'test@test.com',
-        password: 'Test123!@#',
-        role: 'student'
-      });
+  describe('POST /api/auth/role', () => {
+    it('should update user role', async () => {
+      const response = await request(app)
+        .post('/api/auth/role')
+        .set('Authorization', `Bearer ${studentToken}`)
+        .send({ role: 'student' });
+
+      expect(response.status).toBe(200);
+      expect(response.body.message).toBe('Role updated successfully');
     });
 
-    it('should login with valid credentials', async () => {
-      const res = await request(app)
-        .post('/api/auth/login')
-        .send({
-          email: 'test@test.com',
-          password: 'Test123!@#'
-        });
+    it('should return 400 with invalid role', async () => {
+      const response = await request(app)
+        .post('/api/auth/role')
+        .set('Authorization', `Bearer ${studentToken}`)
+        .send({ role: 'invalid' });
 
-      expect(res.status).toBe(200);
-      expect(res.body.success).toBe(true);
-      expect(res.body.data.token).toBeDefined();
+      expect(response.status).toBe(400);
+    });
+  });
+
+  describe('POST /api/auth/verify-email', () => {
+    it('should return custom token for email verification', async () => {
+      const response = await request(app)
+        .post('/api/auth/verify-email')
+        .set('Authorization', `Bearer ${studentToken}`);
+
+      expect(response.status).toBe(200);
+      expect(response.body).toHaveProperty('customToken');
     });
 
-    it('should not login with invalid password', async () => {
-      const res = await request(app)
-        .post('/api/auth/login')
-        .send({
-          email: 'test@test.com',
-          password: 'wrongpassword'
-        });
+    it('should return 400 if email already verified', async () => {
+      const response = await request(app)
+        .post('/api/auth/verify-email')
+        .set('Authorization', `Bearer ${studentToken}`);
 
-      expect(res.status).toBe(401);
-      expect(res.body.success).toBe(false);
+      expect(response.status).toBe(400);
+      expect(response.body.message).toBe('Email already verified');
     });
   });
 });

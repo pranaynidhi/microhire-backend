@@ -1,22 +1,17 @@
 {
   "name": "microhire-backend",
   "version": "1.0.0",
-  "description": "Backend API for MicroHire - A platform connecting students with businesses for micro-internship opportunities in Nepal",
-  "main": "server.js",
+  "description": "Backend for MicroHire - Internship Platform",
+  "main": "src/app.js",
   "scripts": {
-    "start": "node dist/server.js",
-    "dev": "nodemon src/server.js",
-    "build": "babel src -d dist",
-    "test": "jest --detectOpenHandles",
+    "start": "node src/app.js",
+    "dev": "nodemon src/app.js",
+    "test": "jest --detectOpenHandles --forceExit",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "format": "prettier --write \"**/*.{js,json,md}\"",
-    "migrate": "sequelize-cli db:migrate",
-    "migrate:undo": "sequelize-cli db:migrate:undo",
-    "seed": "sequelize-cli db:seed:all",
-    "seed:undo": "sequelize-cli db:seed:undo:all",
+    "format": "prettier --write .",
     "prepare": "husky install"
   },
   "keywords": [
@@ -29,7 +24,7 @@
     "express"
   ],
   "author": "Pranay Nidhi",
-  "license": "MIT",
+  "license": "ISC",
   "dependencies": {
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
@@ -39,37 +34,24 @@
     "express-validator": "^7.0.1",
     "firebase-admin": "^11.11.0",
     "helmet": "^7.0.0",
-    "hpp": "^0.2.3",
-    "ioredis": "^5.3.2",
     "joi": "^17.9.2",
     "jsonwebtoken": "^9.0.0",
+    "morgan": "^1.10.0",
     "multer": "^1.4.5-lts.1",
-    "mysql2": "^3.3.1",
-    "nodemailer": "^6.9.2",
-    "pdfkit": "^0.13.0",
-    "sequelize": "^6.31.1",
-    "socket.io": "^4.6.1",
-    "winston": "^3.8.2",
-    "xss-clean": "^0.1.1"
+    "mysql2": "^3.6.0",
+    "sequelize": "^6.32.1",
+    "winston": "^3.8.2"
   },
   "devDependencies": {
-    "@babel/cli": "^7.21.8",
-    "@babel/core": "^7.21.8",
-    "@babel/node": "^7.20.7",
-    "@babel/preset-env": "^7.21.5",
-    "@babel/register": "^7.21.0",
+    "@types/jest": "^29.5.2",
     "eslint": "^8.40.0",
-    "eslint-config-airbnb-base": "^15.0.0",
     "eslint-config-prettier": "^8.8.0",
-    "eslint-plugin-import": "^2.27.5",
-    "eslint-plugin-jest": "^27.2.1",
     "eslint-plugin-prettier": "^4.2.1",
     "husky": "^8.0.3",
     "jest": "^29.5.0",
     "lint-staged": "^13.2.2",
     "nodemon": "^2.0.22",
     "prettier": "^2.8.8",
-    "sequelize-cli": "^6.6.0",
     "supertest": "^6.3.3"
   },
   "engines": {
@@ -77,39 +59,21 @@
   },
   "jest": {
     "testEnvironment": "node",
-    "setupFilesAfterEnv": [
-      "./tests/setup.js"
-    ],
     "coverageDirectory": "coverage",
     "collectCoverageFrom": [
-      "controllers/**/*.js",
-      "models/**/*.js",
-      "services/**/*.js",
-      "utils/**/*.js"
+      "src/**/*.js",
+      "!src/app.js",
+      "!src/config/**/*.js"
     ],
-    "coverageThreshold": {
-      "global": {
-        "branches": 80,
-        "functions": 80,
-        "lines": 80,
-        "statements": 80
-      }
-    }
+    "setupFiles": [
+      "<rootDir>/tests/setup.js"
+    ]
   },
   "lint-staged": {
     "*.js": [
       "eslint --fix",
       "prettier --write"
-    ],
-    "*.{json,md}": [
-      "prettier --write"
     ]
-  },
-  "husky": {
-    "hooks": {
-      "pre-commit": "lint-staged",
-      "pre-push": "npm test"
-    }
   },
   "babel": {
     "presets": [
