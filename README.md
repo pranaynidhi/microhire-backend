@@ -1,7 +1,196 @@
 # 📚 MicroHire API Documentation
 
-**Version:** 1.0.0  
-**Base URL:** `http://localhost:5000/api` (Development)
+## Table of Contents
+1. [Getting Started](#getting-started)
+2. [Authentication](#authentication)
+3. [API Endpoints](#api-endpoints)
+4. [Error Handling](#error-handling)
+5. [Rate Limiting](#rate-limiting)
+6. [File Uploads](#file-uploads)
+7. [WebSocket Events](#websocket-events)
+8. [Deployment](#deployment)
+
+## Getting Started
+
+### Prerequisites
+- Node.js >= 14.x
+- MySQL >= 8.0
+- Redis >= 6.0
+
+### Installation
+1. Clone the repository
+```bash
+git clone https://github.com/yourusername/microhire-backend.git
+cd microhire-backend
+```
+
+2. Install dependencies
+```bash
+npm install
+```
+
+3. Set up environment variables
+```bash
+cp .env.example .env
+# Edit .env with your configuration
+```
+
+4. Run database migrations
+```bash
+npm run migrate
+```
+
+5. Start the server
+```bash
+npm run dev
+```
+
+## Authentication
+
+### Register
+```http
+POST /api/auth/register
+Content-Type: application/json
+
+{
+  "fullName": "John Doe",
+  "email": "john@example.com",
+  "password": "securePassword123",
+  "role": "student"
+}
+```
+
+### Login
+```http
+POST /api/auth/login
+Content-Type: application/json
+
+{
+  "email": "john@example.com",
+  "password": "securePassword123"
+}
+```
+
+## API Endpoints
+
+### Internships
+
+#### Create Internship
+```http
+POST /api/internships
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "title": "Frontend Developer Intern",
+  "description": "We are looking for a frontend developer...",
+  "requirements": "React, JavaScript, HTML, CSS",
+  "location": "Kathmandu",
+  "stipend": 15000,
+  "duration": "3 months",
+  "deadline": "2024-04-01",
+  "type": "onsite",
+  "category": "Development"
+}
+```
+
+#### Get Internships
+```http
+GET /api/internships?page=1&limit=10&category=Development
+Authorization: Bearer <token>
+```
+
+### Applications
+
+#### Submit Application
+```http
+POST /api/applications
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "internshipId": 1,
+  "coverLetter": "I am interested in this position..."
+}
+```
+
+## Error Handling
+
+All errors follow this format:
+```json
+{
+  "success": false,
+  "message": "Error description",
+  "errors": [
+    {
+      "field": "fieldName",
+      "message": "Specific error message"
+    }
+  ]
+}
+```
+
+## Rate Limiting
+
+- Authentication endpoints: 5 requests per 15 minutes
+- API endpoints: 100 requests per 15 minutes
+- File uploads: 10 requests per 15 minutes
+
+## File Uploads
+
+### Supported File Types
+- Resumes: PDF, DOC, DOCX
+- Logos: JPG, JPEG, PNG, GIF
+- Portfolios: PDF, JPG, JPEG, PNG, ZIP
+
+### Size Limits
+- Maximum file size: 5MB
+
+## WebSocket Events
+
+### Connection
+```javascript
+const socket = io('http://localhost:5000', {
+  auth: {
+    token: 'your_jwt_token'
+  }
+});
+```
+
+### Events
+- `new_message`: New message received
+- `application_update`: Application status changed
+- `new_notification`: New notification received
+
+## Deployment
+
+### Production Setup
+1. Set environment variables
+2. Build the application
+```bash
+npm run build
+```
+3. Start the server
+```bash
+npm start
+```
+
+### Docker Deployment
+```bash
+docker-compose up -d
+```
+
+## Contributing
+
+1. Fork the repository
+2. Create your feature branch
+3. Commit your changes
+4. Push to the branch
+5. Create a Pull Request
+
+## License
+
+This project is licensed under the MIT License.
 
 ---
 

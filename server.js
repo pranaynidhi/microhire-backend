@@ -2,14 +2,18 @@ const express = require('express');
 const cors = require('cors');
 const http = require('http');
 require('dotenv').config();
+const swaggerUi = require('swagger-ui-express');
+const specs = require('./config/swagger');
+const { validate, schemas } = require('./middleware/validation');
+const errorHandler = require('./middleware/errorHandler');
+const logger = require('./utils/logger');
 
 // Import database and models
 const { syncDatabase } = require('./models');
 const initializeSocket = require('./config/socket');
 const attachSocket = require('./middleware/socketMiddleware');
 const { securityMiddleware, authLimiter, apiLimiter } = require('./middleware/security');
-const errorHandler = require('./middleware/errorHandler');
-const logger = require('./utils/logger');
+const { internshipController, applicationController, reviewController } = require('./controllers');
 
 // Import routes
 const authRoutes = require('./routes/auth');
@@ -58,6 +62,20 @@ app.use(csrf({ cookie: true }));
 // Add CSRF token to all responses
 app.use((req, res, next) => {
   res.cookie('XSRF-TOKEN', req.csrfToken());
+  next();
+});
+
+// API Documentation
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
+
+// Request logging
+app.use((req, res, next) => {
+  logger.info({
+    method: req.method,
+    url: req.url,
+    ip: req.ip,
+    user: req.user?.id
+  });
   next();
 });
 
