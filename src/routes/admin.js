@@ -6,7 +6,24 @@ const logger = require('../utils/logger');
 const adminAuth = require('../middleware/adminAuth');
 const adminController = require('../controllers/adminController');
 
-// Get all users
+/**
+ * @swagger
+ * tags:
+ *   name: Admin
+ *   description: Admin operations
+ */
+
+/**
+ * @swagger
+ * /api/admin/users:
+ *   get:
+ *     summary: Get all users (admin only)
+ *     tags: [Admin]
+ *     security: [ { bearerAuth: [] } ]
+ *     responses:
+ *       200:
+ *         description: List of users
+ */
 router.get('/users', authenticate, requireEmailVerification, async (req, res, next) => {
   try {
     // Implementation here
@@ -79,5 +96,23 @@ router.post('/reports/:id/resolve', authenticate, requireEmailVerification, admi
 router.get('/dashboard', authenticate, requireEmailVerification, adminAuth, adminController.getDashboardOverview);
 router.get('/settings', authenticate, requireEmailVerification, adminAuth, adminController.getSystemSettings);
 router.put('/settings', authenticate, requireEmailVerification, adminAuth, adminController.updateSystemSettings);
+
+/**
+ * @swagger
+ * /api/admin/users/{id}/ban:
+ *   patch:
+ *     summary: Ban a user (admin only)
+ *     tags: [Admin]
+ *     security: [ { bearerAuth: [] } ]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: integer }
+ *     responses:
+ *       200:
+ *         description: User banned
+ */
+// router.patch('/users/:id/ban', authenticate, requireAdmin, ...);
 
 module.exports = router;

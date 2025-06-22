@@ -1,5 +1,5 @@
 const { DataTypes } = require('sequelize');
-const sequelize = require('../config/database');
+const { sequelize } = require('../config/database');
 
 const CertificateView = sequelize.define('CertificateView', {
   id: {
@@ -27,6 +27,8 @@ const CertificateView = sequelize.define('CertificateView', {
     type: DataTypes.STRING,
     allowNull: true
   }
+}, {
+  tableName: 'CertificateViews',
 });
 
 module.exports = CertificateView;

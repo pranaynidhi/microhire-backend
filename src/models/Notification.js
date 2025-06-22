@@ -1,5 +1,5 @@
 const { DataTypes } = require('sequelize');
-const sequelize = require('../config/database');
+const { sequelize } = require('../config/database');
 
 const Notification = sequelize.define(
   'Notification',
@@ -71,17 +71,19 @@ const Notification = sequelize.define(
   },
   {
     timestamps: true,
+    underscored: true,
     indexes: [
       {
-        fields: ['userId', 'isRead'],
+        fields: ['user_id', 'is_read'],
       },
       {
         fields: ['type'],
       },
       {
-        fields: ['createdAt'],
+        fields: ['created_at'],
       },
     ],
+    tableName: 'Notifications',
   }
 );
 

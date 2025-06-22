@@ -5,7 +5,24 @@ const { AppError } = require('../utils/errors');
 const logger = require('../utils/logger');
 const certificateController = require('../controllers/certificateController');
 
-// Get all certificates
+/**
+ * @swagger
+ * tags:
+ *   name: Certificates
+ *   description: Certificate management
+ */
+
+/**
+ * @swagger
+ * /api/certificates:
+ *   get:
+ *     summary: Get all certificates for the user
+ *     tags: [Certificates]
+ *     security: [ { bearerAuth: [] } ]
+ *     responses:
+ *       200:
+ *         description: List of certificates
+ */
 router.get('/', authenticate, requireEmailVerification, async (req, res, next) => {
   try {
     // Implementation here
@@ -15,7 +32,22 @@ router.get('/', authenticate, requireEmailVerification, async (req, res, next) =
   }
 });
 
-// Get certificate by ID
+/**
+ * @swagger
+ * /api/certificates/{id}:
+ *   get:
+ *     summary: Get certificate by ID
+ *     tags: [Certificates]
+ *     security: [ { bearerAuth: [] } ]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: integer }
+ *     responses:
+ *       200:
+ *         description: Certificate details
+ */
 router.get('/:id', authenticate, requireEmailVerification, async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -26,7 +58,23 @@ router.get('/:id', authenticate, requireEmailVerification, async (req, res, next
   }
 });
 
-// Add certificate (student only)
+/**
+ * @swagger
+ * /api/certificates:
+ *   post:
+ *     summary: Generate a certificate (company only)
+ *     tags: [Certificates]
+ *     security: [ { bearerAuth: [] } ]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *     responses:
+ *       201:
+ *         description: Certificate generated
+ */
 router.post('/', authenticate, isStudent, requireEmailVerification, async (req, res, next) => {
   try {
     // Implementation here
@@ -47,8 +95,32 @@ router.put('/:id', authenticate, isStudent, requireEmailVerification, async (req
   }
 });
 
-// Delete certificate (student only)
-router.delete('/:id', authenticate, isStudent, requireEmailVerification, async (req, res, next) => {
+/**
+ * @swagger
+ * /api/certificates/{id}/revoke:
+ *   patch:
+ *     summary: Revoke a certificate (company only)
+ *     tags: [Certificates]
+ *     security: [ { bearerAuth: [] } ]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: integer }
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               reason:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Certificate revoked
+ */
+router.patch('/:id/revoke', authenticate, isStudent, requireEmailVerification, async (req, res, next) => {
   try {
     const { id } = req.params;
     // Implementation here
@@ -62,7 +134,6 @@ router.post('/generate', authenticate, certificateController.generateCertificate
 router.get('/verify/:certificateId', certificateController.verifyCertificate);
 router.get('/user/my-certificates', authenticate, certificateController.getUserCertificates);
 router.post('/:id/share', authenticate, certificateController.generateShareLink);
-router.post('/:id/revoke', authenticate, certificateController.revokeCertificate);
 router.get('/:id/analytics', authenticate, certificateController.getCertificateAnalytics);
 
 module.exports = router;

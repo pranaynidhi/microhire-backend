@@ -1,5 +1,5 @@
 const { DataTypes } = require('sequelize');
-const sequelize = require('../config/database');
+const { sequelize } = require('../config/database');
 
 const SearchHistory = sequelize.define('SearchHistory', {
   id: {
@@ -40,14 +40,15 @@ const SearchHistory = sequelize.define('SearchHistory', {
     allowNull: true
   }
 }, {
-  tableName: 'SearchHistory',
+  tableName: 'SearchHistories',
   timestamps: true,
+  underscored: true,
   indexes: [
     {
-      fields: ['userId', 'createdAt']
+      fields: ['user_id', 'created_at']
     },
     {
-      fields: ['isSaved']
+      fields: ['is_saved']
     }
   ]
 });

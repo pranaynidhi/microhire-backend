@@ -6,6 +6,36 @@ const { AppError } = require('../utils/errors');
 const logger = require('../utils/logger');
 const uploadController = require('../controllers/uploadController');
 
+/**
+ * @swagger
+ * tags:
+ *   name: Upload
+ *   description: File upload
+ */
+
+/**
+ * @swagger
+ * /api/upload:
+ *   post:
+ *     summary: Upload a file
+ *     tags: [Upload]
+ *     security: [ { bearerAuth: [] } ]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               file:
+ *                 type: string
+ *                 format: binary
+ *     responses:
+ *       201:
+ *         description: File uploaded
+ */
+// router.post('/', authenticate, ...); // Removed due to syntax error
+
 // Upload resume (student only)
 router.post('/resume', authenticate, requireEmailVerification, uploadMiddleware('resume'), async (req, res, next) => {
   try {

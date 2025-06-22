@@ -2,6 +2,7 @@ const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const User = require('../models/User');
 const emailService = require('../services/emailService');
+const bcrypt = require('bcryptjs');
 
 const generateTokens = (userId) => {
   const accessToken = jwt.sign({ userId }, process.env.JWT_SECRET, {
@@ -179,8 +180,36 @@ const refreshToken = async (req, res) => {
   }
 };
 
+const login = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    const user = await User.findOne({ where: { email } });
+    if (!user || !user.isActive) {
+      return res.status(401).json({ success: false, message: 'Invalid credentials' });
+    }
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(401).json({ success: false, message: 'Invalid credentials' });
+    }
+    const { accessToken, refreshToken } = generateTokens(user.id);
+    res.json({
+      success: true,
+      message: 'Login successful',
+      data: {
+        user: user.getPublicProfile(),
+        accessToken,
+        refreshToken
+      }
+    });
+  } catch (error) {
+    console.error('Login error:', error);
+    res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+};
+
 module.exports = {
   register,
   verifyEmail,
   refreshToken,
+  login,
 };

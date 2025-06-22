@@ -4,7 +4,24 @@ const { authenticate, isCompany, requireEmailVerification } = require('../middle
 const { AppError } = require('../utils/errors');
 const logger = require('../utils/logger');
 
-// Get all internships
+/**
+ * @swagger
+ * tags:
+ *   name: Internships
+ *   description: Internship management
+ */
+
+/**
+ * @swagger
+ * /api/internships:
+ *   get:
+ *     summary: Get all internships
+ *     tags: [Internships]
+ *     security: [ { bearerAuth: [] } ]
+ *     responses:
+ *       200:
+ *         description: List of internships
+ */
 router.get('/', authenticate, async (req, res, next) => {
   try {
     // Implementation here
@@ -14,7 +31,22 @@ router.get('/', authenticate, async (req, res, next) => {
   }
 });
 
-// Get internship by ID
+/**
+ * @swagger
+ * /api/internships/{id}:
+ *   get:
+ *     summary: Get internship by ID
+ *     tags: [Internships]
+ *     security: [ { bearerAuth: [] } ]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: integer }
+ *     responses:
+ *       200:
+ *         description: Internship details
+ */
 router.get('/:id', authenticate, async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -25,7 +57,23 @@ router.get('/:id', authenticate, async (req, res, next) => {
   }
 });
 
-// Create internship (company only)
+/**
+ * @swagger
+ * /api/internships:
+ *   post:
+ *     summary: Create internship (company only)
+ *     tags: [Internships]
+ *     security: [ { bearerAuth: [] } ]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *     responses:
+ *       201:
+ *         description: Internship created
+ */
 router.post('/', authenticate, isCompany, requireEmailVerification, async (req, res, next) => {
   try {
     // Implementation here
@@ -35,7 +83,28 @@ router.post('/', authenticate, isCompany, requireEmailVerification, async (req, 
   }
 });
 
-// Update internship (company only)
+/**
+ * @swagger
+ * /api/internships/{id}:
+ *   put:
+ *     summary: Update internship (company only)
+ *     tags: [Internships]
+ *     security: [ { bearerAuth: [] } ]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: integer }
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *     responses:
+ *       200:
+ *         description: Internship updated
+ */
 router.put('/:id', authenticate, isCompany, requireEmailVerification, async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -46,7 +115,22 @@ router.put('/:id', authenticate, isCompany, requireEmailVerification, async (req
   }
 });
 
-// Delete internship (company only)
+/**
+ * @swagger
+ * /api/internships/{id}:
+ *   delete:
+ *     summary: Delete internship (company only)
+ *     tags: [Internships]
+ *     security: [ { bearerAuth: [] } ]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: integer }
+ *     responses:
+ *       200:
+ *         description: Internship deleted
+ */
 router.delete('/:id', authenticate, isCompany, requireEmailVerification, async (req, res, next) => {
   try {
     const { id } = req.params;

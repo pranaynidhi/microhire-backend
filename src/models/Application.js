@@ -1,5 +1,5 @@
 const { DataTypes } = require('sequelize');
-const sequelize = require('../config/database');
+const { sequelize } = require('../config/database');
 
 const Application = sequelize.define(
   'Application',
@@ -55,9 +55,10 @@ const Application = sequelize.define(
     indexes: [
       {
         unique: true,
-        fields: ['internshipId', 'userId'],
+        fields: ['internship_id', 'user_id'],
       },
     ],
+    tableName: 'Applications',
   }
 );
 

@@ -1,5 +1,5 @@
 const { DataTypes } = require('sequelize');
-const sequelize = require('../config/database');
+const { sequelize } = require('../config/database');
 
 const Review = sequelize.define('Review', {
   id: {
@@ -70,16 +70,17 @@ const Review = sequelize.define('Review', {
 }, {
   tableName: 'Reviews',
   timestamps: true,
+  underscored: true,
   indexes: [
     {
       unique: true,
-      fields: ['reviewerId', 'revieweeId', 'internshipId']
+      fields: ['reviewer_id', 'reviewee_id', 'internship_id']
     },
     {
       fields: ['status']
     },
     {
-      fields: ['reportCount']
+      fields: ['report_count']
     }
   ]
 });

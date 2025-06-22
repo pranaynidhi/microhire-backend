@@ -1,5 +1,5 @@
 const { DataTypes } = require('sequelize');
-const sequelize = require('../config/database');
+const { sequelize } = require('../config/database');
 
 const Internship = sequelize.define(
   'Internship',
@@ -75,6 +75,7 @@ const Internship = sequelize.define(
     },
   },
   {
+    tableName: 'Internships',
     timestamps: true,
   }
 );

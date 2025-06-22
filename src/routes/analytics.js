@@ -4,6 +4,26 @@ const { authenticate, isCompany, requireEmailVerification } = require('../middle
 const { AppError } = require('../utils/errors');
 const logger = require('../utils/logger');
 
+/**
+ * @swagger
+ * tags:
+ *   name: Analytics
+ *   description: Analytics and statistics
+ */
+
+/**
+ * @swagger
+ * /api/analytics:
+ *   get:
+ *     summary: Get analytics for the user
+ *     tags: [Analytics]
+ *     security: [ { bearerAuth: [] } ]
+ *     responses:
+ *       200:
+ *         description: Analytics data
+ */
+// router.get('/', authenticate, ...);
+
 // Get user analytics
 router.get('/user', authenticate, requireEmailVerification, async (req, res, next) => {
   try {

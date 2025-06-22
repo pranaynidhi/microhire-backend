@@ -1,5 +1,5 @@
 const { DataTypes } = require('sequelize');
-const sequelize = require('../config/database');
+const { sequelize } = require('../config/database');
 
 const Message = sequelize.define(
   'Message',
@@ -68,16 +68,18 @@ const Message = sequelize.define(
     },
   },
   {
+    tableName: 'Messages',
     timestamps: true,
+    underscored: true,
     indexes: [
       {
-        fields: ['senderId', 'receiverId'],
+        fields: ['sender_id', 'receiver_id'],
       },
       {
-        fields: ['conversationId'],
+        fields: ['conversation_id'],
       },
       {
-        fields: ['createdAt'],
+        fields: ['created_at'],
       },
     ],
   }

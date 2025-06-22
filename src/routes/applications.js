@@ -4,7 +4,24 @@ const { authenticate, isStudent, isCompany, requireEmailVerification } = require
 const { AppError } = require('../utils/errors');
 const logger = require('../utils/logger');
 
-// Get all applications (filtered by role)
+/**
+ * @swagger
+ * tags:
+ *   name: Applications
+ *   description: Internship applications
+ */
+
+/**
+ * @swagger
+ * /api/applications:
+ *   get:
+ *     summary: Get all applications (filtered by role)
+ *     tags: [Applications]
+ *     security: [ { bearerAuth: [] } ]
+ *     responses:
+ *       200:
+ *         description: List of applications
+ */
 router.get('/', authenticate, async (req, res, next) => {
   try {
     // Implementation here
@@ -14,7 +31,22 @@ router.get('/', authenticate, async (req, res, next) => {
   }
 });
 
-// Get application by ID
+/**
+ * @swagger
+ * /api/applications/{id}:
+ *   get:
+ *     summary: Get application by ID
+ *     tags: [Applications]
+ *     security: [ { bearerAuth: [] } ]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: integer }
+ *     responses:
+ *       200:
+ *         description: Application details
+ */
 router.get('/:id', authenticate, async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -25,7 +57,23 @@ router.get('/:id', authenticate, async (req, res, next) => {
   }
 });
 
-// Create application (student only)
+/**
+ * @swagger
+ * /api/applications:
+ *   post:
+ *     summary: Create application (student only)
+ *     tags: [Applications]
+ *     security: [ { bearerAuth: [] } ]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *     responses:
+ *       201:
+ *         description: Application created
+ */
 router.post('/', authenticate, isStudent, requireEmailVerification, async (req, res, next) => {
   try {
     // Implementation here
@@ -35,7 +83,31 @@ router.post('/', authenticate, isStudent, requireEmailVerification, async (req, 
   }
 });
 
-// Update application status (company only)
+/**
+ * @swagger
+ * /api/applications/{id}/status:
+ *   patch:
+ *     summary: Update application status (company only)
+ *     tags: [Applications]
+ *     security: [ { bearerAuth: [] } ]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: integer }
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               status:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Application status updated
+ */
 router.patch('/:id/status', authenticate, isCompany, requireEmailVerification, async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -47,7 +119,22 @@ router.patch('/:id/status', authenticate, isCompany, requireEmailVerification, a
   }
 });
 
-// Withdraw application (student only)
+/**
+ * @swagger
+ * /api/applications/{id}:
+ *   delete:
+ *     summary: Withdraw application (student only)
+ *     tags: [Applications]
+ *     security: [ { bearerAuth: [] } ]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: integer }
+ *     responses:
+ *       200:
+ *         description: Application withdrawn
+ */
 router.delete('/:id', authenticate, isStudent, requireEmailVerification, async (req, res, next) => {
   try {
     const { id } = req.params;

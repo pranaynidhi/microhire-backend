@@ -5,7 +5,7 @@ const Application = require('../models/Application');
 const crypto = require('crypto');
 const Notification = require('../models/Notification');
 const CertificateView = require('../models/CertificateView');
-const CertificateVerification = require('../models/CertificateVerification');
+// const CertificateVerification = require('../models/CertificateVerification');
 const sequelize = require('../config/database');
 const withTransaction = require('../utils/transaction');
 const cache = require('../utils/cache');
@@ -368,15 +368,7 @@ const certificateController = {
       });
 
       // Get verification statistics
-      const verifications = await CertificateVerification.findAll({
-        where: { certificateId: id },
-        attributes: [
-          [sequelize.fn('DATE', sequelize.col('verifiedAt')), 'date'],
-          [sequelize.fn('COUNT', sequelize.col('id')), 'count']
-        ],
-        group: [sequelize.fn('DATE', sequelize.col('verifiedAt'))],
-        order: [[sequelize.fn('DATE', sequelize.col('verifiedAt')), 'ASC']]
-      });
+      const verifications = [];
 
       res.json({
         success: true,

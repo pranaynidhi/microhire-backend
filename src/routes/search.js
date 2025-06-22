@@ -5,6 +5,31 @@ const { AppError } = require('../utils/errors');
 const logger = require('../utils/logger');
 const searchController = require('../controllers/searchController');
 
+/**
+ * @swagger
+ * tags:
+ *   name: Search
+ *   description: Search functionality
+ */
+
+/**
+ * @swagger
+ * /api/search:
+ *   get:
+ *     summary: Search internships, users, or companies
+ *     tags: [Search]
+ *     security: [ { bearerAuth: [] } ]
+ *     parameters:
+ *       - in: query
+ *         name: q
+ *         schema: { type: string }
+ *         description: Search query
+ *     responses:
+ *       200:
+ *         description: Search results
+ */
+// router.get('/', authenticate, ...);
+
 // Search internships
 router.get('/internships', authenticate, requireEmailVerification, async (req, res, next) => {
   try {

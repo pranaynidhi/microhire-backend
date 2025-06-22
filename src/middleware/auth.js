@@ -53,9 +53,18 @@ const requireEmailVerification = (req, res, next) => {
   next();
 };
 
+// Middleware to check if user is an admin
+const requireAdmin = (req, res, next) => {
+  if (req.user.role !== 'admin') {
+    return next(new AppError('Access denied. Admin role required', 403));
+  }
+  next();
+};
+
 module.exports = {
   authenticate,
   isCompany,
   isStudent,
-  requireEmailVerification
+  requireEmailVerification,
+  requireAdmin
 };

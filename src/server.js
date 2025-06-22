@@ -7,33 +7,21 @@ const specs = require('./config/swagger');
 const { validate, schemas } = require('./middleware/validation');
 const errorHandler = require('./middleware/errorHandler');
 const logger = require('./utils/logger');
+const { applySecurityMiddleware, applyRateLimit } = require('./middleware/security');
 
 // Import database and models
 const { syncDatabase } = require('./models');
-const initializeSocket = require('./config/socket');
+const { initializeSocket } = require('./config/socket');
 const attachSocket = require('./middleware/socketMiddleware');
-const { securityMiddleware, authLimiter, apiLimiter } = require('./middleware/security');
-
-// Import routes
-const authRoutes = require('./routes/auth');
-const userRoutes = require('./routes/users');
-const internshipRoutes = require('./routes/internships');
-const applicationRoutes = require('./routes/applications');
-const messageRoutes = require('./routes/messages');
-const notificationRoutes = require('./routes/notifications');
-const uploadRoutes = require('./routes/upload');
-const reviewRoutes = require('./routes/reviews');
-const certificateRoutes = require('./routes/certificates');
-const analyticsRoutes = require('./routes/analytics');
-const adminRoutes = require('./routes/admin');
-const searchRoutes = require('./routes/search');
 
 const app = express();
 const server = http.createServer(app);
-const PORT = process.env.PORT || 5000;
-
-// Initialize Socket.io
 const io = initializeSocket(server);
+console.log('DEBUG: io initialized:', io);
+console.log('DEBUG: typeof attachSocket:', typeof attachSocket);
+const middleware = attachSocket(io);
+console.log('DEBUG: typeof attachSocket(io):', typeof middleware);
+const PORT = process.env.PORT || 5000;
 
 // Middleware
 app.use(cors({
@@ -45,14 +33,16 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Attach Socket.io to requests
-app.use(attachSocket(io));
+app.use(middleware);
 
 // Apply security middleware
-app.use(securityMiddleware);
+applySecurityMiddleware(app);
 
 // Apply rate limiters
-app.use('/api/auth', authLimiter);
-app.use('/api', apiLimiter);
+app.use(applyRateLimit);
+
+const cookieParser = require('cookie-parser');
+app.use(cookieParser());
 
 // Add CSRF protection
 const csrf = require('csurf');
@@ -69,16 +59,29 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
 
 // Request logging
 app.use((req, res, next) => {
-  logger.info({
+  logger.info(JSON.stringify({
     method: req.method,
     url: req.url,
     ip: req.ip,
     user: req.user?.id
-  });
+  }));
   next();
 });
 
 // Routes
+const authRoutes = require('./routes/auth');
+const userRoutes = require('./routes/users');
+const internshipRoutes = require('./routes/internships');
+const applicationRoutes = require('./routes/applications');
+const messageRoutes = require('./routes/messages');
+const notificationRoutes = require('./routes/notifications');
+const uploadRoutes = require('./routes/upload');
+const reviewRoutes = require('./routes/reviews');
+const certificateRoutes = require('./routes/certificates');
+const analyticsRoutes = require('./routes/analytics');
+const adminRoutes = require('./routes/admin');
+const searchRoutes = require('./routes/search');
+
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/internships', internshipRoutes);

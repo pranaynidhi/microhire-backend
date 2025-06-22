@@ -1,4 +1,4 @@
-const sequelize = require('../config/database');
+const { sequelize } = require('../config/database');
 const User = require('./User');
 const Internship = require('./Internship');
 const Application = require('./Application');
@@ -9,6 +9,10 @@ const Review = require('./Review');
 const Certificate = require('./Certificate');
 const Analytics = require('./Analytics');
 const Report = require('./Report');
+const ReviewReport = require('./ReviewReport');
+const CertificateView = require('./CertificateView');
+const SearchHistory = require('./SearchHistory');
+const SystemSettings = require('./SystemSettings');
 // Define associations
 User.hasMany(Internship, {
   foreignKey: 'companyId',
@@ -133,30 +137,24 @@ const syncDatabase = async () => {
 
 // User model indexes
 User.addHook('afterSync', async () => {
-  await sequelize.query(`
-    CREATE INDEX IF NOT EXISTS idx_users_email ON Users(email);
-    CREATE INDEX IF NOT EXISTS idx_users_role ON Users(role);
-    CREATE INDEX IF NOT EXISTS idx_users_is_active ON Users(isActive);
-  `);
+  await sequelize.query('CREATE INDEX idx_users_email ON Users(email);').catch(() => {});
+  await sequelize.query('CREATE INDEX idx_users_role ON Users(role);').catch(() => {});
+  await sequelize.query('CREATE INDEX idx_users_is_active ON Users(isActive);').catch(() => {});
 });
 
 // Internship model indexes
 Internship.addHook('afterSync', async () => {
-  await sequelize.query(`
-    CREATE INDEX IF NOT EXISTS idx_internships_company ON Internships(companyId);
-    CREATE INDEX IF NOT EXISTS idx_internships_status ON Internships(status);
-    CREATE INDEX IF NOT EXISTS idx_internships_deadline ON Internships(deadline);
-    CREATE INDEX IF NOT EXISTS idx_internships_category ON Internships(category);
-  `);
+  await sequelize.query('CREATE INDEX idx_internships_company ON Internships(companyId);').catch(() => {});
+  await sequelize.query('CREATE INDEX idx_internships_status ON Internships(status);').catch(() => {});
+  await sequelize.query('CREATE INDEX idx_internships_deadline ON Internships(deadline);').catch(() => {});
+  await sequelize.query('CREATE INDEX idx_internships_category ON Internships(category);').catch(() => {});
 });
 
 // Application model indexes
 Application.addHook('afterSync', async () => {
-  await sequelize.query(`
-    CREATE INDEX IF NOT EXISTS idx_applications_student ON Applications(studentId);
-    CREATE INDEX IF NOT EXISTS idx_applications_internship ON Applications(internshipId);
-    CREATE INDEX IF NOT EXISTS idx_applications_status ON Applications(status);
-  `);
+  await sequelize.query('CREATE INDEX idx_applications_student ON Applications(userId);').catch(() => {});
+  await sequelize.query('CREATE INDEX idx_applications_internship ON Applications(internshipId);').catch(() => {});
+  await sequelize.query('CREATE INDEX idx_applications_status ON Applications(status);').catch(() => {});
 });
 
 module.exports = {
@@ -171,5 +169,9 @@ module.exports = {
   Certificate,
   Analytics,
   Report,
+  ReviewReport,
+  CertificateView,
+  SearchHistory,
+  SystemSettings,
   syncDatabase,
 };
