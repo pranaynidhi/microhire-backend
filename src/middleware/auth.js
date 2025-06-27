@@ -1,30 +1,20 @@
-const { verifyIdToken } = require('../config/firebase');
+const jwt = require('jsonwebtoken');
 const { AppError } = require('../utils/errors');
 const logger = require('../utils/logger');
 
-// Middleware to verify Firebase ID token
+// JWT-based authentication middleware
 const authenticate = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
-    
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       throw new AppError('No token provided', 401);
     }
-
-    const idToken = authHeader.split('Bearer ')[1];
-    const decodedToken = await verifyIdToken(idToken);
-
-    // Add user info to request
-    req.user = {
-      uid: decodedToken.uid,
-      email: decodedToken.email,
-      emailVerified: decodedToken.email_verified,
-      role: decodedToken.role || 'user'
-    };
-
+    const token = authHeader.split('Bearer ')[1];
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = decoded;
     next();
   } catch (error) {
-    logger.error('Authentication error:', error);
+    logger.error('Authentication error:', error instanceof Error ? error.stack : JSON.stringify(error));
     next(new AppError('Invalid or expired token', 401));
   }
 };

@@ -38,7 +38,7 @@ const User = sequelize.define(
       },
     },
     role: {
-      type: DataTypes.ENUM('student', 'business'),
+      type: DataTypes.ENUM('student', 'business', 'admin'),
       allowNull: false,
     },
     // Student-specific fields
@@ -85,7 +85,8 @@ const User = sequelize.define(
     },
     emailVerified: {
       type: DataTypes.BOOLEAN,
-      defaultValue: false
+      defaultValue: false,
+      field: 'email_verified'
     },
     emailVerificationToken: {
       type: DataTypes.STRING,

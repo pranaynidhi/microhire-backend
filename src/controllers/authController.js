@@ -3,6 +3,7 @@ const crypto = require('crypto');
 const User = require('../models/User');
 const emailService = require('../services/emailService');
 const bcrypt = require('bcryptjs');
+const { Op } = require('sequelize');
 
 const generateTokens = (userId) => {
   const accessToken = jwt.sign({ userId }, process.env.JWT_SECRET, {
@@ -104,40 +105,26 @@ const register = async (req, res) => {
   }
 };
 
-const verifyEmail = async (req, res) => {
+const verifyEmail = async (req, res, next) => {
   try {
-    const { token } = req.params;
-
-    const user = await User.findOne({
-      where: {
-        emailVerificationToken: token,
-        emailVerificationExpires: { [Op.gt]: new Date() }
-      }
-    });
-
-    if (!user) {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid or expired verification token'
-      });
+    const { token } = req.method === 'GET' ? req.query : req.body;
+    if (!token) {
+      return res.status(400).json({ success: false, message: 'Verification token is required' });
     }
-
-    await user.update({
-      emailVerified: true,
-      emailVerificationToken: null,
-      emailVerificationExpires: null
-    });
-
-    res.json({
-      success: true,
-      message: 'Email verified successfully'
-    });
+    const user = await User.findOne({ where: { emailVerificationToken: token } });
+    if (!user) {
+      return res.status(400).json({ success: false, message: 'Invalid or expired verification token' });
+    }
+    if (user.emailVerified) {
+      return res.status(400).json({ success: false, message: 'Email already verified' });
+    }
+    // Optionally check token expiry if you store expiry
+    user.emailVerified = true;
+    user.emailVerificationToken = null;
+    await user.save();
+    res.json({ success: true, message: 'Email verified successfully' });
   } catch (error) {
-    console.error('Email verification error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Internal server error'
-    });
+    next(error);
   }
 };
 

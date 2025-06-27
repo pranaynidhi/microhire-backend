@@ -1,11 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const { authenticate, requireEmailVerification } = require('../middleware/auth');
-const { createCustomToken, updateUserClaims } = require('../config/firebase');
 const { AppError } = require('../utils/errors');
 const logger = require('../utils/logger');
 const authController = require('../controllers/authController');
-const passport = require('passport'); // For OAuth stubs
+const passport = require('../config/passport');
+const { verifyEmail } = require('../controllers/authController');
 
 /**
  * @swagger
@@ -61,7 +61,6 @@ router.post('/role', authenticate, async (req, res, next) => {
       throw new AppError('Invalid role', 400);
     }
 
-    await updateUserClaims(req.user.uid, { role });
     res.json({ message: 'Role updated successfully' });
   } catch (error) {
     next(error);
@@ -71,33 +70,45 @@ router.post('/role', authenticate, async (req, res, next) => {
 /**
  * @swagger
  * /api/auth/verify-email:
- *   post:
- *     summary: Request email verification token
+ *   get:
+ *     summary: Verify email address using token
  *     tags: [Auth]
- *     security: [ { bearerAuth: [] } ]
+ *     parameters:
+ *       - in: query
+ *         name: token
+ *         required: true
+ *         schema:
+ *           type: string
  *     responses:
  *       200:
- *         description: Custom token for email verification
+ *         description: Email verified successfully
  *       400:
- *         description: Email already verified
+ *         description: Invalid or expired verification token
  */
-// Verify email
-router.post('/verify-email', authenticate, async (req, res, next) => {
-  try {
-    if (req.user.emailVerified) {
-      throw new AppError('Email already verified', 400);
-    }
+router.get('/verify-email', verifyEmail);
 
-    // Create custom token for email verification
-    const customToken = await createCustomToken(req.user.uid, {
-      emailVerification: true
-    });
-
-    res.json({ customToken });
-  } catch (error) {
-    next(error);
-  }
-});
+/**
+ * @swagger
+ * /api/auth/verify-email:
+ *   post:
+ *     summary: Verify email address using token (API)
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               token:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Email verified successfully
+ *       400:
+ *         description: Invalid or expired verification token
+ */
+router.post('/verify-email', verifyEmail);
 
 /**
  * @swagger
@@ -194,32 +205,6 @@ router.get('/oauth/:provider', (req, res) => {
 
 /**
  * @swagger
- * /api/auth/firebase:
- *   post:
- *     summary: Login with Firebase ID token
- *     tags: [Auth]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               idToken:
- *                 type: string
- *     responses:
- *       200:
- *         description: Login successful
- *       401:
- *         description: Invalid Firebase token
- */
-router.post('/firebase', (req, res) => {
-  // Placeholder: Implement Firebase login
-  res.status(501).json({ message: 'Firebase login not implemented yet' });
-});
-
-/**
- * @swagger
  * /api/auth/2fa/setup:
  *   post:
  *     summary: Setup 2FA for user
@@ -260,5 +245,36 @@ router.post('/2fa/verify', authenticate, (req, res) => {
   // Placeholder: Implement 2FA verification
   res.status(501).json({ message: '2FA verification not implemented yet' });
 });
+
+// Google OAuth
+router.get('/oauth/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
+
+router.get('/oauth/google/callback',
+  passport.authenticate('google', { session: false, failureRedirect: '/api/auth/oauth/failure' }),
+  (req, res) => {
+    // Issue your JWT here and send to frontend
+    // Example:
+    // const { accessToken, refreshToken } = generateTokens(req.user.id);
+    // res.json({ user: req.user, accessToken, refreshToken });
+    res.json({ user: req.user, message: 'Google OAuth successful' });
+  }
+);
+
+// GitHub OAuth
+router.get('/oauth/github', passport.authenticate('github', { scope: ['user:email'] }));
+
+router.get('/oauth/github/callback',
+  passport.authenticate('github', { session: false, failureRedirect: '/api/auth/oauth/failure' }),
+  (req, res) => {
+    // Issue your JWT here and send to frontend
+    res.json({ user: req.user, message: 'GitHub OAuth successful' });
+  }
+);
+
+router.get('/oauth/failure', (req, res) => {
+  res.status(401).json({ message: 'OAuth login failed' });
+});
+
+// TODO: Define or import updateUserClaims and createCustomToken if you use them in this file.
 
 module.exports = router;

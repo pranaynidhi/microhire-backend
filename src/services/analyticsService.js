@@ -11,17 +11,17 @@ class AnalyticsService {
         throw new AppError('Invalid tracking data', 400);
       }
 
-      logger.info('User activity tracked:', {
+      logger.info('User activity tracked:', JSON.stringify({
         userId,
         action,
         metadata,
         timestamp: new Date()
-      });
+      }));
 
       // Store in database or analytics service
       // Implementation depends on your analytics storage solution
     } catch (error) {
-      logger.error('Error tracking user activity:', error);
+      logger.error('Error tracking user activity:', error instanceof Error ? error.stack : JSON.stringify(error));
       throw error;
     }
   }

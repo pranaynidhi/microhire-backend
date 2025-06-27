@@ -4,9 +4,9 @@ const {
   updateProfile,
   getMyApplications,
   getMyInternships,
-  updateFCMToken,
 } = require('../controllers/userController');
 const { authenticate } = require('../middleware/auth');
+const webpush = require('../services/webPushService');
 
 const router = express.Router();
 
@@ -77,13 +77,14 @@ router.get('/me/applications', getMyApplications);
  */
 router.get('/me/internships', getMyInternships);
 
+let subscriptions = [];
+
 /**
  * @swagger
- * /api/users/fcm-token:
+ * /api/users/subscribe:
  *   post:
- *     summary: Update FCM token for push notifications
+ *     summary: Subscribe to web push notifications
  *     tags: [Users]
- *     security: [ { bearerAuth: [] } ]
  *     requestBody:
  *       required: true
  *       content:
@@ -91,12 +92,55 @@ router.get('/me/internships', getMyInternships);
  *           schema:
  *             type: object
  *             properties:
- *               fcmToken:
+ *               subscription:
+ *                 type: object
+ *     responses:
+ *       201:
+ *         description: Subscription saved
+ */
+router.post('/subscribe', (req, res) => {
+  const { subscription } = req.body;
+  if (!subscription) {
+    return res.status(400).json({ message: 'Subscription is required' });
+  }
+  subscriptions.push(subscription);
+  res.status(201).json({ message: 'Subscription saved' });
+});
+
+/**
+ * @swagger
+ * /api/users/notify:
+ *   post:
+ *     summary: Send a test web push notification to all subscribers
+ *     tags: [Users]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               title:
+ *                 type: string
+ *               body:
  *                 type: string
  *     responses:
  *       200:
- *         description: FCM token updated
+ *         description: Notification sent
  */
-router.post('/fcm-token', updateFCMToken);
+router.post('/notify', async (req, res) => {
+  const { title, body } = req.body;
+  const payload = JSON.stringify({ title, body });
+  const results = [];
+  for (const sub of subscriptions) {
+    try {
+      await webpush.sendNotification(sub, payload);
+      results.push({ success: true });
+    } catch (err) {
+      results.push({ success: false, error: err.message });
+    }
+  }
+  res.json({ message: 'Notifications sent', results });
+});
 
 module.exports = router;

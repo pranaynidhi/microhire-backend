@@ -62,7 +62,12 @@ process.on('unhandledRejection', (error) => {
   logger.error('Unhandled Rejection:', error);
   // Give time for pending requests to complete
   setTimeout(() => {
-    process.exit(1);
+    if (process.env.NODE_ENV === 'test') {
+      // Do not exit during tests
+      console.error('Test mode: would call process.exit');
+    } else {
+      process.exit(1);
+    }
   }, 1000);
 });
 
@@ -71,7 +76,12 @@ process.on('uncaughtException', (error) => {
   logger.error('Uncaught Exception:', error);
   // Give time for pending requests to complete
   setTimeout(() => {
-    process.exit(1);
+    if (process.env.NODE_ENV === 'test') {
+      // Do not exit during tests
+      console.error('Test mode: would call process.exit');
+    } else {
+      process.exit(1);
+    }
   }, 1000);
 });
 
@@ -80,7 +90,12 @@ process.on('SIGTERM', () => {
   logger.info('SIGTERM received. Shutting down gracefully');
   // Give time for pending requests to complete
   setTimeout(() => {
-    process.exit(0);
+    if (process.env.NODE_ENV === 'test') {
+      // Do not exit during tests
+      console.error('Test mode: would call process.exit');
+    } else {
+      process.exit(0);
+    }
   }, 1000);
 });
 

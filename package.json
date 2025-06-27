@@ -35,7 +35,6 @@
     "express-mongo-sanitize": "^2.2.0",
     "express-rate-limit": "^6.7.0",
     "express-validator": "^7.0.1",
-    "firebase-admin": "^11.11.0",
     "helmet": "^7.0.0",
     "hpp": "^0.2.3",
     "ioredis": "^5.6.1",
@@ -44,15 +43,21 @@
     "morgan": "^1.10.0",
     "multer": "^1.4.5-lts.1",
     "mysql2": "^3.6.0",
+    "nodemailer": "^7.0.3",
+    "passport": "^0.7.0",
+    "passport-github2": "^0.1.12",
+    "passport-google-oauth20": "^2.0.0",
     "pdfkit": "^0.17.1",
     "sequelize": "^6.32.1",
     "socket.io": "^4.8.1",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1",
+    "web-push": "^3.6.7",
     "winston": "^3.8.2",
     "xss-clean": "^0.1.4"
   },
   "devDependencies": {
+    "@babel/preset-env": "^7.27.2",
     "@types/jest": "^29.5.2",
     "eslint": "^8.40.0",
     "eslint-config-prettier": "^8.8.0",
@@ -75,8 +80,8 @@
       "!src/server.js",
       "!src/config/**/*.js"
     ],
-    "setupFiles": [
-      "<rootDir>/tests/setup.js"
+    "setupFilesAfterEnv": [
+      "<rootDir>/tests/setupTest.js"
     ]
   },
   "lint-staged": {

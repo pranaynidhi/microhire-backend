@@ -162,13 +162,13 @@ class ModerationService {
 
       await user.save();
 
-      logger.info('User warned:', {
+      logger.info('User warned:', JSON.stringify({
         userId,
         contentType,
         reason
-      });
+      }));
     } catch (error) {
-      logger.error('Error warning user:', error);
+      logger.error('Error warning user:', error instanceof Error ? error.stack : JSON.stringify(error));
       throw error;
     }
   }

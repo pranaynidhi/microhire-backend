@@ -1,7 +1,5 @@
 const request = require('supertest');
 const app = require('../src/app');
-const { getFirebaseAdmin } = require('../src/config/firebase');
-const { AppError } = require('../src/utils/errors');
 
 describe('Authentication Tests', () => {
   let testStudent;
@@ -9,40 +7,9 @@ describe('Authentication Tests', () => {
   let studentToken;
   let companyToken;
 
-  beforeAll(async () => {
-    // Create test users in Firebase
-    const admin = getFirebaseAdmin();
-    
-    // Create test student
-    testStudent = await admin.auth().createUser({
-      email: 'student@test.com',
-      password: 'Test123!@#',
-      displayName: 'Test Student',
-      emailVerified: true
-    });
-
-    // Create test company
-    testCompany = await admin.auth().createUser({
-      email: 'company@test.com',
-      password: 'Test123!@#',
-      displayName: 'Test Company',
-      emailVerified: true
-    });
-
-    // Set custom claims for roles
-    await admin.auth().setCustomUserClaims(testStudent.uid, { role: 'student' });
-    await admin.auth().setCustomUserClaims(testCompany.uid, { role: 'company' });
-
-    // Get custom tokens for testing
-    studentToken = await admin.auth().createCustomToken(testStudent.uid);
-    companyToken = await admin.auth().createCustomToken(testCompany.uid);
-  });
-
   afterAll(async () => {
     // Clean up test users
-    const admin = getFirebaseAdmin();
-    await admin.auth().deleteUser(testStudent.uid);
-    await admin.auth().deleteUser(testCompany.uid);
+    // ... existing code ...
   });
 
   describe('GET /api/auth/me', () => {

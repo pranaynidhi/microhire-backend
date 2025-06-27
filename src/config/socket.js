@@ -31,7 +31,7 @@ const initializeSocket = (server) => {
       socket.user = decoded;
       next();
     } catch (error) {
-      logger.error('Socket authentication error:', error);
+      logger.error('Socket authentication error:', error instanceof Error ? error.stack : JSON.stringify(error));
       next(new AppError('Authentication failed', 401));
     }
   });

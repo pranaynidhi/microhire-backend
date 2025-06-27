@@ -8,6 +8,10 @@ const { validate, schemas } = require('./middleware/validation');
 const errorHandler = require('./middleware/errorHandler');
 const logger = require('./utils/logger');
 const { applySecurityMiddleware, applyRateLimit } = require('./middleware/security');
+const passport = require('./config/passport');
+const { generateTokens } = require('./controllers/authController');
+const path = require('path');
+const { AppError } = require('./utils/errors');
 
 // Import database and models
 const { syncDatabase } = require('./models');
@@ -46,16 +50,42 @@ app.use(cookieParser());
 
 // Add CSRF protection
 const csrf = require('csurf');
-app.use(csrf({ cookie: true }));
+const csrfProtection = csrf({ cookie: true });
 
-// Add CSRF token to all responses
+// Exclude CSRF for Swagger UI, spec, and static assets
 app.use((req, res, next) => {
-  res.cookie('XSRF-TOKEN', req.csrfToken());
+  if (
+    req.path.startsWith('/api-docs') ||
+    req.path === '/swagger-ui-init.js' ||
+    req.path.startsWith('/uploads') ||
+    req.path.startsWith('/swagger-ui') // for swagger-ui static assets
+  ) {
+    return next();
+  }
+  csrfProtection(req, res, next);
+});
+
+// Add CSRF token to all responses (only if csrfToken is available)
+app.use((req, res, next) => {
+  if (typeof req.csrfToken === 'function') {
+    res.cookie('XSRF-TOKEN', req.csrfToken());
+  }
   next();
 });
 
+app.get('/api-docs/swagger.json', (req, res) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.send(specs);
+});
+
+
+// Serve custom Swagger UI JS if needed
+app.use('/swagger-ui-init.js', express.static(path.join(__dirname, 'utils/swagger-ui-init.js')));
+
 // API Documentation
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs, {
+  customJs: '/swagger-ui-init.js'
+}));
 
 // Request logging
 app.use((req, res, next) => {
@@ -125,6 +155,15 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// Custom root route
+app.get('/', (req, res) => {
+  res.json({
+    success: true,
+    message: 'Welcome to the MicroHire API!',
+    docs: '/api-docs'
+  });
+});
+
 // Error handling
 app.use((req, res, next) => {
   next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));
@@ -135,19 +174,29 @@ app.use(errorHandler);
 // Unhandled rejections
 process.on('unhandledRejection', (err) => {
   logger.error('UNHANDLED REJECTION! Shutting down...', err);
-  process.exit(1);
+  if (process.env.NODE_ENV === 'test') {
+    console.error('Test mode: would call process.exit(1)');
+  } else {
+    process.exit(1);
+  }
 });
 
 // Uncaught exceptions
 process.on('uncaughtException', (err) => {
   logger.error('UNCAUGHT EXCEPTION! Shutting down...', err);
-  process.exit(1);
+  if (process.env.NODE_ENV === 'test') {
+    console.error('Test mode: would call process.exit(1)');
+  } else {
+    process.exit(1);
+  }
 });
 
 // Start server
 const startServer = async () => {
   try {
     await syncDatabase();
+    
+    app.use(passport.initialize());
     
     server.listen(PORT, () => {
       console.log(`🚀 Server is running on port ${PORT}`);
@@ -156,8 +205,13 @@ const startServer = async () => {
     });
   } catch (error) {
     console.error('Failed to start server:', error);
-    process.exit(1);
+    if (process.env.NODE_ENV === 'test') {
+      console.error('Test mode: would call process.exit(1)');
+    } else {
+      process.exit(1);
+    }
   }
 };
 
 startServer();
+

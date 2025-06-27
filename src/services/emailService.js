@@ -234,6 +234,27 @@ class EmailService {
     `;
     return this.sendEmail(userEmail, subject, html);
   }
+
+  async sendVerificationEmail(email, token) {
+    const subject = 'Verify your email address';
+    const verificationUrl = `${process.env.API_URL}/api/auth/verify-email?token=${token}`;
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #2563eb;">Verify Your Email</h2>
+        <p>Thank you for registering! Please verify your email address by clicking the button below:</p>
+        <a href="${verificationUrl}" 
+           style="background-color: #2563eb; color: white; padding: 12px 24px; 
+                  text-decoration: none; border-radius: 6px; display: inline-block;">
+          Verify Email
+        </a>
+        <p style="margin-top: 30px; color: #666;">
+          If you did not create an account, you can ignore this email.<br>
+          The MicroHire Team
+        </p>
+      </div>
+    `;
+    return this.sendEmail(email, subject, html);
+  }
 }
 
 module.exports = new EmailService();

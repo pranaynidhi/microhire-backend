@@ -46,10 +46,20 @@ const connectDB = async () => {
       try {
         await sequelize.close();
         logger.info('Database connection closed through app termination');
-        process.exit(0);
+        if (process.env.NODE_ENV === 'test') {
+          // Do not exit during tests
+          console.error('Test mode: would call process.exit');
+        } else {
+          process.exit(0);
+        }
       } catch (err) {
         logger.error('Error during database connection closure:', err);
-        process.exit(1);
+        if (process.env.NODE_ENV === 'test') {
+          // Do not exit during tests
+          console.error('Test mode: would call process.exit');
+        } else {
+          process.exit(1);
+        }
       }
     });
 
