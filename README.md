@@ -22,43 +22,42 @@
 ### Installation
 
 1. Clone the repository
-    
-    ```bash
-    git clone https://github.com/yourusername/microhire-backend.git
-    cd microhire-backend
-    ```
-    
+
+   ```bash
+   git clone https://github.com/yourusername/microhire-backend.git
+   cd microhire-backend
+   ```
+
 2. Install dependencies
-    
-    ```bash
-    npm install
-    ```
-    
+
+   ```bash
+   npm install
+   ```
+
 3. Set up environment variables
-    
-    ```bash
-    cp .env.example .env
-    # Edit .env with your configuration
-    ```
-    
+
+   ```bash
+   cp .env.example .env
+   # Edit .env with your configuration
+   ```
+
 4. Run database migrations
-    
-    ```bash
-    npm run migrate
-    ```
-    
+
+   ```bash
+   npm run migrate
+   ```
+
 5. Start the server
-    
-    ```bash
-    npm run dev
-    ```
-    
+
+   ```bash
+   npm run dev
+   ```
 
 ## Authentication
 
 ### Register
 
-```
+```json
 POST /api/auth/register
 Content-Type: application/json
 
@@ -72,7 +71,7 @@ Content-Type: application/json
 
 ### Login
 
-```
+```json
 POST /api/auth/login
 Content-Type: application/json
 
@@ -88,7 +87,7 @@ Content-Type: application/json
 
 ### Create Internship
 
-```
+```json
 POST /api/internships
 Authorization: Bearer <token>
 Content-Type: application/json
@@ -108,7 +107,7 @@ Content-Type: application/json
 
 ### Get Internships
 
-```
+```json
 GET /api/internships?page=1&limit=10&category=Development
 Authorization: Bearer <token>
 ```
@@ -117,7 +116,7 @@ Authorization: Bearer <token>
 
 ### Submit Application
 
-```
+```json
 POST /api/applications
 Authorization: Bearer <token>
 Content-Type: application/json
@@ -133,7 +132,11 @@ Content-Type: application/json
 All errors follow this format:
 
 ```json
-{  "success": false,  "message": "Error description",  "errors": [    {      "field": "fieldName",      "message": "Specific error message"    }  ]}
+{
+  "success": false,
+  "message": "Error description",
+  "errors": [{ "field": "fieldName", "message": "Specific error message" }]
+}
 ```
 
 ## Rate Limiting
@@ -161,7 +164,9 @@ All errors follow this format:
 ```jsx
 const socket = io('http://localhost:5000', {
   auth: {
-    token: 'your_jwt_token',  },});
+    token: 'your_jwt_token',
+  },
+});
 ```
 
 ### Events
@@ -176,17 +181,16 @@ const socket = io('http://localhost:5000', {
 
 1. Set environment variables
 2. Build the application
-    
-    ```bash
-    npm run build
-    ```
-    
+
+   ```bash
+   npm run build
+   ```
+
 3. Start the server
-    
-    ```bash
-    npm start
-    ```
-    
+
+   ```bash
+   npm start
+   ```
 
 ### Docker Deployment
 
@@ -208,11 +212,11 @@ This project is licensed under the MIT License.
 
 ---
 
-# 🌟 Overview
+## 🌟 Overview
 
 The MicroHire API is a RESTful service that connects students with businesses for micro-internship opportunities in Nepal. The API supports role-based authentication, internship management, and application tracking.
 
-## Key Features
+### Key Features
 
 - ✅ JWT-based authentication
 - ✅ Role-based access control (Student/Business)
@@ -222,7 +226,7 @@ The MicroHire API is a RESTful service that connects students with businesses fo
 - ✅ Pagination support
 - ✅ Input validation and sanitization
 
-## Tech Stack
+### Tech Stack
 
 - **Runtime:** Node.js
 - **Framework:** Express.js
@@ -232,17 +236,17 @@ The MicroHire API is a RESTful service that connects students with businesses fo
 
 ---
 
-# 🔐 Authentication
+## 🔐 Authentication
 
-## Authentication Flow
+### Authentication Flow
 
 1. Register or login to receive a JWT token
 2. Include token in `Authorization` header for protected routes
 3. Token expires in 7 days (configurable)
 
-## Header Format
+### Header Format
 
-```
+```json
 Authorization: Bearer <your_jwt_token>
 ```
 
@@ -253,15 +257,19 @@ Authorization: Bearer <your_jwt_token>
 
 ---
 
-# ⚠️ Error Handling
+## ⚠️ Error Handling
 
-## Standard Error Response Format
+### Standard Error Response Format
 
 ```json
-{  "success": false,  "message": "Error description",  "errors": [    {      "field": "fieldName",      "message": "Specific error message"    }  ]}
+{
+  "success": false,
+  "message": "Error description",
+  "errors": [{ "field": "fieldName", "message": "Specific error message" }]
+}
 ```
 
-## HTTP Status Codes
+### HTTP Status Codes
 
 - `200` - Success
 - `201` - Created
@@ -274,58 +282,58 @@ Authorization: Bearer <your_jwt_token>
 
 ---
 
-# 🛠 Current API Endpoints
+## 🛠 Current API Endpoints
 
-## 🔒 Authentication Endpoints
+### 🔒 Authentication Endpoints
 
-| Method | Endpoint | Description | Auth Required |
-| --- | --- | --- | --- |
-| `POST` | `/auth/register` | Register new user | ❌ |
-| `POST` | `/auth/login` | User login | ❌ |
+| Method | Endpoint         | Description       | Auth Required |
+| ------ | ---------------- | ----------------- | ------------- |
+| `POST` | `/auth/register` | Register new user | ❌            |
+| `POST` | `/auth/login`    | User login        | ❌            |
 
-## 👤 User Management Endpoints
+### 👤 User Management Endpoints
 
-| Method | Endpoint | Description | Auth Required | Role |
-| --- | --- | --- | --- | --- |
-| `GET` | `/users/me` | Get current user profile | ✅ | Any |
-| `PUT` | `/users/me` | Update user profile | ✅ | Any |
-| `GET` | `/users/me/applications` | Get user’s applications | ✅ | Student |
-| `GET` | `/users/me/internships` | Get user’s posted internships | ✅ | Business |
+| Method | Endpoint                 | Description                   | Auth Required | Role     |
+| ------ | ------------------------ | ----------------------------- | ------------- | -------- |
+| `GET`  | `/users/me`              | Get current user profile      | ✅            | Any      |
+| `PUT`  | `/users/me`              | Update user profile           | ✅            | Any      |
+| `GET`  | `/users/me/applications` | Get user’s applications       | ✅            | Student  |
+| `GET`  | `/users/me/internships`  | Get user’s posted internships | ✅            | Business |
 
-## 📝 Internship Endpoints
+### 📝 Internship Endpoints
 
-| Method | Endpoint | Description | Auth Required | Role |
-| --- | --- | --- | --- | --- |
-| `GET` | `/internships` | Get all active internships | ❌ | Public |
-| `GET` | `/internships/:id` | Get internship by ID | ❌ | Public |
-| `POST` | `/internships` | Create new internship | ✅ | Business |
-| `PUT` | `/internships/:id` | Update internship | ✅ | Business (Owner) |
-| `DELETE` | `/internships/:id` | Delete internship | ✅ | Business (Owner) |
+| Method   | Endpoint           | Description                | Auth Required | Role             |
+| -------- | ------------------ | -------------------------- | ------------- | ---------------- |
+| `GET`    | `/internships`     | Get all active internships | ❌            | Public           |
+| `GET`    | `/internships/:id` | Get internship by ID       | ❌            | Public           |
+| `POST`   | `/internships`     | Create new internship      | ✅            | Business         |
+| `PUT`    | `/internships/:id` | Update internship          | ✅            | Business (Owner) |
+| `DELETE` | `/internships/:id` | Delete internship          | ✅            | Business (Owner) |
 
-## 📩 Application Endpoints
+### 📩 Application Endpoints
 
-| Method | Endpoint | Description | Auth Required | Role |
-| --- | --- | --- | --- | --- |
-| `POST` | `/applications` | Apply for internship | ✅ | Student |
-| `GET` | `/applications/internship/:id` | Get applications for internship | ✅ | Business (Owner) |
-| `PATCH` | `/applications/:id` | Update application status | ✅ | Business (Owner) |
-| `PATCH` | `/applications/:id/withdraw` | Withdraw application | ✅ | Student (Owner) |
+| Method  | Endpoint                       | Description                     | Auth Required | Role             |
+| ------- | ------------------------------ | ------------------------------- | ------------- | ---------------- |
+| `POST`  | `/applications`                | Apply for internship            | ✅            | Student          |
+| `GET`   | `/applications/internship/:id` | Get applications for internship | ✅            | Business (Owner) |
+| `PATCH` | `/applications/:id`            | Update application status       | ✅            | Business (Owner) |
+| `PATCH` | `/applications/:id/withdraw`   | Withdraw application            | ✅            | Student (Owner)  |
 
-## 🏥 System Endpoints
+### 🏥 System Endpoints
 
-| Method | Endpoint | Description | Auth Required |
-| --- | --- | --- | --- |
-| `GET` | `/health` | API health check | ❌ |
+| Method | Endpoint  | Description      | Auth Required |
+| ------ | --------- | ---------------- | ------------- |
+| `GET`  | `/health` | API health check | ❌            |
 
 ---
 
-# 📖 Request/Response Examples
+## 📖 Request/Response Examples
 
-## Authentication
+### Authentication Endpoints
 
-### Register Business
+#### Register Business
 
-```
+```json
 POST /api/auth/register
 Content-Type: application/json
 
@@ -345,12 +353,32 @@ Content-Type: application/json
 **Response:**
 
 ```json
-{  "success": true,  "message": "User registered successfully.",  "data": {    "user": {      "id": 1,      "fullName": "John Doe",      "email": "john@company.com",      "role": "business",      "companyName": "Tech Solutions Nepal",      "contactPerson": "John Doe",      "companyDescription": "Leading tech company in Nepal",      "website": "https://techsolutions.com.np",      "phone": "+977-9841234567",      "isActive": true,      "createdAt": "2025-05-29T10:32:08.000Z",      "updatedAt": "2025-05-29T10:32:08.000Z"    },    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."  }}
+{
+  "success": true,
+  "message": "User registered successfully.",
+  "data": {
+    "user": {
+      "id": 1,
+      "fullName": "John Doe",
+      "email": "john@company.com",
+      "role": "business",
+      "companyName": "Tech Solutions Nepal",
+      "contactPerson": "John Doe",
+      "companyDescription": "Leading tech company in Nepal",
+      "website": "https://techsolutions.com.np",
+      "phone": "+977-9841234567",
+      "isActive": true,
+      "createdAt": "2025-05-29T10:32:08.000Z",
+      "updatedAt": "2025-05-29T10:32:08.000Z"
+    },
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+  }
+}
 ```
 
-### Register Student
+#### Register Student
 
-```
+```json
 POST /api/auth/register
 Content-Type: application/json
 
@@ -364,9 +392,9 @@ Content-Type: application/json
 }
 ```
 
-### Login
+#### Login Endpoint
 
-```
+```json
 POST /api/auth/login
 Content-Type: application/json
 
@@ -376,11 +404,11 @@ Content-Type: application/json
 }
 ```
 
-## Internships
+### Internships Endpoint
 
-### Create Internship
+#### Create Internship Endpoint
 
-```
+```json
 POST /api/internships
 Authorization: Bearer <business_token>
 Content-Type: application/json
@@ -402,26 +430,68 @@ Content-Type: application/json
 **Response:**
 
 ```json
-{  "success": true,  "message": "Internship created successfully.",  "data": {    "internship": {      "id": 1,      "title": "Frontend Developer Intern",      "description": "Work on exciting React projects with our development team",      "requirements": "Knowledge of React, JavaScript, and CSS. Good communication skills.",      "location": "Kathmandu, Nepal",      "stipend": "15000.00",      "duration": "3 months",      "deadline": "2025-07-15T23:59:59.000Z",      "type": "onsite",      "category": "Web Development",      "maxApplicants": 20,      "status": "active",      "companyId": 1,      "createdAt": "2025-05-29T10:32:08.000Z",      "updatedAt": "2025-05-29T10:32:08.000Z",      "company": {        "id": 1,        "companyName": "Tech Solutions Nepal",        "email": "john@company.com"      }    }  }}
+{
+  "success": true,
+  "message": "Internship created successfully.",
+  "data": {
+    "internship": {
+      "id": 1,
+      "title": "Frontend Developer Intern",
+      "description": "Work on exciting React projects with our development team",
+      "requirements": "Knowledge of React, JavaScript, and CSS. Good communication skills.",
+      "location": "Kathmandu, Nepal",
+      "stipend": "15000.00",
+      "duration": "3 months",
+      "deadline": "2025-07-15T23:59:59.000Z",
+      "type": "onsite",
+      "category": "Web Development",
+      "maxApplicants": 20,
+      "status": "active",
+      "companyId": 1,
+      "createdAt": "2025-05-29T10:32:08.000Z",
+      "updatedAt": "2025-05-29T10:32:08.000Z",
+      "company": { "id": 1, "companyName": "Tech Solutions Nepal", "email": "john@company.com" }
+    }
+  }
+}
 ```
 
-### Get All Internships with Filters
+#### Get All Internships with Filters
 
-```
+```json
 GET /api/internships?page=1&limit=10&search=frontend&location=kathmandu&type=onsite&category=web
 ```
 
 **Response:**
 
 ```json
-{  "success": true,  "data": {    "internships": [      {        "id": 1,        "title": "Frontend Developer Intern",        "description": "Work on exciting React projects...",        "location": "Kathmandu, Nepal",        "stipend": "15000.00",        "duration": "3 months",        "deadline": "2025-07-15T23:59:59.000Z",        "type": "onsite",        "category": "Web Development",        "company": {          "id": 1,          "companyName": "Tech Solutions Nepal",          "email": "john@company.com"        }      }    ],    "pagination": {      "currentPage": 1,      "totalPages": 1,      "totalItems": 1,      "itemsPerPage": 10    }  }}
+{
+  "success": true,
+  "data": {
+    "internships": [
+      {
+        "id": 1,
+        "title": "Frontend Developer Intern",
+        "description": "Work on exciting React projects...",
+        "location": "Kathmandu, Nepal",
+        "stipend": "15000.00",
+        "duration": "3 months",
+        "deadline": "2025-07-15T23:59:59.000Z",
+        "type": "onsite",
+        "category": "Web Development",
+        "company": { "id": 1, "companyName": "Tech Solutions Nepal", "email": "john@company.com" }
+      }
+    ],
+    "pagination": { "currentPage": 1, "totalPages": 1, "totalItems": 1, "itemsPerPage": 10 }
+  }
+}
 ```
 
-## Applications
+## Applications Endpoint
 
 ### Apply for Internship
 
-```
+```json
 POST /api/applications
 Authorization: Bearer <student_token>
 Content-Type: application/json
@@ -435,12 +505,32 @@ Content-Type: application/json
 **Response:**
 
 ```json
-{  "success": true,  "message": "Application submitted successfully.",  "data": {    "application": {      "id": 1,      "internshipId": 1,      "userId": 2,      "coverLetter": "Dear Hiring Manager...",      "status": "pending",      "appliedAt": "2025-05-29T10:32:08.000Z",      "createdAt": "2025-05-29T10:32:08.000Z",      "updatedAt": "2025-05-29T10:32:08.000Z",      "internship": {        "id": 1,        "title": "Frontend Developer Intern",        "company": {          "id": 1,          "companyName": "Tech Solutions Nepal",          "email": "john@company.com"        }      }    }  }}
+{
+  "success": true,
+  "message": "Application submitted successfully.",
+  "data": {
+    "application": {
+      "id": 1,
+      "internshipId": 1,
+      "userId": 2,
+      "coverLetter": "Dear Hiring Manager...",
+      "status": "pending",
+      "appliedAt": "2025-05-29T10:32:08.000Z",
+      "createdAt": "2025-05-29T10:32:08.000Z",
+      "updatedAt": "2025-05-29T10:32:08.000Z",
+      "internship": {
+        "id": 1,
+        "title": "Frontend Developer Intern",
+        "company": { "id": 1, "companyName": "Tech Solutions Nepal", "email": "john@company.com" }
+      }
+    }
+  }
+}
 ```
 
 ### Update Application Status
 
-```
+```json
 PATCH /api/applications/1
 Authorization: Bearer <business_token>
 Content-Type: application/json
@@ -453,41 +543,41 @@ Content-Type: application/json
 
 ---
 
-# 🚀 Future Enhancements
+## 🚀 Future Enhancements
 
-## Phase 2: Communication System (Q3 2025)
+### Phase 2: Communication System (Completed)
 
-### Real-time Messaging
+#### Real-time Messaging
 
-```
+```json
 POST /api/messages
 GET /api/messages/conversation/:userId
 GET /api/messages/conversations
 PATCH /api/messages/:id/read
 ```
 
-### Notifications
+#### Notifications
 
-```
+```json
 GET /api/notifications
 PATCH /api/notifications/:id/read
 PATCH /api/notifications/mark-all-read
 ```
 
-## Phase 3: Advanced Features (Q4 2025)
+### Phase 3: Advanced Features (Completed)
 
-### File Upload System
+#### File Upload System
 
-```
+```json
 POST /api/upload/resume
 POST /api/upload/company-logo
 POST /api/upload/portfolio
 DELETE /api/upload/:fileId
 ```
 
-### Review & Rating System
+#### Review & Rating System
 
-```
+```json
 POST /api/reviews
 GET /api/reviews/user/:userId
 GET /api/reviews/company/:companyId
@@ -495,28 +585,28 @@ PUT /api/reviews/:id
 DELETE /api/reviews/:id
 ```
 
-### Certificate Generation
+#### Certificate Generation
 
-```
+```json
 POST /api/certificates/generate
 GET /api/certificates/:id
 GET /api/certificates/verify/:certificateId
 ```
 
-## Phase 4: Analytics & Admin (2026)
+### Phase 4: Analytics & Admin (Completed)
 
-### Analytics Dashboard
+#### Analytics Dashboard
 
-```
+```json
 GET /api/analytics/overview
 GET /api/analytics/internships
 GET /api/analytics/applications
 GET /api/analytics/users
 ```
 
-### Admin Panel
+#### Admin Panel
 
-```
+```json
 GET /api/admin/users
 PATCH /api/admin/users/:id/status
 GET /api/admin/internships
@@ -525,36 +615,36 @@ GET /api/admin/reports
 POST /api/admin/reports/:id/resolve
 ```
 
-### Advanced Search & Recommendations
+#### Advanced Search & Recommendations
 
-```
+```json
 GET /api/internships/recommended
 GET /api/internships/similar/:id
 GET /api/search/advanced
 GET /api/search/suggestions
 ```
 
-## Phase 5: Mobile & Integration (2026)
+### Phase 5: Mobile & Integration (Q4 2025)
 
-### Mobile API Enhancements
+#### Mobile API Enhancements
 
-```
+```json
 POST /api/mobile/push-tokens
 POST /api/mobile/notifications/send
 GET /api/mobile/app-config
 ```
 
-### Third-party Integrations
+#### Third-party Integrations
 
-```
+```json
 POST /api/integrations/linkedin/import
 POST /api/integrations/github/connect
 POST /api/integrations/calendar/sync
 ```
 
-### Payment System (Premium Features)
+#### Payment System (Premium Features)
 
-```
+```json
 POST /api/payments/create-subscription
 GET /api/payments/invoices
 POST /api/payments/cancel-subscription
@@ -562,17 +652,17 @@ POST /api/payments/cancel-subscription
 
 ---
 
-# 🔄 Rate Limiting
+## 🔄 Rate Limiting
 
-## Current Limits (Per IP Address)
+### Current Limits (Per IP Address)
 
 - **Authentication endpoints:** 5 requests per minute
 - **General API endpoints:** 100 requests per minute
 - **File upload endpoints:** 10 requests per minute
 
-## Future Implementation
+### Future Implementation
 
-```
+```json
 X-RateLimit-Limit: 100
 X-RateLimit-Remaining: 95
 X-RateLimit-Reset: 1622547600
@@ -580,36 +670,61 @@ X-RateLimit-Reset: 1622547600
 
 ---
 
-# 📊 Data Models
+## 📊 Data Models
 
-## User Model
+### User Model
 
 ```tsx
 interface User {
   id: number;  fullName: string;  email: string;  password: string; // hashed  role: 'student' | 'business';  // Student fields  bio?: string;  skills?: string;  resumeUrl?: string;  // Business fields  companyName?: string;  contactPerson?: string;  companyDescription?: string;  website?: string;  phone?: string;  isActive: boolean;  createdAt: Date;  updatedAt: Date;}
 ```
 
-## Internship Model
+### Internship Model
 
 ```tsx
 interface Internship {
-  id: number;  title: string;  description: string;  requirements: string;  location: string;  stipend: number;  duration: string;  deadline: Date;  companyId: number;  status: 'active' | 'closed' | 'draft';  type: 'remote' | 'onsite' | 'hybrid';  category?: string;  maxApplicants: number;  createdAt: Date;  updatedAt: Date;}
+  id: number;
+  title: string;
+  description: string;
+  requirements: string;
+  location: string;
+  stipend: number;
+  duration: string;
+  deadline: Date;
+  companyId: number;
+  status: 'active' | 'closed' | 'draft';
+  type: 'remote' | 'onsite' | 'hybrid';
+  category?: string;
+  maxApplicants: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
 ```
 
-## Application Model
+### Application Model
 
 ```tsx
 interface Application {
-  id: number;  internshipId: number;  userId: number;  coverLetter: string;  status: 'pending' | 'accepted' | 'rejected' | 'withdrawn';  appliedAt: Date;  reviewedAt?: Date;  notes?: string;  createdAt: Date;  updatedAt: Date;}
+  id: number;
+  internshipId: number;
+  userId: number;
+  coverLetter: string;
+  status: 'pending' | 'accepted' | 'rejected' | 'withdrawn';
+  appliedAt: Date;
+  reviewedAt?: Date;
+  notes?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
 ```
 
 ---
 
-# 🔧 Environment Configuration
+## 🔧 Environment Configuration
 
-## Required Environment Variables
+### Required Environment Variables
 
-```
+```env
 # Database
 DB_HOST=localhost
 DB_NAME=microhire_db
@@ -629,9 +744,9 @@ NODE_ENV=development
 
 ---
 
-# 📝 Changelog
+## 📝 Changelog
 
-## Version 1.0.0 (May 29, 2025)
+### Version 1.0.0 (May 14, 2025)
 
 - ✅ Initial API release
 - ✅ User authentication and authorization
@@ -640,31 +755,31 @@ NODE_ENV=development
 - ✅ Search and filtering
 - ✅ Role-based access control
 
-## Planned Version 1.1.0 (June 2025)
+### Version 1.1.0 (June 5 2025)
 
-- 🔄 Real-time messaging system
-- 🔄 Email notifications
-- 🔄 File upload for resumes
-- 🔄 Enhanced search with filters
+- ✅ Real-time messaging system
+- ✅ Email notifications
+- ✅ File upload for resumes
+- ✅ Enhanced search with filters
 
-## Planned Version 1.2.0 (July 2025)
+### Version 1.2.0 (June 29 2025)
 
-- 🔄 Review and rating system
-- 🔄 Certificate generation
-- 🔄 Advanced analytics
-- 🔄 Admin panel
+- ✅ Review and rating system
+- ✅ Certificate generation
+- ✅ Advanced analytics
+- ✅ Admin panel
 
 ---
 
-# 🤝 API Support
+## 🤝 API Support
 
-## Contact Information
+### Contact Information
 
 - **Email:** [support@pranaynidhi.tech](mailto:support@pranaynidhi.tech)
 - **Documentation:** [https://docs.prnaynidhi.tech](https://docs.prnaynidhi.tech/)
 - **Status Page:** [https://status.pranaynidhi.tech](https://status.pranaynidhi.tech/)
 
-## Response Times
+### Response Times
 
 - **Critical Issues:** 2 hours
 - **General Support:** 24 hours
@@ -672,7 +787,7 @@ NODE_ENV=development
 
 ---
 
-# 📚 Additional Resources
+## 📚 Additional Resources
 
 - [Postman Collection](./postman/MicroHire-API.json)
 - [OpenAPI Specification](./docs/openapi.yaml)
@@ -681,8 +796,8 @@ NODE_ENV=development
 
 ---
 
-**Last Updated:** May 29, 2025
+**Last Updated:** June 29, 2025
 
-**API Version:** 1.0.0
+**API Version:** 1.2.0
 
-**Documentation Version:** 1.0.0
+**Documentation Version:** 1.2.0
