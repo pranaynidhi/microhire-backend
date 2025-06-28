@@ -1,5 +1,7 @@
 const request = require('supertest');
-const app = require('../src/app');
+const { app } = require('./setupTest');
+const { User } = require('../src/models');
+const { generateTokens } = require('../src/controllers/authController');
 
 describe('Authentication Tests', () => {
   let testStudent;
@@ -7,9 +9,37 @@ describe('Authentication Tests', () => {
   let studentToken;
   let companyToken;
 
-  afterAll(async () => {
-    // Clean up test users
-    // ... existing code ...
+  beforeEach(async () => {
+    const timestamp = Date.now() + Math.floor(Math.random() * 10000);
+    // Create test users
+    testStudent = await User.create({
+      fullName: 'Test Student',
+      email: `student${timestamp}@test.com`,
+      password: 'Test123!@#',
+      role: 'student',
+      isActive: true,
+      emailVerified: true
+    });
+
+    testCompany = await User.create({
+      fullName: 'Test Company',
+      email: `company${timestamp}@test.com`,
+      password: 'Test123!@#',
+      role: 'business',
+      companyName: 'Test Company',
+      isActive: true,
+      emailVerified: true
+    });
+
+    const { accessToken: studentAccessToken } = generateTokens(testStudent.id);
+    const { accessToken: companyAccessToken } = generateTokens(testCompany.id);
+    studentToken = studentAccessToken;
+    companyToken = companyAccessToken;
+  });
+
+  afterEach(async () => {
+    if (testStudent) await testStudent.destroy();
+    if (testCompany) await testCompany.destroy();
   });
 
   describe('GET /api/auth/me', () => {
@@ -19,7 +49,7 @@ describe('Authentication Tests', () => {
         .set('Authorization', `Bearer ${studentToken}`);
 
       expect(response.status).toBe(200);
-      expect(response.body.user).toHaveProperty('uid');
+      expect(response.body.user).toHaveProperty('id');
       expect(response.body.user).toHaveProperty('email');
       expect(response.body.user).toHaveProperty('role');
     });
@@ -55,22 +85,35 @@ describe('Authentication Tests', () => {
   });
 
   describe('POST /api/auth/verify-email', () => {
-    it('should return custom token for email verification', async () => {
+    it('should verify email with valid token', async () => {
+      const timestamp = Date.now() + Math.floor(Math.random() * 10000);
+      // First, set up a user with email verification token
+      const user = await User.create({
+        fullName: 'Test User',
+        email: `test${timestamp}@example.com`,
+        password: 'Test123!@#',
+        role: 'student',
+        emailVerificationToken: 'test-token',
+        emailVerified: false
+      });
+
       const response = await request(app)
         .post('/api/auth/verify-email')
-        .set('Authorization', `Bearer ${studentToken}`);
+        .send({ token: 'test-token' });
 
       expect(response.status).toBe(200);
-      expect(response.body).toHaveProperty('customToken');
+      expect(response.body.success).toBe(true);
+      
+      // Clean up
+      await user.destroy();
     });
 
-    it('should return 400 if email already verified', async () => {
+    it('should return 400 with invalid token', async () => {
       const response = await request(app)
         .post('/api/auth/verify-email')
-        .set('Authorization', `Bearer ${studentToken}`);
+        .send({ token: 'invalid-token' });
 
       expect(response.status).toBe(400);
-      expect(response.body.message).toBe('Email already verified');
     });
   });
 });

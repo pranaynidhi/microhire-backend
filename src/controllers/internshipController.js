@@ -193,9 +193,51 @@ const getInternships = async (req, res) => {
   }
 };
 
+// Update internship
+const updateInternship = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const internship = await Internship.findByPk(id);
+    if (!internship) {
+      return res.status(404).json({ success: false, message: 'Internship not found.' });
+    }
+    // Only the company that owns the internship can update
+    if (internship.companyId !== req.user.id) {
+      return res.status(403).json({ success: false, message: 'Forbidden.' });
+    }
+    await internship.update(req.body);
+    res.json({ success: true, message: 'Internship updated successfully.', data: { internship } });
+  } catch (error) {
+    logger.error('Update internship error:', error);
+    res.status(500).json({ success: false, message: 'Internal server error.' });
+  }
+};
+
+// Delete internship
+const deleteInternship = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const internship = await Internship.findByPk(id);
+    if (!internship) {
+      return res.status(404).json({ success: false, message: 'Internship not found.' });
+    }
+    // Only the company that owns the internship can delete
+    if (internship.companyId !== req.user.id) {
+      return res.status(403).json({ success: false, message: 'Forbidden.' });
+    }
+    await internship.destroy();
+    res.json({ success: true, message: 'Internship deleted successfully.' });
+  } catch (error) {
+    logger.error('Delete internship error:', error);
+    res.status(500).json({ success: false, message: 'Internal server error.' });
+  }
+};
+
 module.exports = {
   createInternship,
   getAllInternships,
   getInternshipById,
   getInternships,
+  updateInternship,
+  deleteInternship,
 };

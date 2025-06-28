@@ -23,14 +23,7 @@ const certificateController = require('../controllers/certificateController');
  *       200:
  *         description: List of certificates
  */
-router.get('/', authenticate, requireEmailVerification, async (req, res, next) => {
-  try {
-    // Implementation here
-    res.json({ message: 'Get all certificates' });
-  } catch (error) {
-    next(error);
-  }
-});
+router.get('/', authenticate, requireEmailVerification, certificateController.getAllCertificates);
 
 /**
  * @swagger
@@ -48,15 +41,7 @@ router.get('/', authenticate, requireEmailVerification, async (req, res, next) =
  *       200:
  *         description: Certificate details
  */
-router.get('/:id', authenticate, requireEmailVerification, async (req, res, next) => {
-  try {
-    const { id } = req.params;
-    // Implementation here
-    res.json({ message: `Get certificate ${id}` });
-  } catch (error) {
-    next(error);
-  }
-});
+router.get('/:id', authenticate, requireEmailVerification, certificateController.getCertificateById);
 
 /**
  * @swagger
@@ -75,25 +60,10 @@ router.get('/:id', authenticate, requireEmailVerification, async (req, res, next
  *       201:
  *         description: Certificate generated
  */
-router.post('/', authenticate, isStudent, requireEmailVerification, async (req, res, next) => {
-  try {
-    // Implementation here
-    res.json({ message: 'Add certificate' });
-  } catch (error) {
-    next(error);
-  }
-});
+router.post('/', authenticate, requireEmailVerification, certificateController.addCertificate);
 
 // Update certificate (student only)
-router.put('/:id', authenticate, isStudent, requireEmailVerification, async (req, res, next) => {
-  try {
-    const { id } = req.params;
-    // Implementation here
-    res.json({ message: `Update certificate ${id}` });
-  } catch (error) {
-    next(error);
-  }
-});
+router.put('/:id', authenticate, requireEmailVerification, certificateController.updateCertificate);
 
 /**
  * @swagger
@@ -120,15 +90,7 @@ router.put('/:id', authenticate, isStudent, requireEmailVerification, async (req
  *       200:
  *         description: Certificate revoked
  */
-router.patch('/:id/revoke', authenticate, isStudent, requireEmailVerification, async (req, res, next) => {
-  try {
-    const { id } = req.params;
-    // Implementation here
-    res.json({ message: `Delete certificate ${id}` });
-  } catch (error) {
-    next(error);
-  }
-});
+router.delete('/:id', authenticate, requireEmailVerification, certificateController.deleteCertificate);
 
 router.post('/generate', authenticate, certificateController.generateCertificate);
 router.get('/verify/:certificateId', certificateController.verifyCertificate);

@@ -32,7 +32,7 @@ const User = sequelize.define(
       validate: {
         len: [8, 255],
         is: {
-          args: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/,
+          args: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?])[A-Za-z\d!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]{8,}$/,
           msg: 'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character'
         }
       },
@@ -103,6 +103,15 @@ const User = sequelize.define(
     lastPasswordChange: {
       type: DataTypes.DATE,
       allowNull: true
+    },
+    // 2FA fields
+    twoFASecret: {
+      type: DataTypes.STRING,
+      allowNull: true
+    },
+    twoFAEnabled: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false
     }
   },
   {

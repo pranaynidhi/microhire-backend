@@ -179,6 +179,33 @@ const getUnreadCount = async (req, res) => {
   }
 };
 
+const deleteNotification = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+    const notification = await Notification.findOne({ where: { id, userId } });
+    if (!notification) {
+      return res.status(404).json({ success: false, message: 'Notification not found.' });
+    }
+    await notification.destroy();
+    res.json({ success: true, message: 'Notification deleted.' });
+  } catch (error) {
+    console.error('Delete notification error:', error);
+    res.status(500).json({ success: false, message: 'Internal server error.' });
+  }
+};
+
+const deleteAllNotifications = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    await Notification.destroy({ where: { userId } });
+    res.json({ success: true, message: 'All notifications deleted.' });
+  } catch (error) {
+    console.error('Delete all notifications error:', error);
+    res.status(500).json({ success: false, message: 'Internal server error.' });
+  }
+};
+
 // Notification helper functions
 const notificationHelpers = {
   // Application notifications
@@ -235,4 +262,6 @@ module.exports = {
   markAllAsRead,
   getUnreadCount,
   notificationHelpers,
+  deleteNotification,
+  deleteAllNotifications,
 };

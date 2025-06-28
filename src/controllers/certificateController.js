@@ -23,7 +23,7 @@ const certificateController = {
         const internship = await Internship.findOne({
           where: { 
             id: req.body.internshipId,
-            status: 'completed',
+            status: 'closed',
             companyId: req.user.id
           },
           include: [{
@@ -116,6 +116,7 @@ const certificateController = {
           },
           {
             model: Internship,
+            as: 'internship',
             attributes: ['id', 'title', 'description']
           }
         ]
@@ -169,6 +170,7 @@ const certificateController = {
             },
             {
               model: Internship,
+              as: 'internship',
               attributes: ['id', 'title']
             }
           ],
@@ -224,6 +226,7 @@ const certificateController = {
           },
           {
             model: Internship,
+            as: 'internship',
             attributes: ['id', 'title']
           }
         ],
@@ -388,4 +391,18 @@ const certificateController = {
   }
 };
 
-module.exports = certificateController; 
+// Aliases for route compatibility
+const getAllCertificates = certificateController.getUserCertificates;
+const getCertificateById = certificateController.getCertificate;
+const addCertificate = certificateController.generateCertificate;
+const updateCertificate = certificateController.generateCertificate; // If you have a separate update, use it
+const deleteCertificate = certificateController.revokeCertificate;
+
+module.exports = {
+  ...certificateController,
+  getAllCertificates,
+  getCertificateById,
+  addCertificate,
+  updateCertificate,
+  deleteCertificate
+}; 

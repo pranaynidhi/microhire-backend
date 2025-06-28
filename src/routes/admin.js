@@ -24,70 +24,22 @@ const adminController = require('../controllers/adminController');
  *       200:
  *         description: List of users
  */
-router.get('/users', authenticate, requireEmailVerification, async (req, res, next) => {
-  try {
-    // Implementation here
-    res.json({ message: 'Get all users' });
-  } catch (error) {
-    next(error);
-  }
-});
+router.get('/users', authenticate, requireEmailVerification, adminController.getAllUsers);
 
 // Get user by ID
-router.get('/users/:id', authenticate, requireEmailVerification, async (req, res, next) => {
-  try {
-    const { id } = req.params;
-    // Implementation here
-    res.json({ message: `Get user ${id}` });
-  } catch (error) {
-    next(error);
-  }
-});
+router.get('/users/:id', authenticate, requireEmailVerification, adminController.getUserById);
 
 // Update user role
-router.patch('/users/:id/role', authenticate, requireEmailVerification, async (req, res, next) => {
-  try {
-    const { id } = req.params;
-    const { role } = req.body;
-    // Implementation here
-    res.json({ message: `Update user ${id} role` });
-  } catch (error) {
-    next(error);
-  }
-});
+router.patch('/users/:id/role', authenticate, requireEmailVerification, adminController.updateUserRole);
 
 // Suspend user
-router.post('/users/:id/suspend', authenticate, requireEmailVerification, async (req, res, next) => {
-  try {
-    const { id } = req.params;
-    // Implementation here
-    res.json({ message: `Suspend user ${id}` });
-  } catch (error) {
-    next(error);
-  }
-});
+router.patch('/users/:id/suspend', authenticate, requireEmailVerification, adminController.suspendUser);
 
 // Unsuspend user
-router.post('/users/:id/unsuspend', authenticate, requireEmailVerification, async (req, res, next) => {
-  try {
-    const { id } = req.params;
-    // Implementation here
-    res.json({ message: `Unsuspend user ${id}` });
-  } catch (error) {
-    next(error);
-  }
-});
+router.patch('/users/:id/unsuspend', authenticate, requireEmailVerification, adminController.unsuspendUser);
 
 // Delete user
-router.delete('/users/:id', authenticate, requireEmailVerification, async (req, res, next) => {
-  try {
-    const { id } = req.params;
-    // Implementation here
-    res.json({ message: `Delete user ${id}` });
-  } catch (error) {
-    next(error);
-  }
-});
+router.delete('/users/:id', authenticate, requireEmailVerification, adminController.deleteUser);
 
 router.get('/internships', authenticate, requireEmailVerification, adminAuth, adminController.getInternships);
 router.patch('/internships/:id/moderate', authenticate, requireEmailVerification, adminAuth, adminController.moderateInternship);

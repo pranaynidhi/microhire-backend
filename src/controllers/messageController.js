@@ -374,10 +374,10 @@ const deleteMessage = async (req, res) => {
 };
 
 module.exports = {
-  sendMessage,
-  getConversation,
   getConversations,
+  getConversation,
+  sendMessage,
   markAsRead,
-  editMessage,
   deleteMessage,
+  editMessage,
 };

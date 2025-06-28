@@ -3,6 +3,7 @@ const router = express.Router();
 const { authenticate, isStudent, isCompany, requireEmailVerification } = require('../middleware/auth');
 const { AppError } = require('../utils/errors');
 const logger = require('../utils/logger');
+const applicationController = require('../controllers/applicationController');
 
 /**
  * @swagger
@@ -22,14 +23,7 @@ const logger = require('../utils/logger');
  *       200:
  *         description: List of applications
  */
-router.get('/', authenticate, async (req, res, next) => {
-  try {
-    // Implementation here
-    res.json({ message: 'Get all applications' });
-  } catch (error) {
-    next(error);
-  }
-});
+router.get('/', authenticate, applicationController.getAllApplications);
 
 /**
  * @swagger
@@ -47,15 +41,7 @@ router.get('/', authenticate, async (req, res, next) => {
  *       200:
  *         description: Application details
  */
-router.get('/:id', authenticate, async (req, res, next) => {
-  try {
-    const { id } = req.params;
-    // Implementation here
-    res.json({ message: `Get application ${id}` });
-  } catch (error) {
-    next(error);
-  }
-});
+router.get('/:id', authenticate, applicationController.getApplicationById);
 
 /**
  * @swagger
@@ -74,14 +60,7 @@ router.get('/:id', authenticate, async (req, res, next) => {
  *       201:
  *         description: Application created
  */
-router.post('/', authenticate, isStudent, requireEmailVerification, async (req, res, next) => {
-  try {
-    // Implementation here
-    res.json({ message: 'Create application' });
-  } catch (error) {
-    next(error);
-  }
-});
+router.post('/', authenticate, isStudent, requireEmailVerification, applicationController.createApplication);
 
 /**
  * @swagger
@@ -108,16 +87,7 @@ router.post('/', authenticate, isStudent, requireEmailVerification, async (req, 
  *       200:
  *         description: Application status updated
  */
-router.patch('/:id/status', authenticate, isCompany, requireEmailVerification, async (req, res, next) => {
-  try {
-    const { id } = req.params;
-    const { status } = req.body;
-    // Implementation here
-    res.json({ message: `Update application ${id} status` });
-  } catch (error) {
-    next(error);
-  }
-});
+router.patch('/:id/status', authenticate, isCompany, requireEmailVerification, applicationController.updateApplicationStatus);
 
 /**
  * @swagger
@@ -135,14 +105,6 @@ router.patch('/:id/status', authenticate, isCompany, requireEmailVerification, a
  *       200:
  *         description: Application withdrawn
  */
-router.delete('/:id', authenticate, isStudent, requireEmailVerification, async (req, res, next) => {
-  try {
-    const { id } = req.params;
-    // Implementation here
-    res.json({ message: `Withdraw application ${id}` });
-  } catch (error) {
-    next(error);
-  }
-});
+router.delete('/:id', authenticate, isStudent, requireEmailVerification, applicationController.deleteApplication);
 
 module.exports = router;

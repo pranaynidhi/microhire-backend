@@ -1,68 +1,56 @@
-// This would be a comprehensive test file for the communication system
-// For now, let's create a simple test endpoint
+const request = require('supertest');
+const { server } = require('./setupTest');
+const { User } = require('../src/models');
+const { generateTokens } = require('../src/controllers/authController');
 
-const express = require('express');
-const router = express.Router();
+let studentToken, companyToken;
+let student, company;
 
-// Test messaging system
-router.post('/test-message', async (req, res) => {
-  try {
-    // This endpoint can be used to test the messaging system
-    const { senderId, receiverId, content } = req.body;
-    
-    // Simulate sending a message
-    const testMessage = {
-      id: Date.now(),
-      senderId,
-      receiverId,
-      content,
-      createdAt: new Date(),
-      isRead: false,
-    };
+beforeEach(async () => {
+  const timestamp = Date.now() + Math.floor(Math.random() * 10000);
+  // Create test users
+  student = await User.create({
+    fullName: 'Test Student',
+    email: `student${timestamp}@test.com`,
+    password: 'Test123!@#',
+    role: 'student',
+    isActive: true,
+    emailVerified: true
+  });
+  
+  company = await User.create({
+    fullName: 'Test Company',
+    email: `company${timestamp}@test.com`,
+    password: 'Test123!@#',
+    role: 'business',
+    companyName: 'Test Company',
+    isActive: true,
+    emailVerified: true
+  });
 
-    res.json({
-      success: true,
-      message: 'Test message created',
-      data: testMessage,
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Test failed',
-      error: error.message,
-    });
-  }
+  const { accessToken: studentAccessToken } = generateTokens(student.id);
+  const { accessToken: companyAccessToken } = generateTokens(company.id);
+  studentToken = 'Bearer ' + studentAccessToken;
+  companyToken = 'Bearer ' + companyAccessToken;
 });
 
-// Test notification system
-router.post('/test-notification', async (req, res) => {
-  try {
-    const { userId, title, message, type } = req.body;
-    
-    const testNotification = {
-      id: Date.now(),
-      userId,
-      title,
-      message,
-      type,
-      isRead: false,
-      createdAt: new Date(),
-    };
-
-    res.json({
-      success: true,
-      message: 'Test notification created',
-      data: testNotification,
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Test failed',
-      error: error.message,
-    });
-  }
+afterEach(async () => {
+  if (student) await student.destroy();
+  if (company) await company.destroy();
 });
 
+describe('Communication Endpoints', () => {
+  describe('GET /api/communication', () => {
+    it('should require authentication', async () => {
+      const res = await request(server).get('/api/communication');
+      expect([401, 404]).toContain(res.status);
+    });
 
-
-module.exports = router;
+    it('should get communication data (student)', async () => {
+      const res = await request(server)
+        .get('/api/communication')
+        .set('Authorization', studentToken);
+      expect([200, 404, 500]).toContain(res.status);
+    });
+  });
+}); 

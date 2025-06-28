@@ -3,6 +3,7 @@ const router = express.Router();
 const { authenticate, requireEmailVerification } = require('../middleware/auth');
 const { AppError } = require('../utils/errors');
 const logger = require('../utils/logger');
+const notificationController = require('../controllers/notificationController');
 
 /**
  * @swagger
@@ -22,14 +23,7 @@ const logger = require('../utils/logger');
  *       200:
  *         description: List of notifications
  */
-router.get('/', authenticate, requireEmailVerification, async (req, res, next) => {
-  try {
-    // Implementation here
-    res.json({ message: 'Get all notifications' });
-  } catch (error) {
-    next(error);
-  }
-});
+router.get('/', authenticate, requireEmailVerification, notificationController.getNotifications);
 
 /**
  * @swagger
@@ -47,15 +41,7 @@ router.get('/', authenticate, requireEmailVerification, async (req, res, next) =
  *       200:
  *         description: Notification marked as read
  */
-router.patch('/:id/read', authenticate, requireEmailVerification, async (req, res, next) => {
-  try {
-    const { id } = req.params;
-    // Implementation here
-    res.json({ message: `Mark notification ${id} as read` });
-  } catch (error) {
-    next(error);
-  }
-});
+router.patch('/:id/read', authenticate, requireEmailVerification, notificationController.markAsRead);
 
 /**
  * @swagger
@@ -68,14 +54,7 @@ router.patch('/:id/read', authenticate, requireEmailVerification, async (req, re
  *       200:
  *         description: All notifications marked as read
  */
-router.patch('/read-all', authenticate, requireEmailVerification, async (req, res, next) => {
-  try {
-    // Implementation here
-    res.json({ message: 'Mark all notifications as read' });
-  } catch (error) {
-    next(error);
-  }
-});
+router.patch('/read-all', authenticate, requireEmailVerification, notificationController.markAllAsRead);
 
 /**
  * @swagger
@@ -93,15 +72,7 @@ router.patch('/read-all', authenticate, requireEmailVerification, async (req, re
  *       200:
  *         description: Notification deleted
  */
-router.delete('/:id', authenticate, requireEmailVerification, async (req, res, next) => {
-  try {
-    const { id } = req.params;
-    // Implementation here
-    res.json({ message: `Delete notification ${id}` });
-  } catch (error) {
-    next(error);
-  }
-});
+router.delete('/:id', authenticate, requireEmailVerification, notificationController.deleteNotification);
 
 /**
  * @swagger
@@ -114,13 +85,6 @@ router.delete('/:id', authenticate, requireEmailVerification, async (req, res, n
  *       200:
  *         description: All notifications deleted
  */
-router.delete('/', authenticate, requireEmailVerification, async (req, res, next) => {
-  try {
-    // Implementation here
-    res.json({ message: 'Delete all notifications' });
-  } catch (error) {
-    next(error);
-  }
-});
+router.delete('/', authenticate, requireEmailVerification, notificationController.deleteAllNotifications);
 
 module.exports = router;

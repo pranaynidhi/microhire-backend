@@ -1,4 +1,7 @@
+# Contributing to MicroHire Backend
+
 These improvements add:
+
 1. Comprehensive logging system
 2. Detailed API documentation
 3. Complete deployment guide
@@ -10,6 +13,7 @@ These improvements add:
 Would you like me to continue with any specific part of these improvements or move on to implementing any other features?
 
 Types:
+
 - feat: New feature
 - fix: Bug fix
 - docs: Documentation
@@ -53,4 +57,3 @@ Types:
 - Check test coverage
 - Verify documentation
 - Test functionality
-

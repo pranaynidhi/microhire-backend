@@ -163,8 +163,10 @@ const cleanupOldFiles = async () => {
   }
 };
 
-// Run cleanup every 24 hours
-setInterval(cleanupOldFiles, 24 * 60 * 60 * 1000);
+// Run cleanup every 24 hours (only in production)
+if (process.env.NODE_ENV !== 'test') {
+  setInterval(cleanupOldFiles, 24 * 60 * 60 * 1000);
+}
 
 module.exports = {
   uploadMiddleware,

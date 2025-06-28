@@ -86,7 +86,7 @@ const getMyApplications = async (req, res) => {
     }
 
     const applications = await Application.findAll({
-      where: { userId: req.user.id },
+      where: { studentId: req.user.id },
       include: [
         {
           model: Internship,
@@ -136,7 +136,7 @@ const getMyInternships = async (req, res) => {
           include: [
             {
               model: User,
-              as: 'applicant',
+              as: 'student',
               attributes: ['id', 'fullName', 'email', 'bio', 'skills'],
             },
           ],

@@ -190,58 +190,12 @@ router.get('/reports', authenticate, requireAdmin, reviewController.getReviewRep
 router.patch('/:reviewId/moderate', authenticate, requireAdmin, reviewController.moderateReview);
 
 // Get all reviews
-router.get('/', authenticate, async (req, res, next) => {
-  try {
-    // Implementation here
-    res.json({ message: 'Get all reviews' });
-  } catch (error) {
-    next(error);
-  }
-});
+router.get('/', authenticate, requireEmailVerification, reviewController.getAllReviews);
 
 // Get review by ID
-router.get('/:id', authenticate, async (req, res, next) => {
-  try {
-    const { id } = req.params;
-    // Implementation here
-    res.json({ message: `Get review ${id}` });
-  } catch (error) {
-    next(error);
-  }
-});
-
-// Update review (student only)
-router.put('/:id', authenticate, isStudent, requireEmailVerification, async (req, res, next) => {
-  try {
-    const { id } = req.params;
-    // Implementation here
-    res.json({ message: `Update review ${id}` });
-  } catch (error) {
-    next(error);
-  }
-});
-
-// Delete review (student only)
-router.delete('/:id', authenticate, isStudent, requireEmailVerification, async (req, res, next) => {
-  try {
-    const { id } = req.params;
-    // Implementation here
-    res.json({ message: `Delete review ${id}` });
-  } catch (error) {
-    next(error);
-  }
-});
+router.get('/:id', authenticate, requireEmailVerification, reviewController.getReviewById);
 
 // Report review
-router.post('/:id/report', authenticate, requireEmailVerification, async (req, res, next) => {
-  try {
-    const { id } = req.params;
-    const { reason } = req.body;
-    // Implementation here
-    res.json({ message: `Report review ${id}` });
-  } catch (error) {
-    next(error);
-  }
-});
+router.post('/:reviewId/report', authenticate, requireEmailVerification, reviewController.reportReview);
 
 module.exports = router;

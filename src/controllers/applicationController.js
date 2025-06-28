@@ -192,8 +192,83 @@ const updateApplicationStatus = async (req, res) => {
   }
 };
 
+// Get all applications (filtered by role)
+const getAllApplications = async (req, res) => {
+  try {
+    let where = {};
+    if (req.user.role === 'student') {
+      where.studentId = req.user.id;
+    } else if (req.user.role === 'business') {
+      // Get all applications for internships owned by this company
+      const internships = await Internship.findAll({ where: { companyId: req.user.id }, attributes: ['id'] });
+      where.internshipId = internships.map(i => i.id);
+    }
+    const applications = await Application.findAll({
+      where,
+      include: [
+        { model: User, as: 'student', attributes: ['id', 'fullName', 'email'] },
+        { model: Internship, as: 'internship', attributes: ['id', 'title'] }
+      ]
+    });
+    res.json({ success: true, data: { applications } });
+  } catch (error) {
+    logger.error('Get all applications error:', error);
+    res.status(500).json({ success: false, message: 'Internal server error.' });
+  }
+};
+
+// Get application by ID
+const getApplicationById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const application = await Application.findByPk(id, {
+      include: [
+        { model: User, as: 'student', attributes: ['id', 'fullName', 'email'] },
+        { model: Internship, as: 'internship', attributes: ['id', 'title', 'companyId'] }
+      ]
+    });
+    if (!application) {
+      return res.status(404).json({ success: false, message: 'Application not found.' });
+    }
+    // Only the student or the company that owns the internship can view
+    if (
+      application.studentId !== req.user.id &&
+      application.internship.companyId !== req.user.id
+    ) {
+      return res.status(403).json({ success: false, message: 'Forbidden.' });
+    }
+    res.json({ success: true, data: { application } });
+  } catch (error) {
+    logger.error('Get application by ID error:', error);
+    res.status(500).json({ success: false, message: 'Internal server error.' });
+  }
+};
+
+// Delete/withdraw application
+const deleteApplication = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const application = await Application.findByPk(id);
+    if (!application) {
+      return res.status(404).json({ success: false, message: 'Application not found.' });
+    }
+    // Only the student who created the application can delete
+    if (application.studentId !== req.user.id) {
+      return res.status(403).json({ success: false, message: 'Forbidden.' });
+    }
+    await application.destroy();
+    res.json({ success: true, message: 'Application withdrawn successfully.' });
+  } catch (error) {
+    logger.error('Delete application error:', error);
+    res.status(500).json({ success: false, message: 'Internal server error.' });
+  }
+};
+
 module.exports = {
+  getAllApplications,
+  getApplicationById,
   createApplication,
-  getApplicationsByInternship,
   updateApplicationStatus,
+  deleteApplication,
+  getApplicationsByInternship,
 };

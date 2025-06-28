@@ -11,7 +11,7 @@ yarn-error.log*
 *.log
 dist/
 build/
-
+*.sql
 # Firebase
 serviceAccountKey.json
 
@@ -66,3 +66,5 @@ Thumbs.db
 
 # Uploads directory
 uploads/
+test_output_final.txt
+

@@ -17,7 +17,7 @@ const Application = sequelize.define(
         key: 'id',
       },
     },
-    userId: {
+    studentId: {
       type: DataTypes.INTEGER,
       allowNull: false,
       references: {
@@ -55,7 +55,7 @@ const Application = sequelize.define(
     indexes: [
       {
         unique: true,
-        fields: ['internship_id', 'user_id'],
+        fields: ['internship_id', 'student_id'],
       },
     ],
     tableName: 'Applications',

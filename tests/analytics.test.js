@@ -1,57 +1,92 @@
 const request = require('supertest');
-const app = require('../src/server');
+const { server } = require('./setupTest');
+const { User, Internship, Application } = require('../src/models');
+const { generateTokens } = require('../src/controllers/authController');
 let studentToken, companyToken, adminToken;
+let student, company, admin;
 
 beforeAll(async () => {
-  // Login as student
-  const studentRes = await request(app)
+  const timestamp = Date.now() + Math.floor(Math.random() * 10000);
+  // Create test users
+  student = await User.create({
+    fullName: 'Test Student',
+    email: `student${timestamp}@test.com`,
+    password: 'Test123!@#',
+    role: 'student',
+    isActive: true,
+    emailVerified: true
+  });
+  company = await User.create({
+    fullName: 'Test Company',
+    email: `company${timestamp}@test.com`,
+    password: 'Test123!@#',
+    role: 'business',
+    companyName: 'Test Company',
+    isActive: true,
+    emailVerified: true
+  });
+  admin = await User.create({
+    fullName: 'Test Admin',
+    email: `admin${timestamp}@test.com`,
+    password: 'Test123!@#',
+    role: 'admin',
+    isActive: true,
+    emailVerified: true
+  });
+
+  // Login and get tokens
+  const studentRes = await request(server)
     .post('/api/auth/login')
-    .send({ email: 'student@test.com', password: 'Test123!@#' });
+    .send({ email: student.email, password: 'Test123!@#' });
   studentToken = 'Bearer ' + studentRes.body?.data?.accessToken;
 
-  // Login as company
-  const companyRes = await request(app)
+  const companyRes = await request(server)
     .post('/api/auth/login')
-    .send({ email: 'company@test.com', password: 'Test123!@#' });
+    .send({ email: company.email, password: 'Test123!@#' });
   companyToken = 'Bearer ' + companyRes.body?.data?.accessToken;
 
-  // Login as admin
-  const adminRes = await request(app)
+  const adminRes = await request(server)
     .post('/api/auth/login')
-    .send({ email: 'admin@test.com', password: 'Test123!@#' });
+    .send({ email: admin.email, password: 'Test123!@#' });
   adminToken = 'Bearer ' + adminRes.body?.data?.accessToken;
+});
+
+afterAll(async () => {
+  if (student) await student.destroy();
+  if (company) await company.destroy();
+  if (admin) await admin.destroy();
 });
 
 describe('Analytics API', () => {
   describe('GET /api/analytics/user', () => {
     it('should require authentication', async () => {
-      const res = await request(app).get('/api/analytics/user');
+      const res = await request(server).get('/api/analytics/user');
       expect(res.status).toBe(401);
     });
     it('should get user analytics (student)', async () => {
-      const res = await request(app).get('/api/analytics/user').set('Authorization', studentToken);
+      const res = await request(server).get('/api/analytics/user').set('Authorization', studentToken);
       expect([200, 403, 500]).toContain(res.status);
     });
   });
 
   describe('GET /api/analytics/company', () => {
     it('should require authentication', async () => {
-      const res = await request(app).get('/api/analytics/company');
+      const res = await request(server).get('/api/analytics/company');
       expect(res.status).toBe(401);
     });
     it('should get company analytics (company)', async () => {
-      const res = await request(app).get('/api/analytics/company').set('Authorization', companyToken);
+      const res = await request(server).get('/api/analytics/company').set('Authorization', companyToken);
       expect([200, 403, 500]).toContain(res.status);
     });
   });
 
   describe('GET /api/analytics/platform', () => {
     it('should require authentication', async () => {
-      const res = await request(app).get('/api/analytics/platform');
+      const res = await request(server).get('/api/analytics/platform');
       expect(res.status).toBe(401);
     });
     it('should get platform analytics (admin)', async () => {
-      const res = await request(app).get('/api/analytics/platform').set('Authorization', adminToken);
+      const res = await request(server).get('/api/analytics/platform').set('Authorization', adminToken);
       expect([200, 403, 500]).toContain(res.status);
     });
   });

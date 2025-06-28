@@ -1,46 +1,83 @@
 const request = require('supertest');
-const app = require('../src/server');
+const { server } = require('./setupTest');
+const { User, Notification } = require('../src/models');
+const { generateTokens } = require('../src/controllers/authController');
 let studentToken, companyToken, adminToken;
+let student, company, admin;
 
 beforeAll(async () => {
+  const timestamp = Date.now() + Math.floor(Math.random() * 10000);
+  // Create users
+  student = await User.create({
+    fullName: 'Test Student',
+    email: `student${timestamp}@test.com`,
+    password: 'Test123!@#',
+    role: 'student',
+    isActive: true,
+    emailVerified: true
+  });
+  company = await User.create({
+    fullName: 'Test Company',
+    email: `company${timestamp}@test.com`,
+    password: 'Test123!@#',
+    role: 'business',
+    companyName: 'Test Company',
+    isActive: true,
+    emailVerified: true
+  });
+  admin = await User.create({
+    fullName: 'Test Admin',
+    email: `admin${timestamp}@test.com`,
+    password: 'Test123!@#',
+    role: 'admin',
+    isActive: true,
+    emailVerified: true
+  });
+
   // Login as student
-  const studentRes = await request(app)
+  const studentRes = await request(server)
     .post('/api/auth/login')
-    .send({ email: 'student@test.com', password: 'Test123!@#' });
+    .send({ email: student.email, password: 'Test123!@#' });
   studentToken = 'Bearer ' + studentRes.body?.data?.accessToken;
 
   // Login as company
-  const companyRes = await request(app)
+  const companyRes = await request(server)
     .post('/api/auth/login')
-    .send({ email: 'company@test.com', password: 'Test123!@#' });
+    .send({ email: company.email, password: 'Test123!@#' });
   companyToken = 'Bearer ' + companyRes.body?.data?.accessToken;
 
   // Login as admin
-  const adminRes = await request(app)
+  const adminRes = await request(server)
     .post('/api/auth/login')
-    .send({ email: 'admin@test.com', password: 'Test123!@#' });
+    .send({ email: admin.email, password: 'Test123!@#' });
   adminToken = 'Bearer ' + adminRes.body?.data?.accessToken;
+});
+
+afterAll(async () => {
+  if (student) await student.destroy();
+  if (company) await company.destroy();
+  if (admin) await admin.destroy();
 });
 
 describe('Notifications API', () => {
   describe('GET /api/notifications', () => {
     it('should require authentication', async () => {
-      const res = await request(app).get('/api/notifications');
+      const res = await request(server).get('/api/notifications');
       expect(res.status).toBe(401);
     });
     it('should get all notifications (student)', async () => {
-      const res = await request(app).get('/api/notifications').set('Authorization', studentToken);
-      expect([200, 404, 500]).toContain(res.status);
+      const res = await request(server).get('/api/notifications').set('Authorization', studentToken);
+      expect([200, 500]).toContain(res.status);
     });
   });
 
   describe('PATCH /api/notifications/:id/read', () => {
     it('should require authentication', async () => {
-      const res = await request(app).patch('/api/notifications/1/read');
+      const res = await request(server).patch('/api/notifications/1/read');
       expect(res.status).toBe(401);
     });
     it('should mark notification as read (student)', async () => {
-      const res = await request(app)
+      const res = await request(server)
         .patch('/api/notifications/1/read')
         .set('Authorization', studentToken);
       expect([200, 404, 500]).toContain(res.status);
@@ -49,11 +86,11 @@ describe('Notifications API', () => {
 
   describe('PATCH /api/notifications/read-all', () => {
     it('should require authentication', async () => {
-      const res = await request(app).patch('/api/notifications/read-all');
+      const res = await request(server).patch('/api/notifications/read-all');
       expect(res.status).toBe(401);
     });
     it('should mark all notifications as read (student)', async () => {
-      const res = await request(app)
+      const res = await request(server)
         .patch('/api/notifications/read-all')
         .set('Authorization', studentToken);
       expect([200, 500]).toContain(res.status);
@@ -62,11 +99,11 @@ describe('Notifications API', () => {
 
   describe('DELETE /api/notifications/:id', () => {
     it('should require authentication', async () => {
-      const res = await request(app).delete('/api/notifications/1');
+      const res = await request(server).delete('/api/notifications/1');
       expect(res.status).toBe(401);
     });
     it('should delete notification (student)', async () => {
-      const res = await request(app)
+      const res = await request(server)
         .delete('/api/notifications/1')
         .set('Authorization', studentToken);
       expect([200, 404, 500]).toContain(res.status);
@@ -75,11 +112,11 @@ describe('Notifications API', () => {
 
   describe('DELETE /api/notifications', () => {
     it('should require authentication', async () => {
-      const res = await request(app).delete('/api/notifications');
+      const res = await request(server).delete('/api/notifications');
       expect(res.status).toBe(401);
     });
     it('should delete all notifications (student)', async () => {
-      const res = await request(app)
+      const res = await request(server)
         .delete('/api/notifications')
         .set('Authorization', studentToken);
       expect([200, 500]).toContain(res.status);

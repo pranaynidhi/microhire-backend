@@ -1,4 +1,5 @@
 const jwt = require('jsonwebtoken');
+const { User } = require('../models');
 const { AppError } = require('../utils/errors');
 const logger = require('../utils/logger');
 
@@ -11,7 +12,14 @@ const authenticate = async (req, res, next) => {
     }
     const token = authHeader.split('Bearer ')[1];
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded;
+    
+    // Fetch full user object from database
+    const user = await User.findByPk(decoded.userId);
+    if (!user || !user.isActive) {
+      throw new AppError('User not found or inactive', 401);
+    }
+    
+    req.user = user;
     next();
   } catch (error) {
     logger.error('Authentication error:', error instanceof Error ? error.stack : JSON.stringify(error));
@@ -21,7 +29,7 @@ const authenticate = async (req, res, next) => {
 
 // Middleware to check if user is a company
 const isCompany = (req, res, next) => {
-  if (req.user.role !== 'company') {
+  if (req.user.role !== 'business') {
     return next(new AppError('Access denied. Company role required', 403));
   }
   next();

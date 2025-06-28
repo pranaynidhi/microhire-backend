@@ -6,6 +6,9 @@ const logger = require('../utils/logger');
 const authController = require('../controllers/authController');
 const passport = require('../config/passport');
 const { verifyEmail } = require('../controllers/authController');
+const speakeasy = require('speakeasy');
+const qrcode = require('qrcode');
+const { User } = require('../models');
 
 /**
  * @swagger
@@ -198,9 +201,15 @@ router.post('/login', require('../controllers/authController').login);
  *       302:
  *         description: Redirect to OAuth provider
  */
-router.get('/oauth/:provider', (req, res) => {
-  // Placeholder: Implement with passport or similar
-  res.status(501).json({ message: 'OAuth login not implemented yet' });
+router.get('/oauth/:provider', (req, res, next) => {
+  const { provider } = req.params;
+  if (provider === 'google') {
+    return passport.authenticate('google', { scope: ['profile', 'email'] })(req, res, next);
+  }
+  if (provider === 'github') {
+    return passport.authenticate('github', { scope: ['user:email'] })(req, res, next);
+  }
+  return res.status(400).json({ message: 'Unsupported OAuth provider' });
 });
 
 /**
@@ -214,9 +223,18 @@ router.get('/oauth/:provider', (req, res) => {
  *       200:
  *         description: 2FA setup info (QR code, secret)
  */
-router.post('/2fa/setup', authenticate, (req, res) => {
-  // Placeholder: Implement 2FA setup (e.g., using speakeasy)
-  res.status(501).json({ message: '2FA setup not implemented yet' });
+router.post('/2fa/setup', authenticate, async (req, res, next) => {
+  try {
+    // Generate a secret for the user
+    const secret = speakeasy.generateSecret({ length: 20, name: `MicroHire (${req.user.email})` });
+    // Save the secret to the user profile (in production, encrypt this!)
+    await User.update({ twoFASecret: secret.base32 }, { where: { id: req.user.id } });
+    // Generate QR code for authenticator apps
+    const qr = await qrcode.toDataURL(secret.otpauth_url);
+    res.json({ secret: secret.base32, otpauth_url: secret.otpauth_url, qr });
+  } catch (error) {
+    next(error);
+  }
 });
 
 /**
@@ -241,9 +259,26 @@ router.post('/2fa/setup', authenticate, (req, res) => {
  *       400:
  *         description: Invalid 2FA code
  */
-router.post('/2fa/verify', authenticate, (req, res) => {
-  // Placeholder: Implement 2FA verification
-  res.status(501).json({ message: '2FA verification not implemented yet' });
+router.post('/2fa/verify', authenticate, async (req, res, next) => {
+  try {
+    const { code } = req.body;
+    if (!code) return res.status(400).json({ message: '2FA code is required' });
+    // Fetch user's 2FA secret
+    const user = await User.findByPk(req.user.id);
+    if (!user || !user.twoFASecret) return res.status(400).json({ message: '2FA not set up' });
+    const verified = speakeasy.totp.verify({
+      secret: user.twoFASecret,
+      encoding: 'base32',
+      token: code,
+      window: 1
+    });
+    if (!verified) return res.status(400).json({ message: 'Invalid 2FA code' });
+    // Optionally, mark 2FA as verified in user profile
+    await User.update({ twoFAEnabled: true }, { where: { id: req.user.id } });
+    res.json({ message: '2FA verified' });
+  } catch (error) {
+    next(error);
+  }
 });
 
 // Google OAuth

@@ -151,6 +151,12 @@ class AnalyticsService {
       throw error;
     }
   }
+
+  // CSV export (future implementation)
+  static async exportAnalyticsCSV(req, res) {
+    // TODO: Implement CSV export for analytics
+    return res.status(501).json({ success: false, message: 'CSV export is not implemented yet.' });
+  }
 }
 
 module.exports = AnalyticsService; 

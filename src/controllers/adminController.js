@@ -10,39 +10,19 @@ const { Op } = require('sequelize');
 const adminController = {
   getUsers: async (req, res) => {
     try {
-      const { 
-        page = 1, 
-        limit = 20, 
-        role, 
-        status, 
-        search 
-      } = req.query;
-
+      const { page = 1, limit = 10, role, isActive } = req.query;
       const offset = (page - 1) * limit;
+
       const whereClause = {};
-
-      if (role) {
-        whereClause.role = role;
-      }
-
-      if (status) {
-        whereClause.isActive = status === 'active';
-      }
-
-      if (search) {
-        whereClause[Op.or] = [
-          { fullName: { [Op.like]: `%${search}%` } },
-          { email: { [Op.like]: `%${search}%` } },
-          { companyName: { [Op.like]: `%${search}%` } }
-        ];
-      }
+      if (role) whereClause.role = role;
+      if (isActive !== undefined) whereClause.isActive = isActive === 'true';
 
       const users = await User.findAndCountAll({
         where: whereClause,
         attributes: { exclude: ['password'] },
-        order: [['createdAt', 'DESC']],
         limit: parseInt(limit),
-        offset: offset
+        offset: offset,
+        order: [['createdAt', 'DESC']]
       });
 
       res.json({
@@ -59,6 +39,44 @@ const adminController = {
       });
     } catch (error) {
       console.error('Get users error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to fetch users'
+      });
+    }
+  },
+
+  getAllUsers: async (req, res) => {
+    try {
+      const { page = 1, limit = 10, role, isActive } = req.query;
+      const offset = (page - 1) * limit;
+
+      const whereClause = {};
+      if (role) whereClause.role = role;
+      if (isActive !== undefined) whereClause.isActive = isActive === 'true';
+
+      const users = await User.findAndCountAll({
+        where: whereClause,
+        attributes: { exclude: ['password'] },
+        limit: parseInt(limit),
+        offset: offset,
+        order: [['createdAt', 'DESC']]
+      });
+
+      res.json({
+        success: true,
+        data: {
+          users: users.rows,
+          pagination: {
+            currentPage: parseInt(page),
+            totalPages: Math.ceil(users.count / limit),
+            totalItems: users.count,
+            itemsPerPage: parseInt(limit)
+          }
+        }
+      });
+    } catch (error) {
+      console.error('Get all users error:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to fetch users'
@@ -407,6 +425,126 @@ const adminController = {
       res.status(500).json({
         success: false,
         message: 'Failed to update system settings'
+      });
+    }
+  },
+
+  getUserById: async (req, res) => {
+    try {
+      const user = await User.findByPk(req.params.id, {
+        attributes: { exclude: ['password'] }
+      });
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: 'User not found'
+        });
+      }
+      res.json({
+        success: true,
+        data: { user }
+      });
+    } catch (error) {
+      console.error('Get user by ID error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to fetch user'
+      });
+    }
+  },
+
+  updateUserRole: async (req, res) => {
+    try {
+      const { role } = req.body;
+      const user = await User.findByPk(req.params.id);
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: 'User not found'
+        });
+      }
+      await user.update({ role });
+      res.json({
+        success: true,
+        message: 'User role updated successfully',
+        data: { user }
+      });
+    } catch (error) {
+      console.error('Update user role error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to update user role'
+      });
+    }
+  },
+
+  suspendUser: async (req, res) => {
+    try {
+      const user = await User.findByPk(req.params.id);
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: 'User not found'
+        });
+      }
+      await user.update({ isActive: false });
+      res.json({
+        success: true,
+        message: 'User suspended successfully',
+        data: { user }
+      });
+    } catch (error) {
+      console.error('Suspend user error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to suspend user'
+      });
+    }
+  },
+
+  unsuspendUser: async (req, res) => {
+    try {
+      const user = await User.findByPk(req.params.id);
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: 'User not found'
+        });
+      }
+      await user.update({ isActive: true });
+      res.json({
+        success: true,
+        message: 'User unsuspended successfully',
+        data: { user }
+      });
+    } catch (error) {
+      console.error('Unsuspend user error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to unsuspend user'
+      });
+    }
+  },
+
+  deleteUser: async (req, res) => {
+    try {
+      const user = await User.findByPk(req.params.id);
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: 'User not found'
+        });
+      }
+      await user.destroy();
+      res.json({
+        success: true,
+        message: 'User deleted successfully'
+      });
+    } catch (error) {
+      console.error('Delete user error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to delete user'
       });
     }
   }

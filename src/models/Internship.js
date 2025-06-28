@@ -46,12 +46,20 @@ const Internship = sequelize.define(
       allowNull: false,
       validate: {
         isDate: true,
-        isAfter: new Date().toISOString(),
+        isAfter: () => new Date().toISOString(),
       },
     },
     companyId: {
       type: DataTypes.INTEGER,
       allowNull: false,
+      references: {
+        model: 'Users',
+        key: 'id',
+      },
+    },
+    studentId: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
       references: {
         model: 'Users',
         key: 'id',

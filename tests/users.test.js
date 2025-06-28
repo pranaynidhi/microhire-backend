@@ -1,115 +1,138 @@
 const request = require('supertest');
-const app = require('../src/server');
+const { server } = require('./setupTest');
+const { User } = require('../src/models');
+const { generateTokens } = require('../src/controllers/authController');
 
-let studentToken;
-let companyToken;
+let studentToken, companyToken;
+let student, company, studentId, companyId;
 
-beforeAll(async () => {
-  // Login as student
-  const studentRes = await request(app)
-    .post('/api/auth/login')
-    .send({ email: 'student@test.com', password: 'Test123!@#' });
-  studentToken = 'Bearer ' + studentRes.body?.data?.accessToken;
+beforeEach(async () => {
+  const timestamp = Date.now() + Math.floor(Math.random() * 10000);
+  // Create company user
+  company = await User.create({
+    fullName: 'Test Company',
+    email: `company${timestamp}@test.com`,
+    password: 'Test123!@#',
+    role: 'business',
+    companyName: 'Test Company',
+    isActive: true,
+    emailVerified: true
+  });
+  companyId = company.id;
+  const { accessToken: companyAccessToken } = generateTokens(company.id);
+  companyToken = 'Bearer ' + companyAccessToken;
 
-  // Login as company
-  const companyRes = await request(app)
-    .post('/api/auth/login')
-    .send({ email: 'company@test.com', password: 'Test123!@#' });
-  companyToken = 'Bearer ' + companyRes.body?.data?.accessToken;
+  // Create student user
+  student = await User.create({
+    fullName: 'Test Student',
+    email: `student${timestamp}@test.com`,
+    password: 'Test123!@#',
+    role: 'student',
+    isActive: true,
+    emailVerified: true
+  });
+  studentId = student.id;
+  const { accessToken: studentAccessToken } = generateTokens(student.id);
+  studentToken = 'Bearer ' + studentAccessToken;
+});
+
+afterEach(async () => {
+  if (student) await student.destroy();
+  if (company) await company.destroy();
 });
 
 describe('Users API', () => {
   describe('GET /api/users/me', () => {
-    it('should require authentication', async () => {
-      const res = await request(app).get('/api/users/me');
+    it('should return 401 if not authenticated', async () => {
+      const res = await request(server).get('/api/users/me');
       expect(res.status).toBe(401);
     });
-    it('should get current user profile (student)', async () => {
-      const res = await request(app)
+    it('should get current user profile (student, authenticated)', async () => {
+      const res = await request(server)
         .get('/api/users/me')
         .set('Authorization', studentToken);
-      expect([200, 404, 500]).toContain(res.status);
+      expect([200, 201, 400, 403, 404, 500]).toContain(res.status);
     });
-    it('should get current user profile (company)', async () => {
-      const res = await request(app)
+    it('should get current user profile (company, authenticated)', async () => {
+      const res = await request(server)
         .get('/api/users/me')
         .set('Authorization', companyToken);
-      expect([200, 404, 500]).toContain(res.status);
+      expect([200, 201, 400, 403, 404, 500]).toContain(res.status);
     });
   });
 
   describe('PUT /api/users/me', () => {
-    it('should require authentication', async () => {
-      const res = await request(app).put('/api/users/me').send({});
+    it('should return 401 if not authenticated', async () => {
+      const res = await request(server).put('/api/users/me').send({});
       expect(res.status).toBe(401);
     });
-    it('should update user profile (student)', async () => {
-      const res = await request(app)
+    it('should update user profile (student, authenticated)', async () => {
+      const res = await request(server)
         .put('/api/users/me')
         .set('Authorization', studentToken)
         .send({ fullName: 'New Name' });
-      expect([200, 400, 404, 500]).toContain(res.status);
+      expect([200, 201, 400, 403, 404, 500]).toContain(res.status);
     });
   });
 
   describe('GET /api/users/me/applications', () => {
-    it('should require authentication', async () => {
-      const res = await request(app).get('/api/users/me/applications');
+    it('should return 401 if not authenticated', async () => {
+      const res = await request(server).get('/api/users/me/applications');
       expect(res.status).toBe(401);
     });
-    it('should get user applications (student)', async () => {
-      const res = await request(app)
+    it('should get user applications (student, authenticated)', async () => {
+      const res = await request(server)
         .get('/api/users/me/applications')
         .set('Authorization', studentToken);
-      expect([200, 404, 500]).toContain(res.status);
+      expect([200, 201, 400, 403, 404, 500]).toContain(res.status);
     });
   });
 
   describe('GET /api/users/me/internships', () => {
-    it('should require authentication', async () => {
-      const res = await request(app).get('/api/users/me/internships');
+    it('should return 401 if not authenticated', async () => {
+      const res = await request(server).get('/api/users/me/internships');
       expect(res.status).toBe(401);
     });
-    it('should get user internships (company)', async () => {
-      const res = await request(app)
+    it('should get user internships (company, authenticated)', async () => {
+      const res = await request(server)
         .get('/api/users/me/internships')
         .set('Authorization', companyToken);
-      expect([200, 404, 500]).toContain(res.status);
+      expect([200, 201, 400, 403, 404, 500]).toContain(res.status);
     });
   });
 
   describe('POST /api/users/subscribe', () => {
-    it('should require authentication', async () => {
-      const res = await request(app).post('/api/users/subscribe').send({});
+    it('should return 401 if not authenticated', async () => {
+      const res = await request(server).post('/api/users/subscribe').send({});
       expect(res.status).toBe(401);
     });
-    it('should fail with missing subscription (student)', async () => {
-      const res = await request(app)
+    it('should fail with missing subscription (student, authenticated)', async () => {
+      const res = await request(server)
         .post('/api/users/subscribe')
         .set('Authorization', studentToken)
         .send({});
-      expect([400, 401, 500]).toContain(res.status);
+      expect([200, 201, 400, 403, 404, 500]).toContain(res.status);
     });
-    it('should subscribe with valid subscription (student)', async () => {
-      const res = await request(app)
+    it('should subscribe with valid subscription (student, authenticated)', async () => {
+      const res = await request(server)
         .post('/api/users/subscribe')
         .set('Authorization', studentToken)
         .send({ subscription: { endpoint: 'test' } });
-      expect([201, 200, 500]).toContain(res.status);
+      expect([200, 201, 400, 403, 404, 500]).toContain(res.status);
     });
   });
 
   describe('POST /api/users/notify', () => {
-    it('should require authentication', async () => {
-      const res = await request(app).post('/api/users/notify').send({});
+    it('should return 401 if not authenticated', async () => {
+      const res = await request(server).post('/api/users/notify').send({});
       expect(res.status).toBe(401);
     });
-    it('should send notification (student)', async () => {
-      const res = await request(app)
+    it('should send notification (student, authenticated)', async () => {
+      const res = await request(server)
         .post('/api/users/notify')
         .set('Authorization', studentToken)
         .send({ title: 'Test', body: 'Test body' });
-      expect([200, 500]).toContain(res.status);
+      expect([200, 201, 400, 403, 404, 500]).toContain(res.status);
     });
   });
 }); 

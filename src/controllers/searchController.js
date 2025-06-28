@@ -451,6 +451,106 @@ const searchController = {
         message: 'Failed to track search click'
       });
     }
+  },
+
+  searchCompanies: async (req, res) => {
+    try {
+      const { query, page = 1, limit = 10 } = req.query;
+      const offset = (page - 1) * limit;
+
+      const whereClause = {
+        role: 'company',
+        isActive: true
+      };
+
+      if (query) {
+        whereClause[Op.or] = [
+          { companyName: { [Op.like]: `%${query}%` } },
+          { description: { [Op.like]: `%${query}%` } },
+          { industry: { [Op.like]: `%${query}%` } }
+        ];
+      }
+
+      const companies = await User.findAndCountAll({
+        where: whereClause,
+        attributes: ['id', 'companyName', 'email', 'logoUrl', 'description', 'industry', 'website', 'location'],
+        order: [['companyName', 'ASC']],
+        limit: parseInt(limit),
+        offset: offset
+      });
+
+      res.json({
+        success: true,
+        data: {
+          companies: companies.rows,
+          pagination: {
+            currentPage: parseInt(page),
+            totalPages: Math.ceil(companies.count / limit),
+            totalItems: companies.count,
+            itemsPerPage: parseInt(limit)
+          }
+        }
+      });
+    } catch (error) {
+      console.error('Search companies error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to search companies'
+      });
+    }
+  },
+
+  searchStudents: async (req, res) => {
+    try {
+      const { query, page = 1, limit = 10 } = req.query;
+      const offset = (page - 1) * limit;
+
+      const whereClause = {
+        role: 'student',
+        isActive: true
+      };
+
+      if (query) {
+        whereClause[Op.or] = [
+          { fullName: { [Op.like]: `%${query}%` } },
+          { email: { [Op.like]: `%${query}%` } },
+          { skills: { [Op.like]: `%${query}%` } },
+          { education: { [Op.like]: `%${query}%` } }
+        ];
+      }
+
+      const students = await User.findAndCountAll({
+        where: whereClause,
+        attributes: ['id', 'fullName', 'email', 'profilePicture', 'skills', 'education', 'university', 'graduationYear'],
+        order: [['fullName', 'ASC']],
+        limit: parseInt(limit),
+        offset: offset
+      });
+
+      res.json({
+        success: true,
+        data: {
+          students: students.rows,
+          pagination: {
+            currentPage: parseInt(page),
+            totalPages: Math.ceil(students.count / limit),
+            totalItems: students.count,
+            itemsPerPage: parseInt(limit)
+          }
+        }
+      });
+    } catch (error) {
+      console.error('Search students error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to search students'
+      });
+    }
+  },
+
+  searchInternships: async (req, res) => {
+    // Alias for advancedSearch
+    return searchController.advancedSearch(req, res);
   }
 };
 

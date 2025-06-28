@@ -195,23 +195,19 @@ process.on('uncaughtException', (err) => {
 const startServer = async () => {
   try {
     await syncDatabase();
-    
     app.use(passport.initialize());
-    
     server.listen(PORT, () => {
-      console.log(`🚀 Server is running on port ${PORT}`);
-      console.log(`📍 Health check: http://localhost:${PORT}/api/health`);
-      console.log(`🔌 Socket.io enabled for real-time features`);
+      logger.info(`Server running on port ${PORT}`);
     });
   } catch (error) {
-    console.error('Failed to start server:', error);
-    if (process.env.NODE_ENV === 'test') {
-      console.error('Test mode: would call process.exit(1)');
-    } else {
-      process.exit(1);
-    }
+    logger.error('Failed to start server:', error);
+    process.exit(1);
   }
 };
 
-startServer();
+if (require.main === module) {
+  startServer();
+}
+
+module.exports = { app, server };
 

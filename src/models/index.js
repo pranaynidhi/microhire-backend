@@ -24,15 +24,20 @@ Internship.belongsTo(User, {
   as: 'company',
 });
 
+Internship.belongsTo(User, {
+  foreignKey: 'studentId',
+  as: 'student',
+});
+
 User.hasMany(Application, {
-  foreignKey: 'userId',
+  foreignKey: 'studentId',
   as: 'applications',
   onDelete: 'CASCADE',
 });
 
 Application.belongsTo(User, {
-  foreignKey: 'userId',
-  as: 'applicant',
+  foreignKey: 'studentId',
+  as: 'student',
 });
 
 Internship.hasMany(Application, {
@@ -156,7 +161,7 @@ Internship.addHook('afterSync', async () => {
 
 // Application model indexes
 Application.addHook('afterSync', async () => {
-  await sequelize.query('CREATE INDEX idx_applications_student ON Applications(userId);').catch(() => {});
+  await sequelize.query('CREATE INDEX idx_applications_student ON Applications(studentId);').catch(() => {});
   await sequelize.query('CREATE INDEX idx_applications_internship ON Applications(internshipId);').catch(() => {});
   await sequelize.query('CREATE INDEX idx_applications_status ON Applications(status);').catch(() => {});
 });

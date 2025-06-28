@@ -199,4 +199,5 @@ module.exports = {
   verifyEmail,
   refreshToken,
   login,
+  generateTokens,
 };

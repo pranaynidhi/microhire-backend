@@ -31,37 +31,13 @@ const searchController = require('../controllers/searchController');
 // router.get('/', authenticate, ...);
 
 // Search internships
-router.get('/internships', authenticate, requireEmailVerification, async (req, res, next) => {
-  try {
-    const { query, location, type, skills, page = 1, limit = 10 } = req.query;
-    // Implementation here
-    res.json({ message: 'Search internships' });
-  } catch (error) {
-    next(error);
-  }
-});
+router.get('/internships', authenticate, requireEmailVerification, searchController.searchInternships);
 
 // Search companies
-router.get('/companies', authenticate, requireEmailVerification, async (req, res, next) => {
-  try {
-    const { query, location, industry, page = 1, limit = 10 } = req.query;
-    // Implementation here
-    res.json({ message: 'Search companies' });
-  } catch (error) {
-    next(error);
-  }
-});
+router.get('/companies', authenticate, requireEmailVerification, searchController.searchCompanies);
 
 // Search students
-router.get('/students', authenticate, requireEmailVerification, async (req, res, next) => {
-  try {
-    const { query, skills, education, experience, page = 1, limit = 10 } = req.query;
-    // Implementation here
-    res.json({ message: 'Search students' });
-  } catch (error) {
-    next(error);
-  }
-});
+router.get('/students', authenticate, requireEmailVerification, searchController.searchStudents);
 
 router.get('/advanced', searchController.advancedSearch);
 router.get('/recommendations', authenticate, searchController.getRecommendations);

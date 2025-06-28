@@ -3,6 +3,7 @@ const router = express.Router();
 const { authenticate, requireEmailVerification } = require('../middleware/auth');
 const { AppError } = require('../utils/errors');
 const logger = require('../utils/logger');
+const messageController = require('../controllers/messageController');
 
 /**
  * @swagger
@@ -22,14 +23,7 @@ const logger = require('../utils/logger');
  *       200:
  *         description: List of conversations
  */
-router.get('/conversations', authenticate, requireEmailVerification, async (req, res, next) => {
-  try {
-    // Implementation here
-    res.json({ message: 'Get all conversations' });
-  } catch (error) {
-    next(error);
-  }
-});
+router.get('/conversations', authenticate, requireEmailVerification, messageController.getConversations);
 
 /**
  * @swagger
@@ -47,15 +41,7 @@ router.get('/conversations', authenticate, requireEmailVerification, async (req,
  *       200:
  *         description: List of messages
  */
-router.get('/conversations/:conversationId', authenticate, requireEmailVerification, async (req, res, next) => {
-  try {
-    const { conversationId } = req.params;
-    // Implementation here
-    res.json({ message: `Get messages in conversation ${conversationId}` });
-  } catch (error) {
-    next(error);
-  }
-});
+router.get('/conversations/:conversationId', authenticate, requireEmailVerification, messageController.getConversation);
 
 /**
  * @swagger
@@ -82,16 +68,7 @@ router.get('/conversations/:conversationId', authenticate, requireEmailVerificat
  *       201:
  *         description: Message sent
  */
-router.post('/conversations/:conversationId', authenticate, requireEmailVerification, async (req, res, next) => {
-  try {
-    const { conversationId } = req.params;
-    const { content } = req.body;
-    // Implementation here
-    res.json({ message: `Send message in conversation ${conversationId}` });
-  } catch (error) {
-    next(error);
-  }
-});
+router.post('/conversations/:conversationId', authenticate, requireEmailVerification, messageController.sendMessage);
 
 /**
  * @swagger
@@ -109,15 +86,7 @@ router.post('/conversations/:conversationId', authenticate, requireEmailVerifica
  *       200:
  *         description: Conversation marked as read
  */
-router.patch('/conversations/:conversationId/read', authenticate, requireEmailVerification, async (req, res, next) => {
-  try {
-    const { conversationId } = req.params;
-    // Implementation here
-    res.json({ message: `Mark conversation ${conversationId} as read` });
-  } catch (error) {
-    next(error);
-  }
-});
+router.patch('/conversations/:conversationId/read', authenticate, requireEmailVerification, messageController.markAsRead);
 
 /**
  * @swagger
@@ -135,14 +104,6 @@ router.patch('/conversations/:conversationId/read', authenticate, requireEmailVe
  *       200:
  *         description: Conversation deleted
  */
-router.delete('/conversations/:conversationId', authenticate, requireEmailVerification, async (req, res, next) => {
-  try {
-    const { conversationId } = req.params;
-    // Implementation here
-    res.json({ message: `Delete conversation ${conversationId}` });
-  } catch (error) {
-    next(error);
-  }
-});
+router.delete('/conversations/:conversationId', authenticate, requireEmailVerification, messageController.deleteMessage);
 
 module.exports = router;

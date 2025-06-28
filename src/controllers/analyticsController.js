@@ -365,4 +365,14 @@ const analyticsController = {
   }
 };
 
-module.exports = analyticsController;
+// Add stubs if missing
+const getPlatformAnalytics = analyticsController.getOverview || (async (req, res) => res.status(501).json({ success: false, message: 'Not implemented' }));
+const getUserAnalytics = analyticsController.getUserAnalytics || (async (req, res) => res.status(501).json({ success: false, message: 'Not implemented' }));
+const getCompanyAnalytics = analyticsController.getCompanyAnalytics || (async (req, res) => res.status(501).json({ success: false, message: 'Not implemented' }));
+
+module.exports = {
+  ...analyticsController,
+  getPlatformAnalytics,
+  getUserAnalytics,
+  getCompanyAnalytics
+};

@@ -555,4 +555,59 @@ const reviewController = {
   }
 };
 
-module.exports = reviewController;
+const getAllReviews = async (req, res) => {
+  try {
+    const { page = 1, limit = 10 } = req.query;
+    const offset = (page - 1) * limit;
+    const reviews = await Review.findAndCountAll({
+      include: [
+        { model: User, as: 'reviewer', attributes: ['id', 'fullName', 'email'] },
+        { model: User, as: 'reviewee', attributes: ['id', 'fullName', 'email'] },
+        { model: Internship, attributes: ['id', 'title'] }
+      ],
+      order: [['createdAt', 'DESC']],
+      limit: parseInt(limit),
+      offset: offset
+    });
+    res.json({
+      success: true,
+      data: {
+        reviews: reviews.rows,
+        pagination: {
+          currentPage: parseInt(page),
+          totalPages: Math.ceil(reviews.count / limit),
+          totalItems: reviews.count,
+          itemsPerPage: parseInt(limit)
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Get all reviews error:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch reviews' });
+  }
+};
+
+const getReviewById = async (req, res) => {
+  try {
+    const review = await Review.findByPk(req.params.id, {
+      include: [
+        { model: User, as: 'reviewer', attributes: ['id', 'fullName', 'email'] },
+        { model: User, as: 'reviewee', attributes: ['id', 'fullName', 'email'] },
+        { model: Internship, attributes: ['id', 'title'] }
+      ]
+    });
+    if (!review) {
+      return res.status(404).json({ success: false, message: 'Review not found' });
+    }
+    res.json({ success: true, data: { review } });
+  } catch (error) {
+    console.error('Get review by ID error:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch review' });
+  }
+};
+
+module.exports = {
+  ...reviewController,
+  getAllReviews,
+  getReviewById
+};
