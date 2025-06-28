@@ -17,11 +17,25 @@ const notificationController = require('../controllers/notificationController');
  * /api/notifications:
  *   get:
  *     summary: Get all notifications for the user
+ *     description: Retrieve all notifications for the current user
  *     tags: [Notifications]
  *     security: [ { bearerAuth: [] } ]
  *     responses:
  *       200:
  *         description: List of notifications
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 notifications:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Notification'
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
  */
 router.get('/', authenticate, requireEmailVerification, notificationController.getNotifications);
 

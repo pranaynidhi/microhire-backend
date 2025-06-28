@@ -17,11 +17,25 @@ const certificateController = require('../controllers/certificateController');
  * /api/certificates:
  *   get:
  *     summary: Get all certificates for the user
+ *     description: Retrieve all certificates issued to the current user
  *     tags: [Certificates]
  *     security: [ { bearerAuth: [] } ]
  *     responses:
  *       200:
  *         description: List of certificates
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 certificates:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Certificate'
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
  */
 router.get('/', authenticate, requireEmailVerification, certificateController.getAllCertificates);
 

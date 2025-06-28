@@ -18,11 +18,31 @@ const adminController = require('../controllers/adminController');
  * /api/admin/users:
  *   get:
  *     summary: Get all users (admin only)
+ *     description: Retrieve a list of all users (admin only)
  *     tags: [Admin]
  *     security: [ { bearerAuth: [] } ]
  *     responses:
  *       200:
  *         description: List of users
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 users:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/User'
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
+ *       403:
+ *         description: Only admins can access this endpoint
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  */
 router.get('/users', authenticate, requireEmailVerification, adminController.getAllUsers);
 

@@ -15,9 +15,10 @@ const uploadController = require('../controllers/uploadController');
 
 /**
  * @swagger
- * /api/upload:
+ * /api/upload/resume:
  *   post:
- *     summary: Upload a file
+ *     summary: Upload resume (student only)
+ *     description: Upload a resume file for the current student user
  *     tags: [Upload]
  *     security: [ { bearerAuth: [] } ]
  *     requestBody:
@@ -32,7 +33,18 @@ const uploadController = require('../controllers/uploadController');
  *                 format: binary
  *     responses:
  *       201:
- *         description: File uploaded
+ *         description: Resume uploaded successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 file:
+ *                   type: object
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
  */
 // router.post('/', authenticate, ...); // Removed due to syntax error
 

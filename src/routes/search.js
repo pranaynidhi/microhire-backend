@@ -14,19 +14,34 @@ const searchController = require('../controllers/searchController');
 
 /**
  * @swagger
- * /api/search:
+ * /api/search/internships:
  *   get:
- *     summary: Search internships, users, or companies
+ *     summary: Search internships
+ *     description: Search for internships by keyword, location, or skills
  *     tags: [Search]
  *     security: [ { bearerAuth: [] } ]
  *     parameters:
  *       - in: query
  *         name: q
- *         schema: { type: string }
+ *         schema:
+ *           type: string
  *         description: Search query
  *     responses:
  *       200:
  *         description: Search results
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 results:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Internship'
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
  */
 // router.get('/', authenticate, ...);
 

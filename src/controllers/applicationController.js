@@ -77,6 +77,9 @@ const createApplication = async (req, res) => {
       data: { application: result }
     });
   } catch (error) {
+    if (error.name === 'SequelizeValidationError') {
+      return res.status(400).json({ success: false, message: error.errors.map(e => e.message).join(', ') });
+    }
     logger.error('Create application error:', error);
     throw error;
   }
@@ -149,6 +152,7 @@ const updateApplicationStatus = async (req, res) => {
         where: { id: req.params.id },
         include: [{
           model: Internship,
+          as: 'internship',
           where: { companyId: req.user.id }
         }],
         transaction
@@ -174,7 +178,7 @@ const updateApplicationStatus = async (req, res) => {
       await notificationHelpers.applicationStatusChanged(
         application.studentId,
         req.body.status,
-        application.Internship.title,
+        application.internship.title,
         req.user.companyName
       );
 

@@ -28,10 +28,14 @@ const createInternship = async (req, res) => {
     logger.error('Create internship error:', error);
     
     if (error.name === 'SequelizeValidationError') {
-      throw new AppError('Validation error', 400, error.errors);
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Validation error', 
+        errors: error.errors.map(e => e.message) 
+      });
     }
     
-    throw error;
+    res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };
 

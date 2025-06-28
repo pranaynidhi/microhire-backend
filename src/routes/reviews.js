@@ -18,6 +18,7 @@ const reviewController = require('../controllers/reviewController');
  * /api/reviews:
  *   post:
  *     summary: Create a review (student only)
+ *     description: Submit a new review for a user or company (only available to students)
  *     tags: [Reviews]
  *     security: [ { bearerAuth: [] } ]
  *     requestBody:
@@ -26,9 +27,44 @@ const reviewController = require('../controllers/reviewController');
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - reviewedId
+ *               - rating
+ *               - comment
+ *               - type
+ *             properties:
+ *               reviewedId:
+ *                 type: integer
+ *                 description: ID of the user or company being reviewed
+ *               rating:
+ *                 type: number
+ *                 minimum: 1
+ *                 maximum: 5
+ *                 description: Rating (1-5)
+ *               comment:
+ *                 type: string
+ *                 description: Review comment
+ *               type:
+ *                 type: string
+ *                 enum: [student, company]
+ *                 description: Type of review
  *     responses:
  *       201:
- *         description: Review created
+ *         description: Review created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Review'
+ *       400:
+ *         $ref: '#/components/responses/ValidationError'
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
+ *       403:
+ *         description: Only students can create reviews
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  */
 router.post('/', authenticate, isStudent, requireEmailVerification, reviewController.createReview);
 

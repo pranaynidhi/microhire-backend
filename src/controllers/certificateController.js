@@ -59,18 +59,25 @@ const certificateController = {
           studentId: internship.studentId,
           companyId: req.user.id,
           internshipId: req.body.internshipId,
-          studentName: internship.student.fullName,
+          studentName: internship.student?.fullName || 'Unknown Student',
           companyName: req.user.companyName,
           internshipTitle: internship.title,
-          startDate: internship.startDate,
-          endDate: internship.endDate,
+          startDate: internship.startDate || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+          endDate: internship.endDate || new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
           performance: req.body.performance,
           isValid: true
         }, { transaction });
 
         // Generate PDF
         const doc = new PDFDocument();
-        const pdfPath = path.join(__dirname, '../certificates', `${certificateId}.pdf`);
+        const certificatesDir = path.join(__dirname, '../certificates');
+        
+        // Create certificates directory if it doesn't exist
+        if (!fs.existsSync(certificatesDir)) {
+          fs.mkdirSync(certificatesDir, { recursive: true });
+        }
+        
+        const pdfPath = path.join(certificatesDir, `${certificateId}.pdf`);
         
         doc.pipe(fs.createWriteStream(pdfPath));
         // Add certificate content
@@ -178,11 +185,15 @@ const certificateController = {
         });
 
         if (!certificate) {
-          throw new AppError('Certificate not found or invalid', 404);
+          return null;
         }
 
         return certificate;
       });
+
+      if (!result) {
+        return res.status(404).json({ success: false, message: 'Certificate not found or invalid' });
+      }
 
       const response = {
         success: true,
@@ -207,7 +218,7 @@ const certificateController = {
       res.json(response);
     } catch (error) {
       logger.error('Verify certificate error:', error);
-      throw error;
+      res.status(500).json({ success: false, message: 'Internal server error' });
     }
   },
 

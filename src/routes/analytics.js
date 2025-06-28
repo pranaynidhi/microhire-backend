@@ -14,14 +14,26 @@ const analyticsController = require('../controllers/analyticsController');
 
 /**
  * @swagger
- * /api/analytics:
+ * /api/analytics/user:
  *   get:
- *     summary: Get analytics for the user
+ *     summary: Get user analytics
+ *     description: Retrieve analytics data for the current user
  *     tags: [Analytics]
  *     security: [ { bearerAuth: [] } ]
  *     responses:
  *       200:
- *         description: Analytics data
+ *         description: User analytics data
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 analytics:
+ *                   type: object
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
  */
 // router.get('/', authenticate, ...);
 

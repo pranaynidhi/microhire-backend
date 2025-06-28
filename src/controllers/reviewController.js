@@ -16,24 +16,36 @@ const reviewController = {
       const result = await withTransaction(async (transaction) => {
         // Check if internship exists and is completed
         const internship = await Internship.findOne({
-          where: { 
+          where: {
             id: req.body.internshipId,
-            status: 'completed'
+            status: 'closed'
           },
           transaction
         });
 
         if (!internship) {
-          throw new AppError('Internship not found or not completed', 404);
+          res.status(404).json({
+            success: false,
+            message: 'Internship not found or not completed'
+          });
+          return null;
         }
 
         // Check if user is authorized to review
         if (req.user.role === 'student' && internship.studentId !== req.user.id) {
-          throw new AppError('Not authorized to review this internship', 403);
+          res.status(403).json({
+            success: false,
+            message: 'Not authorized to review this internship'
+          });
+          return null;
         }
 
         if (req.user.role === 'business' && internship.companyId !== req.user.id) {
-          throw new AppError('Not authorized to review this internship', 403);
+          res.status(403).json({
+            success: false,
+            message: 'Not authorized to review this internship'
+          });
+          return null;
         }
 
         // Check if review already exists
@@ -46,7 +58,11 @@ const reviewController = {
         });
 
         if (existingReview) {
-          throw new AppError('You have already reviewed this internship', 400);
+          res.status(400).json({
+            success: false,
+            message: 'You have already reviewed this internship'
+          });
+          return null;
         }
 
         // Create review
@@ -56,7 +72,7 @@ const reviewController = {
           internshipId: req.body.internshipId,
           rating: req.body.rating,
           comment: req.body.comment,
-          type: req.user.role
+          type: req.user.role === 'student' ? 'student_to_company' : 'company_to_student'
         }, { transaction });
 
         // Invalidate caches
@@ -68,7 +84,7 @@ const reviewController = {
 
         return review;
       });
-
+      if (!result) return; // Response already sent
       res.status(201).json({
         success: true,
         message: 'Review submitted successfully',
@@ -76,7 +92,12 @@ const reviewController = {
       });
     } catch (error) {
       logger.error('Create review error:', error);
-      throw error;
+      if (!res.headersSent) {
+        res.status(500).json({
+          success: false,
+          message: 'Internal server error'
+        });
+      }
     }
   },
 
@@ -563,7 +584,7 @@ const getAllReviews = async (req, res) => {
       include: [
         { model: User, as: 'reviewer', attributes: ['id', 'fullName', 'email'] },
         { model: User, as: 'reviewee', attributes: ['id', 'fullName', 'email'] },
-        { model: Internship, attributes: ['id', 'title'] }
+        { model: Internship, as: 'internship', attributes: ['id', 'title'] }
       ],
       order: [['createdAt', 'DESC']],
       limit: parseInt(limit),
@@ -593,7 +614,7 @@ const getReviewById = async (req, res) => {
       include: [
         { model: User, as: 'reviewer', attributes: ['id', 'fullName', 'email'] },
         { model: User, as: 'reviewee', attributes: ['id', 'fullName', 'email'] },
-        { model: Internship, attributes: ['id', 'title'] }
+        { model: Internship, as: 'internship', attributes: ['id', 'title'] }
       ]
     });
     if (!review) {

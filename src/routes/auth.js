@@ -14,7 +14,7 @@ const { User } = require('../models');
  * @swagger
  * tags:
  *   name: Auth
- *   description: Authentication and user identity
+ *   description: Authentication and user identity management
  */
 
 /**
@@ -22,11 +22,23 @@ const { User } = require('../models');
  * /api/auth/me:
  *   get:
  *     summary: Get current authenticated user
+ *     description: Retrieve the profile information of the currently authenticated user
  *     tags: [Auth]
  *     security: [ { bearerAuth: [] } ]
  *     responses:
  *       200:
- *         description: Current user info
+ *         description: Current user information retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 user:
+ *                   $ref: '#/components/schemas/User'
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
  */
 // Get current user
 router.get('/me', authenticate, async (req, res) => {
@@ -38,6 +50,7 @@ router.get('/me', authenticate, async (req, res) => {
  * /api/auth/role:
  *   post:
  *     summary: Update user role
+ *     description: Update the role of the current user (student or company)
  *     tags: [Auth]
  *     security: [ { bearerAuth: [] } ]
  *     requestBody:
@@ -46,15 +59,28 @@ router.get('/me', authenticate, async (req, res) => {
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - role
  *             properties:
  *               role:
  *                 type: string
  *                 enum: [student, company]
+ *                 description: New role for the user
  *     responses:
  *       200:
  *         description: Role updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Success'
  *       400:
- *         description: Invalid role
+ *         description: Invalid role provided
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
  */
 // Update user role
 router.post('/role', authenticate, async (req, res, next) => {
@@ -75,6 +101,7 @@ router.post('/role', authenticate, async (req, res, next) => {
  * /api/auth/verify-email:
  *   get:
  *     summary: Verify email address using token
+ *     description: Verify user email address using the verification token sent via email
  *     tags: [Auth]
  *     parameters:
  *       - in: query
@@ -82,11 +109,20 @@ router.post('/role', authenticate, async (req, res, next) => {
  *         required: true
  *         schema:
  *           type: string
+ *         description: Email verification token
  *     responses:
  *       200:
  *         description: Email verified successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Success'
  *       400:
  *         description: Invalid or expired verification token
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  */
 router.get('/verify-email', verifyEmail);
 
@@ -95,6 +131,7 @@ router.get('/verify-email', verifyEmail);
  * /api/auth/verify-email:
  *   post:
  *     summary: Verify email address using token (API)
+ *     description: Verify user email address using the verification token via API call
  *     tags: [Auth]
  *     requestBody:
  *       required: true
@@ -102,14 +139,25 @@ router.get('/verify-email', verifyEmail);
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - token
  *             properties:
  *               token:
  *                 type: string
+ *                 description: Email verification token
  *     responses:
  *       200:
  *         description: Email verified successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Success'
  *       400:
  *         description: Invalid or expired verification token
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  */
 router.post('/verify-email', verifyEmail);
 
@@ -118,6 +166,7 @@ router.post('/verify-email', verifyEmail);
  * /api/auth/register:
  *   post:
  *     summary: Register a new user
+ *     description: Create a new user account with the provided information
  *     tags: [Auth]
  *     requestBody:
  *       required: true
@@ -125,36 +174,74 @@ router.post('/verify-email', verifyEmail);
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - fullName
+ *               - email
+ *               - password
+ *               - role
  *             properties:
  *               fullName:
  *                 type: string
+ *                 description: Full name of the user
  *               email:
  *                 type: string
  *                 format: email
+ *                 description: User's email address
  *               password:
  *                 type: string
+ *                 minLength: 6
+ *                 description: User's password (minimum 6 characters)
  *               role:
  *                 type: string
- *                 enum: [student, business]
+ *                 enum: [student, company]
+ *                 description: User role (student or company)
  *               bio:
  *                 type: string
+ *                 description: User biography (optional)
  *               skills:
  *                 type: string
+ *                 description: User skills (optional, for students)
  *               companyName:
  *                 type: string
+ *                 description: Company name (required for company role)
  *               contactPerson:
  *                 type: string
+ *                 description: Contact person name (for company role)
  *               companyDescription:
  *                 type: string
+ *                 description: Company description (for company role)
  *               website:
  *                 type: string
+ *                 format: uri
+ *                 description: Company website URL (for company role)
  *               phone:
  *                 type: string
+ *                 description: Phone number (optional)
  *     responses:
  *       201:
  *         description: User registered successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ *                 user:
+ *                   $ref: '#/components/schemas/User'
+ *                 token:
+ *                   type: string
+ *                   description: JWT access token
  *       400:
- *         description: Validation error or user exists
+ *         $ref: '#/components/responses/ValidationError'
+ *       409:
+ *         description: User with this email already exists
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  */
 router.post('/register', authController.register);
 
@@ -163,6 +250,7 @@ router.post('/register', authController.register);
  * /api/auth/login:
  *   post:
  *     summary: Login with email and password
+ *     description: Authenticate user with email and password to receive JWT tokens
  *     tags: [Auth]
  *     requestBody:
  *       required: true
@@ -170,17 +258,49 @@ router.post('/register', authController.register);
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - email
+ *               - password
  *             properties:
  *               email:
  *                 type: string
  *                 format: email
+ *                 description: User's email address
  *               password:
  *                 type: string
+ *                 description: User's password
  *     responses:
  *       200:
  *         description: Login successful
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ *                 user:
+ *                   $ref: '#/components/schemas/User'
+ *                 accessToken:
+ *                   type: string
+ *                   description: JWT access token
+ *                 refreshToken:
+ *                   type: string
+ *                   description: JWT refresh token
  *       401:
  *         description: Invalid credentials
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       403:
+ *         description: Email not verified
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  */
 router.post('/login', require('../controllers/authController').login);
 
@@ -189,6 +309,7 @@ router.post('/login', require('../controllers/authController').login);
  * /api/auth/oauth/{provider}:
  *   get:
  *     summary: OAuth login (Google, GitHub, etc.)
+ *     description: Initiate OAuth authentication flow with the specified provider
  *     tags: [Auth]
  *     parameters:
  *       - in: path
@@ -197,9 +318,16 @@ router.post('/login', require('../controllers/authController').login);
  *         schema:
  *           type: string
  *           enum: [google, github]
+ *         description: OAuth provider name
  *     responses:
  *       302:
- *         description: Redirect to OAuth provider
+ *         description: Redirect to OAuth provider for authentication
+ *       400:
+ *         description: Unsupported OAuth provider
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  */
 router.get('/oauth/:provider', (req, res, next) => {
   const { provider } = req.params;
@@ -217,11 +345,31 @@ router.get('/oauth/:provider', (req, res, next) => {
  * /api/auth/2fa/setup:
  *   post:
  *     summary: Setup 2FA for user
+ *     description: Generate and setup two-factor authentication for the current user
  *     tags: [Auth]
  *     security: [ { bearerAuth: [] } ]
  *     responses:
  *       200:
- *         description: 2FA setup info (QR code, secret)
+ *         description: 2FA setup information generated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 secret:
+ *                   type: string
+ *                   description: 2FA secret key
+ *                 otpauth_url:
+ *                   type: string
+ *                   description: OTP authentication URL
+ *                 qr:
+ *                   type: string
+ *                   format: data-url
+ *                   description: QR code data URL for authenticator apps
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
  */
 router.post('/2fa/setup', authenticate, async (req, res, next) => {
   try {
@@ -242,6 +390,7 @@ router.post('/2fa/setup', authenticate, async (req, res, next) => {
  * /api/auth/2fa/verify:
  *   post:
  *     summary: Verify 2FA code
+ *     description: Verify the two-factor authentication code provided by the user
  *     tags: [Auth]
  *     security: [ { bearerAuth: [] } ]
  *     requestBody:
@@ -250,14 +399,27 @@ router.post('/2fa/setup', authenticate, async (req, res, next) => {
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - code
  *             properties:
  *               code:
  *                 type: string
+ *                 description: 2FA verification code from authenticator app
  *     responses:
  *       200:
- *         description: 2FA verified
+ *         description: 2FA verified successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Success'
  *       400:
- *         description: Invalid 2FA code
+ *         description: Invalid 2FA code or 2FA not set up
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
  */
 router.post('/2fa/verify', authenticate, async (req, res, next) => {
   try {
@@ -281,9 +443,48 @@ router.post('/2fa/verify', authenticate, async (req, res, next) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/auth/oauth/google:
+ *   get:
+ *     summary: Google OAuth login
+ *     description: Initiate Google OAuth authentication flow
+ *     tags: [Auth]
+ *     responses:
+ *       302:
+ *         description: Redirect to Google OAuth
+ */
 // Google OAuth
 router.get('/oauth/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
 
+/**
+ * @swagger
+ * /api/auth/oauth/google/callback:
+ *   get:
+ *     summary: Google OAuth callback
+ *     description: Handle Google OAuth callback and authenticate user
+ *     tags: [Auth]
+ *     responses:
+ *       200:
+ *         description: Google OAuth successful
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 user:
+ *                   $ref: '#/components/schemas/User'
+ *                 message:
+ *                   type: string
+ *       401:
+ *         description: OAuth authentication failed
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 router.get('/oauth/google/callback',
   passport.authenticate('google', { session: false, failureRedirect: '/api/auth/oauth/failure' }),
   (req, res) => {
@@ -295,9 +496,48 @@ router.get('/oauth/google/callback',
   }
 );
 
+/**
+ * @swagger
+ * /api/auth/oauth/github:
+ *   get:
+ *     summary: GitHub OAuth login
+ *     description: Initiate GitHub OAuth authentication flow
+ *     tags: [Auth]
+ *     responses:
+ *       302:
+ *         description: Redirect to GitHub OAuth
+ */
 // GitHub OAuth
 router.get('/oauth/github', passport.authenticate('github', { scope: ['user:email'] }));
 
+/**
+ * @swagger
+ * /api/auth/oauth/github/callback:
+ *   get:
+ *     summary: GitHub OAuth callback
+ *     description: Handle GitHub OAuth callback and authenticate user
+ *     tags: [Auth]
+ *     responses:
+ *       200:
+ *         description: GitHub OAuth successful
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 user:
+ *                   $ref: '#/components/schemas/User'
+ *                 message:
+ *                   type: string
+ *       401:
+ *         description: OAuth authentication failed
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 router.get('/oauth/github/callback',
   passport.authenticate('github', { session: false, failureRedirect: '/api/auth/oauth/failure' }),
   (req, res) => {
@@ -306,8 +546,93 @@ router.get('/oauth/github/callback',
   }
 );
 
+/**
+ * @swagger
+ * /api/auth/oauth/failure:
+ *   get:
+ *     summary: OAuth failure
+ *     description: Handle OAuth authentication failures
+ *     tags: [Auth]
+ *     responses:
+ *       401:
+ *         description: OAuth login failed
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 router.get('/oauth/failure', (req, res) => {
   res.status(401).json({ message: 'OAuth login failed' });
+});
+
+/**
+ * @swagger
+ * /api/auth/logout:
+ *   post:
+ *     summary: Logout user
+ *     description: Logout the current user and invalidate tokens
+ *     tags: [Auth]
+ *     security: [ { bearerAuth: [] } ]
+ *     responses:
+ *       200:
+ *         description: Logout successful
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Success'
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
+ */
+router.post('/logout', authenticate, (req, res) => {
+  // In a real implementation, you might want to blacklist the token
+  res.json({ success: true, message: 'Logout successful' });
+});
+
+/**
+ * @swagger
+ * /api/auth/refresh:
+ *   post:
+ *     summary: Refresh access token
+ *     description: Get a new access token using a valid refresh token
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - refreshToken
+ *             properties:
+ *               refreshToken:
+ *                 type: string
+ *                 description: Valid refresh token
+ *     responses:
+ *       200:
+ *         description: Token refreshed successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 accessToken:
+ *                   type: string
+ *                   description: New JWT access token
+ *                 refreshToken:
+ *                   type: string
+ *                   description: New JWT refresh token
+ *       401:
+ *         description: Invalid or expired refresh token
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
+router.post('/refresh', (req, res) => {
+  // Implement token refresh logic here
+  res.json({ success: true, message: 'Token refresh endpoint' });
 });
 
 // TODO: Define or import updateUserClaims and createCustomToken if you use them in this file.

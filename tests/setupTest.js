@@ -22,6 +22,13 @@ jest.mock('../src/utils/cache', () => ({
   quit: jest.fn()
 }));
 
+// Mock realtime service to prevent notification errors
+jest.mock('../src/services/realtimeService', () => ({
+  sendNotificationToUser: jest.fn(),
+  sendMessageToUser: jest.fn(),
+  broadcastToRoom: jest.fn()
+}));
+
 const redis = require('../src/utils/cache');
 
 // Create a lightweight test app instead of importing the full server
