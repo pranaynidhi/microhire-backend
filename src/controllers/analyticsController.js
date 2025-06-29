@@ -7,6 +7,105 @@ const sequelize = require('../config/database');
 const AnalyticsService = require('../services/analyticsService');
 
 const analyticsController = {
+  getDashboardStats: async (req, res) => {
+    try {
+      const { user } = req;
+      let stats = {};
+
+      if (user.role === 'student') {
+        // Student dashboard stats
+        const applications = await Application.count({
+          where: { userId: user.id }
+        });
+
+        const interviews = await Application.count({
+          where: { 
+            userId: user.id,
+            status: 'interviewing'
+          }
+        });
+
+        const offers = await Application.count({
+          where: { 
+            userId: user.id,
+            status: 'accepted'
+          }
+        });
+
+        // For now, set certificates to 0 (can be implemented later)
+        const certificates = 0;
+
+        stats = {
+          applications,
+          interviews,
+          offers,
+          certificates
+        };
+      } else if (user.role === 'business') {
+        // Business dashboard stats
+        const activeInternships = await Internship.count({
+          where: { 
+            userId: user.id,
+            status: 'active'
+          }
+        });
+
+        const totalApplications = await Application.count({
+          include: [{
+            model: Internship,
+            where: { userId: user.id }
+          }]
+        });
+
+        const hiredInterns = await Application.count({
+          where: { status: 'accepted' },
+          include: [{
+            model: Internship,
+            where: { userId: user.id }
+          }]
+        });
+
+        // For now, set profile views to 0 (can be implemented later)
+        const profileViews = 0;
+
+        stats = {
+          activeInternships,
+          totalApplications,
+          hiredInterns,
+          profileViews
+        };
+      } else if (user.role === 'admin') {
+        // Admin dashboard stats
+        const totalUsers = await User.count();
+        const activeInternships = await Internship.count({
+          where: { status: 'active' }
+        });
+        const totalApplications = await Application.count();
+        
+        // For now, set pending reports to 0 (can be implemented later)
+        const pendingReports = 0;
+
+        stats = {
+          totalUsers,
+          activeInternships,
+          totalApplications,
+          pendingReports
+        };
+      }
+
+      res.json({
+        success: true,
+        data: stats
+      });
+    } catch (error) {
+      console.error('Get dashboard stats error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to fetch dashboard statistics'
+      });
+    }
+  },
+
   getOverview: async (req, res) => {
     try {
       const { startDate, endDate } = req.query;

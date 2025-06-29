@@ -14,7 +14,7 @@ const path = require('path');
 const { AppError } = require('./utils/errors');
 
 // Import database and models
-const { syncDatabase } = require('./models');
+const { initializeDatabase } = require('./models');
 const { initializeSocket } = require('./config/socket');
 const attachSocket = require('./middleware/socketMiddleware');
 
@@ -30,7 +30,12 @@ const PORT = process.env.PORT || 5000;
 // Middleware
 app.use(
   cors({
-    origin: process.env.CLIENT_URL || process.env.FRONTEND_URL || 'http://localhost:3000',
+    origin: [
+      process.env.CLIENT_URL || 'http://localhost:3000',
+      process.env.FRONTEND_URL || 'http://localhost:3000',
+      'http://localhost:5173', // Vite's default port
+      'http://localhost:3000'
+    ],
     credentials: true,
   })
 );
@@ -134,11 +139,6 @@ app.use('/api/search', searchRoutes);
 
 app.use('/uploads', express.static('uploads'));
 
-if (process.env.NODE_ENV === 'development') {
-  const testRoutes = require('../tests/communication.test');
-  app.use('/api/test', testRoutes);
-}
-
 // Health check endpoint
 app.get('/api/health', (req, res) => {
   res.json({
@@ -162,6 +162,15 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// CSRF token endpoint
+app.get('/api/csrf-token', (req, res) => {
+  res.json({
+    success: true,
+    message: 'CSRF token available in XSRF-TOKEN cookie',
+    timestamp: new Date().toISOString(),
+  });
+});
+
 // Custom root route
 app.get('/', (req, res) => {
   res.json({
@@ -174,6 +183,19 @@ app.get('/', (req, res) => {
 // Error handling
 app.use((req, res, next) => {
   next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));
+});
+
+// CSRF error handler
+app.use((err, req, res, next) => {
+  if (err.code === 'EBADCSRFTOKEN') {
+    return res.status(403).json({
+      success: false,
+      message: 'CSRF token missing or invalid. Please refresh the page and try again.',
+      error: 'CSRF_TOKEN_ERROR',
+      code: 'EBADCSRFTOKEN'
+    });
+  }
+  next(err);
 });
 
 app.use(errorHandler);
@@ -201,7 +223,7 @@ process.on('uncaughtException', (err) => {
 // Start server
 const startServer = async () => {
   try {
-    await syncDatabase();
+    await initializeDatabase();
     app.use(passport.initialize());
     server.listen(PORT, () => {
       logger.info(`Server running on port ${PORT}`);

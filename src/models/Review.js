@@ -10,24 +10,27 @@ const Review = sequelize.define('Review', {
   reviewerId: {
     type: DataTypes.INTEGER,
     allowNull: false,
+    field: 'reviewer_id',
     references: {
-      model: 'Users',
+      model: 'users',
       key: 'id'
     }
   },
   revieweeId: {
     type: DataTypes.INTEGER,
     allowNull: false,
+    field: 'reviewee_id',
     references: {
-      model: 'Users',
+      model: 'users',
       key: 'id'
     }
   },
   internshipId: {
     type: DataTypes.INTEGER,
     allowNull: false,
+    field: 'internship_id',
     references: {
-      model: 'Internships',
+      model: 'internships',
       key: 'id'
     }
   },
@@ -49,7 +52,8 @@ const Review = sequelize.define('Review', {
   },
   isVisible: {
     type: DataTypes.BOOLEAN,
-    defaultValue: true
+    defaultValue: true,
+    field: 'is_visible'
   },
   status: {
     type: DataTypes.ENUM('pending', 'approved', 'rejected'),
@@ -57,18 +61,21 @@ const Review = sequelize.define('Review', {
   },
   adminNotes: {
     type: DataTypes.TEXT,
-    allowNull: true
+    allowNull: true,
+    field: 'admin_notes'
   },
   reportCount: {
     type: DataTypes.INTEGER,
-    defaultValue: 0
+    defaultValue: 0,
+    field: 'report_count'
   },
   lastReportedAt: {
     type: DataTypes.DATE,
-    allowNull: true
+    allowNull: true,
+    field: 'last_reported_at'
   }
 }, {
-  tableName: 'Reviews',
+  tableName: 'reviews',
   timestamps: true,
   underscored: true,
   indexes: [

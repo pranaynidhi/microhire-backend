@@ -11,16 +11,18 @@ const ReviewReport = sequelize.define('ReviewReport', {
   reviewId: {
     type: DataTypes.INTEGER,
     allowNull: false,
+    field: 'review_id',
     references: {
-      model: 'Reviews',
+      model: 'reviews',
       key: 'id'
     }
   },
   reporterId: {
     type: DataTypes.INTEGER,
     allowNull: false,
+    field: 'reporter_id',
     references: {
-      model: 'Users',
+      model: 'users',
       key: 'id'
     }
   },
@@ -44,10 +46,11 @@ const ReviewReport = sequelize.define('ReviewReport', {
   },
   adminNotes: {
     type: DataTypes.TEXT,
-    allowNull: true
+    allowNull: true,
+    field: 'admin_notes'
   }
 }, {
-  tableName: 'ReviewReports',
+  tableName: 'review_reports',
   timestamps: true,
   underscored: true,
   indexes: [

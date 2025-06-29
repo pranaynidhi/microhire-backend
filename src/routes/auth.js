@@ -9,6 +9,8 @@ const { verifyEmail } = require('../controllers/authController');
 const speakeasy = require('speakeasy');
 const qrcode = require('qrcode');
 const { User } = require('../models');
+const jwt = require('jsonwebtoken');
+const { generateTokens } = require('../utils/tokenUtils');
 
 /**
  * @swagger
@@ -630,9 +632,46 @@ router.post('/logout', authenticate, (req, res) => {
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.post('/refresh', (req, res) => {
-  // Implement token refresh logic here
-  res.json({ success: true, message: 'Token refresh endpoint' });
+router.post('/refresh', async (req, res, next) => {
+  try {
+    const { refreshToken } = req.body;
+    
+    if (!refreshToken) {
+      return res.status(400).json({
+        success: false,
+        message: 'Refresh token is required'
+      });
+    }
+    
+    // Verify refresh token
+    const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
+    
+    // Get user
+    const user = await User.findByPk(decoded.id);
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid refresh token'
+      });
+    }
+    
+    // Generate new tokens
+    const { accessToken, refreshToken: newRefreshToken } = generateTokens(user.id);
+    
+    res.json({
+      success: true,
+      accessToken,
+      refreshToken: newRefreshToken
+    });
+  } catch (error) {
+    if (error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError') {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid or expired refresh token'
+      });
+    }
+    next(error);
+  }
 });
 
 // TODO: Define or import updateUserClaims and createCustomToken if you use them in this file.

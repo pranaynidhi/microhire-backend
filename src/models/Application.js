@@ -8,22 +8,25 @@ const Application = sequelize.define(
       type: DataTypes.INTEGER,
       primaryKey: true,
       autoIncrement: true,
+      field: 'id',
     },
     internshipId: {
       type: DataTypes.INTEGER,
       allowNull: false,
       references: {
-        model: 'Internships',
+        model: 'internships',
         key: 'id',
       },
+      field: 'internship_id',
     },
     studentId: {
       type: DataTypes.INTEGER,
       allowNull: false,
       references: {
-        model: 'Users',
+        model: 'users',
         key: 'id',
       },
+      field: 'student_id',
     },
     coverLetter: {
       type: DataTypes.TEXT,
@@ -32,33 +35,39 @@ const Application = sequelize.define(
         notEmpty: true,
         len: [50, 2000],
       },
+      field: 'cover_letter',
     },
     status: {
       type: DataTypes.ENUM('pending', 'accepted', 'rejected', 'withdrawn'),
       defaultValue: 'pending',
+      field: 'status',
     },
     appliedAt: {
       type: DataTypes.DATE,
       defaultValue: DataTypes.NOW,
+      field: 'applied_at',
     },
     reviewedAt: {
       type: DataTypes.DATE,
       allowNull: true,
+      field: 'reviewed_at',
     },
     notes: {
       type: DataTypes.TEXT,
       allowNull: true,
+      field: 'notes',
     },
   },
   {
     timestamps: true,
+    underscored: true,
     indexes: [
       {
         unique: true,
         fields: ['internship_id', 'student_id'],
       },
     ],
-    tableName: 'Applications',
+    tableName: 'applications',
   }
 );
 

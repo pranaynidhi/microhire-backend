@@ -10,24 +10,27 @@ const Report = sequelize.define('Report', {
   reporterId: {
     type: DataTypes.INTEGER,
     allowNull: false,
+    field: 'reporter_id',
     references: {
-      model: 'Users',
+      model: 'users',
       key: 'id'
     }
   },
   reportedUserId: {
     type: DataTypes.INTEGER,
     allowNull: true,
+    field: 'reported_user_id',
     references: {
-      model: 'Users',
+      model: 'users',
       key: 'id'
     }
   },
   reportedInternshipId: {
     type: DataTypes.INTEGER,
     allowNull: true,
+    field: 'reported_internship_id',
     references: {
-      model: 'Internships',
+      model: 'internships',
       key: 'id'
     }
   },
@@ -56,23 +59,27 @@ const Report = sequelize.define('Report', {
   },
   adminNotes: {
     type: DataTypes.TEXT,
-    allowNull: true
+    allowNull: true,
+    field: 'admin_notes'
   },
   resolvedAt: {
     type: DataTypes.DATE,
-    allowNull: true
+    allowNull: true,
+    field: 'resolved_at'
   },
   resolvedBy: {
     type: DataTypes.INTEGER,
     allowNull: true,
+    field: 'resolved_by',
     references: {
-      model: 'Users',
+      model: 'users',
       key: 'id'
     }
   }
 }, {
-  tableName: 'Reports',
-  timestamps: true
+  tableName: 'reports',
+  timestamps: true,
+  underscored: true
 });
 
 module.exports = Report;

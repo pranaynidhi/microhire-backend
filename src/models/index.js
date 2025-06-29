@@ -13,6 +13,10 @@ const ReviewReport = require('./ReviewReport');
 const CertificateView = require('./CertificateView');
 const SearchHistory = require('./SearchHistory');
 const SystemSettings = require('./SystemSettings');
+const Bookmark = require('./Bookmark');
+const Interview = require('./Interview');
+const Conversation = require('./Conversation');
+
 // Define associations
 User.hasMany(Internship, {
   foreignKey: 'companyId',
@@ -124,14 +128,89 @@ Report.belongsTo(User, { foreignKey: 'reporterId', as: 'reporter' });
 Report.belongsTo(User, { foreignKey: 'reportedUserId', as: 'reportedUser' });
 Report.belongsTo(Internship, { foreignKey: 'reportedInternshipId', as: 'reportedInternship' });
 
-// Sync database
+// Bookmark associations
+User.hasMany(Bookmark, {
+  foreignKey: 'userId',
+  as: 'bookmarks',
+  onDelete: 'CASCADE',
+});
+
+Internship.hasMany(Bookmark, {
+  foreignKey: 'internshipId',
+  as: 'bookmarks',
+  onDelete: 'CASCADE',
+});
+
+Bookmark.belongsTo(User, {
+  foreignKey: 'userId',
+  as: 'user',
+});
+
+Bookmark.belongsTo(Internship, {
+  foreignKey: 'internshipId',
+  as: 'internship',
+});
+
+// Interview associations
+Application.hasMany(Interview, {
+  foreignKey: 'applicationId',
+  as: 'interviews',
+  onDelete: 'CASCADE',
+});
+
+Interview.belongsTo(Application, {
+  foreignKey: 'applicationId',
+  as: 'application',
+});
+
+// Conversation associations
+User.hasMany(Conversation, {
+  foreignKey: 'participant1Id',
+  as: 'conversationsAsParticipant1',
+});
+
+User.hasMany(Conversation, {
+  foreignKey: 'participant2Id',
+  as: 'conversationsAsParticipant2',
+});
+
+Conversation.belongsTo(User, {
+  foreignKey: 'participant1Id',
+  as: 'participant1',
+});
+
+Conversation.belongsTo(User, {
+  foreignKey: 'participant2Id',
+  as: 'participant2',
+});
+
+Conversation.belongsTo(Message, {
+  foreignKey: 'lastMessageId',
+  as: 'lastMessage',
+});
+
+Conversation.hasMany(Message, {
+  foreignKey: 'conversationId',
+  as: 'messages',
+});
+
+// Update Message associations to use conversationId
+Message.belongsTo(Conversation, {
+  foreignKey: 'conversationId',
+  as: 'conversation',
+});
+
+// Sync database (for migrations)
 const syncDatabase = async () => {
   try {
     await sequelize.authenticate();
     console.log('✅ Database connection established successfully.');
     
-    await sequelize.sync({ alter: true });
+    // Use force: true to drop and recreate all tables
+    // This resolves circular dependency issues during table creation
+    await sequelize.sync({ force: true });
     console.log('✅ Database synchronized successfully.');
+    process.exit(0);
   } catch (error) {
     console.error('❌ Unable to connect to the database:', error);
     if (process.env.NODE_ENV === 'test') {
@@ -139,6 +218,62 @@ const syncDatabase = async () => {
     } else {
       process.exit(1);
     }
+  }
+};
+
+// Initialize database connection (for server startup)
+const initializeDatabase = async () => {
+  try {
+    await sequelize.authenticate();
+    console.log('✅ Database connection established successfully.');
+    
+    // Ensure admin account exists
+    await ensureAdminAccount();
+  } catch (error) {
+    console.error('❌ Unable to connect to the database:', error);
+    throw error;
+  }
+};
+
+// Ensure admin account exists
+const ensureAdminAccount = async () => {
+  try {
+    const adminEmail = process.env.ADMIN_EMAIL || 'admin@microhire.com';
+    const adminPassword = process.env.ADMIN_PASSWORD || 'Admin@123';
+    
+    const existingAdmin = await User.findOne({
+      where: { 
+        email: adminEmail,
+        role: 'admin'
+      }
+    });
+    
+    if (!existingAdmin) {
+      const bcrypt = require('bcryptjs');
+      const hashedPassword = await bcrypt.hash(adminPassword, 12);
+      
+      await User.create({
+        fullName: 'System Administrator',
+        email: adminEmail,
+        password: hashedPassword,
+        role: 'admin',
+        emailVerified: true,
+        isActive: true,
+        companyName: 'MicroHire Platform',
+        contactPerson: 'System Admin',
+        companyDescription: 'Platform administrator for MicroHire',
+        website: 'https://microhire.com'
+      });
+      
+      console.log('✅ Admin account created successfully');
+      console.log(`📧 Admin Email: ${adminEmail}`);
+      console.log(`🔑 Admin Password: ${adminPassword}`);
+      console.log('⚠️  Please change the admin password after first login!');
+    } else {
+      console.log('✅ Admin account already exists');
+    }
+  } catch (error) {
+    console.error('❌ Error ensuring admin account:', error);
   }
 };
 
@@ -182,5 +317,9 @@ module.exports = {
   CertificateView,
   SearchHistory,
   SystemSettings,
+  Bookmark,
+  Interview,
+  Conversation,
   syncDatabase,
+  initializeDatabase,
 };

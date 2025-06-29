@@ -5,8 +5,12 @@ const {
   getMyApplications,
   getMyInternships,
 } = require('../controllers/userController');
-const { authenticate } = require('../middleware/auth');
+const { authenticate, requireEmailVerification } = require('../middleware/auth');
 const webpush = require('../services/webPushService');
+const User = require('../models/User');
+const bcrypt = require('bcryptjs');
+const { AppError } = require('../utils/errors');
+const logger = require('../utils/logger');
 
 const router = express.Router();
 
@@ -380,9 +384,27 @@ router.post('/notify', async (req, res) => {
  *       401:
  *         $ref: '#/components/responses/UnauthorizedError'
  */
-router.get('/:id', authenticate, (req, res) => {
-  // Implement get user by ID logic
-  res.json({ success: true, message: 'Get user by ID endpoint' });
+router.get('/:id', authenticate, async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const user = await User.findByPk(id, {
+      attributes: { exclude: ['password', 'twoFASecret'] }
+    });
+    
+    if (!user) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'User not found' 
+      });
+    }
+    
+    res.json({ 
+      success: true, 
+      user 
+    });
+  } catch (error) {
+    next(error);
+  }
 });
 
 /**
@@ -426,9 +448,54 @@ router.get('/:id', authenticate, (req, res) => {
  *       401:
  *         $ref: '#/components/responses/UnauthorizedError'
  */
-router.put('/me/password', authenticate, (req, res) => {
-  // Implement password change logic
-  res.json({ success: true, message: 'Password change endpoint' });
+router.put('/me/password', authenticate, async (req, res, next) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: 'Current password and new password are required'
+      });
+    }
+    
+    if (newPassword.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: 'New password must be at least 6 characters long'
+      });
+    }
+    
+    const user = await User.findByPk(req.user.id);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+    
+    // Verify current password
+    const isCurrentPasswordValid = await bcrypt.compare(currentPassword, user.password);
+    if (!isCurrentPasswordValid) {
+      return res.status(400).json({
+        success: false,
+        message: 'Current password is incorrect'
+      });
+    }
+    
+    // Hash new password
+    const hashedNewPassword = await bcrypt.hash(newPassword, 12);
+    
+    // Update password
+    await user.update({ password: hashedNewPassword });
+    
+    res.json({
+      success: true,
+      message: 'Password changed successfully'
+    });
+  } catch (error) {
+    next(error);
+  }
 });
 
 /**
@@ -467,9 +534,44 @@ router.put('/me/password', authenticate, (req, res) => {
  *       401:
  *         $ref: '#/components/responses/UnauthorizedError'
  */
-router.delete('/me/delete', authenticate, (req, res) => {
-  // Implement account deletion logic
-  res.json({ success: true, message: 'Account deletion endpoint' });
+router.delete('/me/delete', authenticate, async (req, res, next) => {
+  try {
+    const { password } = req.body;
+    
+    if (!password) {
+      return res.status(400).json({
+        success: false,
+        message: 'Password is required for account deletion'
+      });
+    }
+    
+    const user = await User.findByPk(req.user.id);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+    
+    // Verify password
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid password'
+      });
+    }
+    
+    // Delete user account (this will cascade to related data due to paranoid: true)
+    await user.destroy();
+    
+    res.json({
+      success: true,
+      message: 'Account deleted successfully'
+    });
+  } catch (error) {
+    next(error);
+  }
 });
 
 module.exports = router;

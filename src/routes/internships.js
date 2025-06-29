@@ -4,6 +4,7 @@ const { authenticate, isCompany, requireEmailVerification } = require('../middle
 const { AppError } = require('../utils/errors');
 const logger = require('../utils/logger');
 const internshipController = require('../controllers/internshipController');
+const { Internship, Application, User, Bookmark } = require('../models');
 
 /**
  * @swagger
@@ -389,9 +390,59 @@ router.delete('/:id', authenticate, isCompany, requireEmailVerification, interns
  *       404:
  *         $ref: '#/components/responses/NotFoundError'
  */
-router.get('/:id/applications', authenticate, isCompany, requireEmailVerification, (req, res) => {
-  // Implement get applications for internship logic
-  res.json({ success: true, message: 'Get applications for internship endpoint' });
+router.get('/:id/applications', authenticate, isCompany, requireEmailVerification, async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { page = 1, limit = 10, status } = req.query;
+    
+    const internship = await Internship.findByPk(id);
+    if (!internship) {
+      return res.status(404).json({
+        success: false,
+        message: 'Internship not found'
+      });
+    }
+    
+    // Check if the current user owns this internship
+    if (internship.companyId !== req.user.id) {
+      return res.status(403).json({
+        success: false,
+        message: 'You can only view applications for your own internships'
+      });
+    }
+    
+    const whereClause = { internshipId: id };
+    if (status) {
+      whereClause.status = status;
+    }
+    
+    const applications = await Application.findAndCountAll({
+      where: whereClause,
+      include: [
+        {
+          model: User,
+          as: 'applicant',
+          attributes: ['id', 'fullName', 'email', 'bio', 'skills']
+        }
+      ],
+      limit: parseInt(limit),
+      offset: (parseInt(page) - 1) * parseInt(limit),
+      order: [['createdAt', 'DESC']]
+    });
+    
+    res.json({
+      success: true,
+      applications: applications.rows,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total: applications.count,
+        pages: Math.ceil(applications.count / parseInt(limit))
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
 });
 
 /**
@@ -421,9 +472,44 @@ router.get('/:id/applications', authenticate, isCompany, requireEmailVerificatio
  *       404:
  *         $ref: '#/components/responses/NotFoundError'
  */
-router.post('/:id/bookmark', authenticate, (req, res) => {
-  // Implement bookmark internship logic
-  res.json({ success: true, message: 'Bookmark internship endpoint' });
+router.post('/:id/bookmark', authenticate, async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+    
+    const internship = await Internship.findByPk(id);
+    if (!internship) {
+      return res.status(404).json({
+        success: false,
+        message: 'Internship not found'
+      });
+    }
+    
+    // Check if already bookmarked
+    const existingBookmark = await Bookmark.findOne({
+      where: { userId, internshipId: id }
+    });
+    
+    if (existingBookmark) {
+      return res.status(400).json({
+        success: false,
+        message: 'Internship is already bookmarked'
+      });
+    }
+    
+    // Create bookmark
+    await Bookmark.create({
+      userId,
+      internshipId: id
+    });
+    
+    res.json({
+      success: true,
+      message: 'Internship bookmarked successfully'
+    });
+  } catch (error) {
+    next(error);
+  }
 });
 
 /**
@@ -453,9 +539,31 @@ router.post('/:id/bookmark', authenticate, (req, res) => {
  *       404:
  *         $ref: '#/components/responses/NotFoundError'
  */
-router.delete('/:id/bookmark', authenticate, (req, res) => {
-  // Implement remove bookmark logic
-  res.json({ success: true, message: 'Remove bookmark endpoint' });
+router.delete('/:id/bookmark', authenticate, async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+    
+    const bookmark = await Bookmark.findOne({
+      where: { userId, internshipId: id }
+    });
+    
+    if (!bookmark) {
+      return res.status(404).json({
+        success: false,
+        message: 'Bookmark not found'
+      });
+    }
+    
+    await bookmark.destroy();
+    
+    res.json({
+      success: true,
+      message: 'Bookmark removed successfully'
+    });
+  } catch (error) {
+    next(error);
+  }
 });
 
 module.exports = router;

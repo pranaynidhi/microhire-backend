@@ -10,25 +10,31 @@ const CertificateView = sequelize.define('CertificateView', {
   certificateId: {
     type: DataTypes.INTEGER,
     allowNull: false,
+    field: 'certificate_id',
     references: {
-      model: 'Certificates',
+      model: 'certificates',
       key: 'id'
     }
   },
   viewedAt: {
     type: DataTypes.DATE,
-    defaultValue: DataTypes.NOW
+    defaultValue: DataTypes.NOW,
+    field: 'viewed_at'
   },
   ipAddress: {
     type: DataTypes.STRING,
-    allowNull: true
+    allowNull: true,
+    field: 'ip_address'
   },
   userAgent: {
     type: DataTypes.STRING,
-    allowNull: true
+    allowNull: true,
+    field: 'user_agent'
   }
 }, {
-  tableName: 'CertificateViews',
+  tableName: 'certificate_views',
+  timestamps: true,
+  underscored: true
 });
 
 module.exports = CertificateView;

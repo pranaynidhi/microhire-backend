@@ -4,6 +4,7 @@ const { authenticate, isStudent, isCompany, requireEmailVerification } = require
 const { AppError } = require('../utils/errors');
 const logger = require('../utils/logger');
 const applicationController = require('../controllers/applicationController');
+const { Application, Internship, Interview } = require('../models');
 
 /**
  * @swagger
@@ -335,9 +336,49 @@ router.delete('/:id', authenticate, isStudent, requireEmailVerification, applica
  *       404:
  *         $ref: '#/components/responses/NotFoundError'
  */
-router.post('/:id/feedback', authenticate, isCompany, requireEmailVerification, (req, res) => {
-  // Implement add feedback logic
-  res.json({ success: true, message: 'Add feedback endpoint' });
+router.post('/:id/feedback', authenticate, isCompany, requireEmailVerification, async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { feedback, rating } = req.body;
+    
+    if (!feedback) {
+      return res.status(400).json({
+        success: false,
+        message: 'Feedback is required'
+      });
+    }
+    
+    const application = await Application.findByPk(id, {
+      include: [
+        {
+          model: Internship,
+          where: { companyId: req.user.id }
+        }
+      ]
+    });
+    
+    if (!application) {
+      return res.status(404).json({
+        success: false,
+        message: 'Application not found or you do not have permission to add feedback'
+      });
+    }
+    
+    // Update application with feedback
+    await application.update({
+      feedback,
+      rating: rating || null,
+      reviewedAt: new Date()
+    });
+    
+    res.json({
+      success: true,
+      message: 'Feedback added successfully',
+      application
+    });
+  } catch (error) {
+    next(error);
+  }
 });
 
 /**
@@ -402,9 +443,57 @@ router.post('/:id/feedback', authenticate, isCompany, requireEmailVerification, 
  *       404:
  *         $ref: '#/components/responses/NotFoundError'
  */
-router.post('/:id/interview', authenticate, isCompany, requireEmailVerification, (req, res) => {
-  // Implement schedule interview logic
-  res.json({ success: true, message: 'Schedule interview endpoint' });
+router.post('/:id/interview', authenticate, isCompany, requireEmailVerification, async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { interviewDate, interviewType, location, notes } = req.body;
+    
+    if (!interviewDate || !interviewType) {
+      return res.status(400).json({
+        success: false,
+        message: 'Interview date and type are required'
+      });
+    }
+    
+    const application = await Application.findByPk(id, {
+      include: [
+        {
+          model: Internship,
+          where: { companyId: req.user.id }
+        }
+      ]
+    });
+    
+    if (!application) {
+      return res.status(404).json({
+        success: false,
+        message: 'Application not found or you do not have permission to schedule interview'
+      });
+    }
+    
+    // Create interview record
+    const interview = await Interview.create({
+      applicationId: id,
+      interviewDate: new Date(interviewDate),
+      interviewType,
+      location: location || null,
+      notes: notes || null,
+      status: 'scheduled'
+    });
+    
+    // Update application status
+    await application.update({
+      status: 'interview_scheduled'
+    });
+    
+    res.json({
+      success: true,
+      message: 'Interview scheduled successfully',
+      interview
+    });
+  } catch (error) {
+    next(error);
+  }
 });
 
 module.exports = router;

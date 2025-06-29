@@ -29,7 +29,7 @@ const authenticate = async (req, res, next) => {
 
 // Middleware to check if user is a company
 const isCompany = (req, res, next) => {
-  if (req.user.role !== 'business') {
+  if (req.user.role !== 'business' && req.user.role !== 'admin') {
     return next(new AppError('Access denied. Company role required', 403));
   }
   next();

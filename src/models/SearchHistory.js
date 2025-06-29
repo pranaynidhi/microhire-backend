@@ -10,8 +10,9 @@ const SearchHistory = sequelize.define('SearchHistory', {
   userId: {
     type: DataTypes.INTEGER,
     allowNull: false,
+    field: 'user_id',
     references: {
-      model: 'Users',
+      model: 'users',
       key: 'id'
     }
   },
@@ -25,22 +26,26 @@ const SearchHistory = sequelize.define('SearchHistory', {
   },
   resultCount: {
     type: DataTypes.INTEGER,
-    allowNull: false
+    allowNull: false,
+    field: 'result_count'
   },
   clickedResults: {
     type: DataTypes.JSON,
-    allowNull: true
+    allowNull: true,
+    field: 'clicked_results'
   },
   isSaved: {
     type: DataTypes.BOOLEAN,
-    defaultValue: false
+    defaultValue: false,
+    field: 'is_saved'
   },
   savedName: {
     type: DataTypes.STRING,
-    allowNull: true
+    allowNull: true,
+    field: 'saved_name'
   }
 }, {
-  tableName: 'SearchHistories',
+  tableName: 'search_histories',
   timestamps: true,
   underscored: true,
   indexes: [

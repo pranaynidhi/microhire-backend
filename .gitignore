@@ -70,3 +70,5 @@ uploads/
 src/certificates/*
 test_output_final.txt
 
+cookies.txt
+token.txt

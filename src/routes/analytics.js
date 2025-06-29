@@ -14,6 +14,32 @@ const analyticsController = require('../controllers/analyticsController');
 
 /**
  * @swagger
+ * /api/analytics/dashboard:
+ *   get:
+ *     summary: Get dashboard statistics
+ *     description: Retrieve role-specific dashboard statistics for the current user
+ *     tags: [Analytics]
+ *     security: [ { bearerAuth: [] } ]
+ *     responses:
+ *       200:
+ *         description: Dashboard statistics
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: object
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
+ */
+// Get dashboard statistics (role-specific)
+router.get('/dashboard', authenticate, requireEmailVerification, analyticsController.getDashboardStats);
+
+/**
+ * @swagger
  * /api/analytics/user:
  *   get:
  *     summary: Get user analytics

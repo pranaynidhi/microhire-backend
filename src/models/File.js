@@ -9,7 +9,8 @@ const File = sequelize.define('File', {
   },
   originalName: {
     type: DataTypes.STRING,
-    allowNull: false
+    allowNull: false,
+    field: 'original_name'
   },
   filename: {
     type: DataTypes.STRING,
@@ -34,18 +35,21 @@ const File = sequelize.define('File', {
   userId: {
     type: DataTypes.INTEGER,
     allowNull: false,
+    field: 'user_id',
     references: {
-      model: 'Users',
+      model: 'users',
       key: 'id'
     }
   },
   isActive: {
     type: DataTypes.BOOLEAN,
-    defaultValue: true
+    defaultValue: true,
+    field: 'is_active'
   }
 }, {
-  tableName: 'Files',
-  timestamps: true
+  tableName: 'files',
+  timestamps: true,
+  underscored: true
 });
 
 module.exports = File;

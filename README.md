@@ -1,210 +1,155 @@
-# 📚 MicroHire API Documentation
+# MicroHire Backend
 
-## Table of Contents
+A production-ready Node.js/Express backend for the MicroHire internship platform with comprehensive features including user management, internship listings, applications, messaging, and analytics.
 
-1. [Getting Started](about:blank#getting-started)
-2. [Authentication](about:blank#authentication)
-3. [API Endpoints](about:blank#api-endpoints)
-4. [Error Handling](about:blank#error-handling)
-5. [Rate Limiting](about:blank#rate-limiting)
-6. [File Uploads](about:blank#file-uploads)
-7. [WebSocket Events](about:blank#websocket-events)
-8. [Deployment](about:blank#deployment)
+## Features
 
-## Getting Started
+- 🔐 **Authentication & Authorization**: JWT-based auth with role-based access control
+- 👥 **User Management**: Student, Business, and Admin roles
+- 💼 **Internship Management**: Create, manage, and apply for internships
+- 📝 **Application System**: Complete application workflow
+- 💬 **Real-time Messaging**: WebSocket-based messaging system
+- 📊 **Analytics Dashboard**: Comprehensive platform analytics
+- 🔍 **Search & Filtering**: Advanced search capabilities
+- 📧 **Email Notifications**: Automated email system
+- 🔒 **Security**: CSRF protection, rate limiting, input validation
+- 📁 **File Upload**: Secure file handling with validation
+- 🎯 **Admin Panel**: Complete administrative interface
+
+## Quick Start
 
 ### Prerequisites
 
-- Node.js >= 14.x
-- MySQL >= 8.0
-- Redis >= 6.0
+- Node.js 18+ 
+- MySQL 8.0+
+- Redis (optional, for caching)
 
 ### Installation
 
-1. Clone the repository
-
+1. **Clone the repository**
    ```bash
-   git clone https://github.com/yourusername/microhire-backend.git
+   git clone <repository-url>
    cd microhire-backend
    ```
 
-2. Install dependencies
-
+2. **Install dependencies**
    ```bash
    npm install
    ```
 
-3. Set up environment variables
-
+3. **Environment Setup**
    ```bash
    cp .env.example .env
-   # Edit .env with your configuration
+   ```
+   
+   Configure your `.env` file with your database and service credentials.
+
+4. **Database Setup**
+   ```bash
+   # Create database and user
+   mysql -u root -p
+   CREATE DATABASE microhire_db;
+   CREATE USER 'microhire_user'@'localhost' IDENTIFIED BY 'your_password_here';
+   GRANT ALL PRIVILEGES ON microhire_db.* TO 'microhire_user'@'localhost';
+   FLUSH PRIVILEGES;
+   EXIT;
    ```
 
-4. Run database migrations
-
+5. **Run Migrations**
    ```bash
    npm run migrate
    ```
 
-5. Start the server
-
+6. **Start the Server**
    ```bash
+   # Development
    npm run dev
-   ```
-
-## Authentication
-
-### Register
-
-```json
-POST /api/auth/register
-Content-Type: application/json
-
-{
-  "fullName": "John Doe",
-  "email": "john@example.com",
-  "password": "securePassword123",
-  "role": "student"
-}
-```
-
-### Login
-
-```json
-POST /api/auth/login
-Content-Type: application/json
-
-{
-  "email": "john@example.com",
-  "password": "securePassword123"
-}
-```
-
-## API Endpoints
-
-### Internships
-
-### Create Internship
-
-```json
-POST /api/internships
-Authorization: Bearer <token>
-Content-Type: application/json
-
-{
-  "title": "Frontend Developer Intern",
-  "description": "We are looking for a frontend developer...",
-  "requirements": "React, JavaScript, HTML, CSS",
-  "location": "Kathmandu",
-  "stipend": 15000,
-  "duration": "3 months",
-  "deadline": "2024-04-01",
-  "type": "onsite",
-  "category": "Development"
-}
-```
-
-### Get Internships
-
-```json
-GET /api/internships?page=1&limit=10&category=Development
-Authorization: Bearer <token>
-```
-
-### Applications
-
-### Submit Application
-
-```json
-POST /api/applications
-Authorization: Bearer <token>
-Content-Type: application/json
-
-{
-  "internshipId": 1,
-  "coverLetter": "I am interested in this position..."
-}
-```
-
-## Error Handling
-
-All errors follow this format:
-
-```json
-{
-  "success": false,
-  "message": "Error description",
-  "errors": [{ "field": "fieldName", "message": "Specific error message" }]
-}
-```
-
-## Rate Limiting
-
-- Authentication endpoints: 5 requests per 15 minutes
-- API endpoints: 100 requests per 15 minutes
-- File uploads: 10 requests per 15 minutes
-
-## File Uploads
-
-### Supported File Types
-
-- Resumes: PDF, DOC, DOCX
-- Logos: JPG, JPEG, PNG, GIF
-- Portfolios: PDF, JPG, JPEG, PNG, ZIP
-
-### Size Limits
-
-- Maximum file size: 5MB
-
-## WebSocket Events
-
-### Connection
-
-```jsx
-const socket = io('http://localhost:5000', {
-  auth: {
-    token: 'your_jwt_token',
-  },
-});
-```
-
-### Events
-
-- `new_message`: New message received
-- `application_update`: Application status changed
-- `new_notification`: New notification received
-
-## Deployment
-
-### Production Setup
-
-1. Set environment variables
-2. Build the application
-
-   ```bash
-   npm run build
-   ```
-
-3. Start the server
-
-   ```bash
+   
+   # Production
    npm start
    ```
 
-### Docker Deployment
+## Admin Account
 
+The system automatically creates an admin account on first startup:
+
+- **Email**: `admin@microhire.com` (configurable via `ADMIN_EMAIL`)
+- **Password**: `Admin@123` (configurable via `ADMIN_PASSWORD`)
+
+⚠️ **Important**: Change the admin password after first login for security!
+
+## API Documentation
+
+The API documentation is available at `/api-docs` when the server is running.
+
+### Key Endpoints
+
+- `POST /api/auth/register` - User registration
+- `POST /api/auth/login` - User login
+- `GET /api/auth/me` - Get current user
+- `GET /api/internships` - List internships
+- `POST /api/internships` - Create internship (Business only)
+- `POST /api/applications` - Apply for internship
+- `GET /api/messages` - Get messages
+- `POST /api/messages` - Send message
+
+## Security Features
+
+- **CSRF Protection**: All state-changing requests require CSRF tokens
+- **Rate Limiting**: Configurable rate limits on API endpoints
+- **Input Validation**: Comprehensive validation using Joi
+- **SQL Injection Protection**: Parameterized queries with Sequelize
+- **XSS Protection**: Content Security Policy headers
+- **Password Security**: Bcrypt hashing with configurable rounds
+
+## Development
+
+### Running Tests
 ```bash
-docker-compose up -d
+npm test
 ```
+
+### Code Quality
+```bash
+npm run lint
+npm run format
+```
+
+## Production Deployment
+
+1. Set `NODE_ENV=production` in your environment
+2. Configure production database credentials
+3. Set up SSL certificates
+4. Configure reverse proxy (nginx recommended)
+5. Set up process manager (PM2 recommended)
+
+### PM2 Configuration
+```bash
+npm install -g pm2
+pm2 start ecosystem.config.js
+pm2 save
+pm2 startup
+```
+
+## Environment Variables
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `NODE_ENV` | Environment mode | `development` |
+| `PORT` | Server port | `5000` |
+| `DB_HOST` | Database host | `localhost` |
+| `DB_NAME` | Database name | `microhire_db` |
+| `JWT_SECRET` | JWT signing secret | Required |
+| `ADMIN_EMAIL` | Admin account email | `admin@microhire.com` |
+| `ADMIN_PASSWORD` | Admin account password | `Admin@123` |
 
 ## Contributing
 
 1. Fork the repository
-2. Create your feature branch
-3. Commit your changes
-4. Push to the branch
-5. Create a Pull Request
+2. Create a feature branch
+3. Make your changes
+4. Add tests
+5. Submit a pull request
 
 ## License
 
@@ -297,8 +242,8 @@ Authorization: Bearer <your_jwt_token>
 | ------ | ------------------------ | ----------------------------- | ------------- | -------- |
 | `GET`  | `/users/me`              | Get current user profile      | ✅            | Any      |
 | `PUT`  | `/users/me`              | Update user profile           | ✅            | Any      |
-| `GET`  | `/users/me/applications` | Get user’s applications       | ✅            | Student  |
-| `GET`  | `/users/me/internships`  | Get user’s posted internships | ✅            | Business |
+| `GET`  | `/users/me/applications` | Get user's applications       | ✅            | Student  |
+| `GET`  | `/users/me/internships`  | Get user's posted internships | ✅            | Business |
 
 ### 📝 Internship Endpoints
 

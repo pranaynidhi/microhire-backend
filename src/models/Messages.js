@@ -9,19 +9,30 @@ const Message = sequelize.define(
       primaryKey: true,
       autoIncrement: true,
     },
+    conversationId: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      field: 'conversation_id',
+      references: {
+        model: 'conversations',
+        key: 'id',
+      },
+    },
     senderId: {
       type: DataTypes.INTEGER,
       allowNull: false,
+      field: 'sender_id',
       references: {
-        model: 'Users',
+        model: 'users',
         key: 'id',
       },
     },
     receiverId: {
       type: DataTypes.INTEGER,
       allowNull: false,
+      field: 'receiver_id',
       references: {
-        model: 'Users',
+        model: 'users',
         key: 'id',
       },
     },
@@ -36,47 +47,54 @@ const Message = sequelize.define(
     messageType: {
       type: DataTypes.ENUM('text', 'file', 'system'),
       defaultValue: 'text',
+      field: 'message_type',
     },
     fileUrl: {
       type: DataTypes.STRING,
       allowNull: true,
+      field: 'file_url',
     },
     fileName: {
       type: DataTypes.STRING,
       allowNull: true,
+      field: 'file_name',
     },
     isRead: {
       type: DataTypes.BOOLEAN,
       defaultValue: false,
+      field: 'is_read',
     },
     readAt: {
       type: DataTypes.DATE,
       allowNull: true,
+      field: 'read_at',
     },
     isDeleted: {
       type: DataTypes.BOOLEAN,
       defaultValue: false,
+      field: 'is_deleted',
     },
     deletedAt: {
       type: DataTypes.DATE,
       allowNull: true,
+      field: 'deleted_at',
     },
-    conversationId: {
-      type: DataTypes.STRING,
-      allowNull: false,
-      index: true,
+    editedAt: {
+      type: DataTypes.DATE,
+      allowNull: true,
+      field: 'edited_at',
     },
   },
   {
-    tableName: 'Messages',
+    tableName: 'messages',
     timestamps: true,
     underscored: true,
     indexes: [
       {
-        fields: ['sender_id', 'receiver_id'],
+        fields: ['conversation_id'],
       },
       {
-        fields: ['conversation_id'],
+        fields: ['sender_id'],
       },
       {
         fields: ['created_at'],

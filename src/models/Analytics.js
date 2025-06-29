@@ -31,19 +31,22 @@ const Analytics = sequelize.define('Analytics', {
       'internship_share',
       'internship_bookmark'
     ),
-    allowNull: false
+    allowNull: false,
+    field: 'event_type'
   },
   userId: {
     type: DataTypes.INTEGER,
     allowNull: true,
+    field: 'user_id',
     references: {
-      model: 'Users',
+      model: 'users',
       key: 'id'
     }
   },
   targetId: {
     type: DataTypes.INTEGER,
-    allowNull: true
+    allowNull: true,
+    field: 'target_id'
   },
   metadata: {
     type: DataTypes.JSON,
@@ -51,15 +54,18 @@ const Analytics = sequelize.define('Analytics', {
   },
   ipAddress: {
     type: DataTypes.STRING,
-    allowNull: true
+    allowNull: true,
+    field: 'ip_address'
   },
   userAgent: {
     type: DataTypes.TEXT,
-    allowNull: true
+    allowNull: true,
+    field: 'user_agent'
   },
   sessionId: {
     type: DataTypes.STRING,
-    allowNull: true
+    allowNull: true,
+    field: 'session_id'
   },
   duration: {
     type: DataTypes.INTEGER, // in seconds
@@ -71,7 +77,8 @@ const Analytics = sequelize.define('Analytics', {
   },
   deviceType: {
     type: DataTypes.ENUM('desktop', 'mobile', 'tablet'),
-    allowNull: true
+    allowNull: true,
+    field: 'device_type'
   },
   browser: {
     type: DataTypes.STRING,
@@ -82,8 +89,9 @@ const Analytics = sequelize.define('Analytics', {
     allowNull: true
   }
 }, {
-  tableName: 'Analytics',
-  timestamps: true
+  tableName: 'analytics',
+  timestamps: true,
+  underscored: true
 });
 
 module.exports = Analytics;

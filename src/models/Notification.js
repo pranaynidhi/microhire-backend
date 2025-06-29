@@ -12,8 +12,9 @@ const Notification = sequelize.define(
     userId: {
       type: DataTypes.INTEGER,
       allowNull: false,
+      field: 'user_id',
       references: {
-        model: 'Users',
+        model: 'users',
         key: 'id',
       },
     },
@@ -47,14 +48,17 @@ const Notification = sequelize.define(
     isRead: {
       type: DataTypes.BOOLEAN,
       defaultValue: false,
+      field: 'is_read',
     },
     readAt: {
       type: DataTypes.DATE,
       allowNull: true,
+      field: 'read_at',
     },
     actionUrl: {
       type: DataTypes.STRING,
       allowNull: true,
+      field: 'action_url',
     },
     metadata: {
       type: DataTypes.JSON,
@@ -67,11 +71,13 @@ const Notification = sequelize.define(
     expiresAt: {
       type: DataTypes.DATE,
       allowNull: true,
+      field: 'expires_at',
     },
   },
   {
     timestamps: true,
     underscored: true,
+    tableName: 'notifications',
     indexes: [
       {
         fields: ['user_id', 'is_read'],
@@ -83,7 +89,6 @@ const Notification = sequelize.define(
         fields: ['created_at'],
       },
     ],
-    tableName: 'Notifications',
   }
 );
 

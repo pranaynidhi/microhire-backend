@@ -4,6 +4,8 @@ const { authenticate, requireEmailVerification } = require('../middleware/auth')
 const { AppError } = require('../utils/errors');
 const logger = require('../utils/logger');
 const messageController = require('../controllers/messageController');
+const { Conversation, Message } = require('../models');
+const { Op } = require('sequelize');
 
 /**
  * @swagger
@@ -323,9 +325,58 @@ router.delete('/conversations/:conversationId', authenticate, requireEmailVerifi
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.post('/conversations', authenticate, requireEmailVerification, (req, res) => {
-  // Implement create conversation logic
-  res.json({ success: true, message: 'Create conversation endpoint' });
+router.post('/conversations', authenticate, requireEmailVerification, async (req, res, next) => {
+  try {
+    const { participantId, message } = req.body;
+    
+    if (!participantId || !message) {
+      return res.status(400).json({
+        success: false,
+        message: 'Participant ID and message are required'
+      });
+    }
+    
+    // Check if conversation already exists
+    let conversation = await Conversation.findOne({
+      where: {
+        [Op.or]: [
+          { participant1Id: req.user.id, participant2Id: participantId },
+          { participant1Id: participantId, participant2Id: req.user.id }
+        ]
+      }
+    });
+    
+    // Create new conversation if it doesn't exist
+    if (!conversation) {
+      conversation = await Conversation.create({
+        participant1Id: req.user.id,
+        participant2Id: participantId
+      });
+    }
+    
+    // Create the message
+    const newMessage = await Message.create({
+      conversationId: conversation.id,
+      senderId: req.user.id,
+      receiverId: participantId,
+      content: message
+    });
+    
+    // Update conversation last message
+    await conversation.update({
+      lastMessageId: newMessage.id,
+      lastMessageAt: new Date()
+    });
+    
+    res.status(201).json({
+      success: true,
+      message: 'Conversation created and message sent',
+      conversation,
+      message: newMessage
+    });
+  } catch (error) {
+    next(error);
+  }
 });
 
 /**
@@ -380,9 +431,57 @@ router.post('/conversations', authenticate, requireEmailVerification, (req, res)
  *       404:
  *         $ref: '#/components/responses/NotFoundError'
  */
-router.put('/:messageId', authenticate, requireEmailVerification, (req, res) => {
-  // Implement edit message logic
-  res.json({ success: true, message: 'Edit message endpoint' });
+router.put('/:messageId', authenticate, requireEmailVerification, async (req, res, next) => {
+  try {
+    const { messageId } = req.params;
+    const { content } = req.body;
+    
+    if (!content) {
+      return res.status(400).json({
+        success: false,
+        message: 'Message content is required'
+      });
+    }
+    
+    const message = await Message.findByPk(messageId);
+    
+    if (!message) {
+      return res.status(404).json({
+        success: false,
+        message: 'Message not found'
+      });
+    }
+    
+    // Check if user owns the message
+    if (message.senderId !== req.user.id) {
+      return res.status(403).json({
+        success: false,
+        message: 'You can only edit your own messages'
+      });
+    }
+    
+    // Check if message is not too old (e.g., within 5 minutes)
+    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+    if (message.createdAt < fiveMinutesAgo) {
+      return res.status(400).json({
+        success: false,
+        message: 'Messages can only be edited within 5 minutes of sending'
+      });
+    }
+    
+    await message.update({
+      content,
+      editedAt: new Date()
+    });
+    
+    res.json({
+      success: true,
+      message: 'Message updated successfully',
+      message
+    });
+  } catch (error) {
+    next(error);
+  }
 });
 
 /**
@@ -418,9 +517,45 @@ router.put('/:messageId', authenticate, requireEmailVerification, (req, res) => 
  *       404:
  *         $ref: '#/components/responses/NotFoundError'
  */
-router.delete('/:messageId', authenticate, requireEmailVerification, (req, res) => {
-  // Implement delete message logic
-  res.json({ success: true, message: 'Delete message endpoint' });
+router.delete('/:messageId', authenticate, requireEmailVerification, async (req, res, next) => {
+  try {
+    const { messageId } = req.params;
+    
+    const message = await Message.findByPk(messageId);
+    
+    if (!message) {
+      return res.status(404).json({
+        success: false,
+        message: 'Message not found'
+      });
+    }
+    
+    // Check if user owns the message
+    if (message.senderId !== req.user.id) {
+      return res.status(403).json({
+        success: false,
+        message: 'You can only delete your own messages'
+      });
+    }
+    
+    // Check if message is not too old (e.g., within 10 minutes)
+    const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000);
+    if (message.createdAt < tenMinutesAgo) {
+      return res.status(400).json({
+        success: false,
+        message: 'Messages can only be deleted within 10 minutes of sending'
+      });
+    }
+    
+    await message.destroy();
+    
+    res.json({
+      success: true,
+      message: 'Message deleted successfully'
+    });
+  } catch (error) {
+    next(error);
+  }
 });
 
 module.exports = router;
