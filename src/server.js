@@ -28,10 +28,12 @@ console.log('DEBUG: typeof attachSocket(io):', typeof middleware);
 const PORT = process.env.PORT || 5000;
 
 // Middleware
-app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:3000',
-  credentials: true,
-}));
+app.use(
+  cors({
+    origin: process.env.CLIENT_URL || process.env.FRONTEND_URL || 'http://localhost:3000',
+    credentials: true,
+  })
+);
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
@@ -78,23 +80,28 @@ app.get('/api-docs/swagger.json', (req, res) => {
   res.send(specs);
 });
 
-
 // Serve custom Swagger UI JS if needed
 app.use('/swagger-ui-init.js', express.static(path.join(__dirname, 'utils/swagger-ui-init.js')));
 
 // API Documentation
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs, {
-  customJs: '/swagger-ui-init.js'
-}));
+app.use(
+  '/api-docs',
+  swaggerUi.serve,
+  swaggerUi.setup(specs, {
+    customJs: '/swagger-ui-init.js',
+  })
+);
 
 // Request logging
 app.use((req, res, next) => {
-  logger.info(JSON.stringify({
-    method: req.method,
-    url: req.url,
-    ip: req.ip,
-    user: req.user?.id
-  }));
+  logger.info(
+    JSON.stringify({
+      method: req.method,
+      url: req.url,
+      ip: req.ip,
+      user: req.user?.id,
+    })
+  );
   next();
 });
 
@@ -160,7 +167,7 @@ app.get('/', (req, res) => {
   res.json({
     success: true,
     message: 'Welcome to the MicroHire API!',
-    docs: '/api-docs'
+    docs: '/api-docs',
   });
 });
 
@@ -210,4 +217,3 @@ if (require.main === module) {
 }
 
 module.exports = { app, server };
-

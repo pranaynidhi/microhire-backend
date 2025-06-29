@@ -17,9 +17,9 @@ const limiter = rateLimit({
     logger.warn(`Rate limit exceeded for IP: ${req.ip}`);
     res.status(options.statusCode).json({
       success: false,
-      message: options.message
+      message: options.message,
     });
-  }
+  },
 });
 
 // Apply rate limiting to all routes
@@ -37,34 +37,39 @@ const securityHeaders = helmet({
       fontSrc: ["'self'"],
       objectSrc: ["'none'"],
       mediaSrc: ["'self'"],
-      frameSrc: ["'none'"]
-    }
+      frameSrc: ["'none'"],
+    },
   },
   crossOriginEmbedderPolicy: true,
   crossOriginOpenerPolicy: true,
-  crossOriginResourcePolicy: { policy: "same-site" },
+  crossOriginResourcePolicy: { policy: 'same-site' },
   dnsPrefetchControl: { allow: false },
   frameguard: { action: 'deny' },
   hidePoweredBy: true,
   hsts: {
     maxAge: 31536000,
     includeSubDomains: true,
-    preload: true
+    preload: true,
   },
   ieNoOpen: true,
   noSniff: true,
   referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
-  xssFilter: true
+  xssFilter: true,
 });
 
 // CORS configuration
 const corsOptions = {
-  origin: process.env.FRONTEND_URL || '*',
+  origin: [
+    process.env.FRONTEND_URL || 'http://localhost:3000',
+    process.env.CLIENT_URL || 'http://localhost:3000',
+    'http://localhost:3000',
+    'http://localhost:80',
+  ],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   exposedHeaders: ['Content-Range', 'X-Content-Range'],
   credentials: true,
-  maxAge: 86400 // 24 hours
+  maxAge: 86400, // 24 hours
 };
 
 // Apply security middleware
@@ -94,7 +99,7 @@ const applySecurityMiddleware = (app) => {
       method: req.method,
       path: req.path,
       ip: req.ip,
-      userAgent: req.get('User-Agent')
+      userAgent: req.get('User-Agent'),
     });
     next();
   });
@@ -102,5 +107,5 @@ const applySecurityMiddleware = (app) => {
 
 module.exports = {
   applySecurityMiddleware,
-  applyRateLimit
+  applyRateLimit,
 };

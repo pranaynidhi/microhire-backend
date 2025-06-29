@@ -21,17 +21,19 @@ const certificateController = {
       const result = await withTransaction(async (transaction) => {
         // Check if internship exists and is completed
         const internship = await Internship.findOne({
-          where: { 
+          where: {
             id: req.body.internshipId,
             status: 'closed',
-            companyId: req.user.id
+            companyId: req.user.id,
           },
-          include: [{
-            model: User,
-            as: 'student',
-            attributes: ['id', 'fullName']
-          }],
-          transaction
+          include: [
+            {
+              model: User,
+              as: 'student',
+              attributes: ['id', 'fullName'],
+            },
+          ],
+          transaction,
         });
 
         if (!internship) {
@@ -41,9 +43,9 @@ const certificateController = {
         // Check if certificate already exists
         const existingCertificate = await Certificate.findOne({
           where: {
-            internshipId: req.body.internshipId
+            internshipId: req.body.internshipId,
           },
-          transaction
+          transaction,
         });
 
         if (existingCertificate) {
@@ -54,31 +56,34 @@ const certificateController = {
         const certificateId = `CERT-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
         // Create certificate
-        const certificate = await Certificate.create({
-          certificateId,
-          studentId: internship.studentId,
-          companyId: req.user.id,
-          internshipId: req.body.internshipId,
-          studentName: internship.student?.fullName || 'Unknown Student',
-          companyName: req.user.companyName,
-          internshipTitle: internship.title,
-          startDate: internship.startDate || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
-          endDate: internship.endDate || new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
-          performance: req.body.performance,
-          isValid: true
-        }, { transaction });
+        const certificate = await Certificate.create(
+          {
+            certificateId,
+            studentId: internship.studentId,
+            companyId: req.user.id,
+            internshipId: req.body.internshipId,
+            studentName: internship.student?.fullName || 'Unknown Student',
+            companyName: req.user.companyName,
+            internshipTitle: internship.title,
+            startDate: internship.startDate || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+            endDate: internship.endDate || new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
+            performance: req.body.performance,
+            isValid: true,
+          },
+          { transaction }
+        );
 
         // Generate PDF
         const doc = new PDFDocument();
-        const certificatesDir = path.join(__dirname, '../certificates');
-        
+        const certificatesDir = path.join(__dirname, '../../uploads/certificates');
+
         // Create certificates directory if it doesn't exist
         if (!fs.existsSync(certificatesDir)) {
           fs.mkdirSync(certificatesDir, { recursive: true });
         }
-        
+
         const pdfPath = path.join(certificatesDir, `${certificateId}.pdf`);
-        
+
         doc.pipe(fs.createWriteStream(pdfPath));
         // Add certificate content
         doc.text(`Certificate of Completion`, { align: 'center' });
@@ -90,7 +95,7 @@ const certificateController = {
         // Invalidate caches
         await Promise.all([
           cache.del(`student:${certificate.studentId}:certificates`),
-          cache.del(`company:${certificate.companyId}:certificates`)
+          cache.del(`company:${certificate.companyId}:certificates`),
         ]);
 
         return certificate;
@@ -99,7 +104,7 @@ const certificateController = {
       res.status(201).json({
         success: true,
         message: 'Certificate generated successfully',
-        data: { certificate: result }
+        data: { certificate: result },
       });
     } catch (error) {
       logger.error('Generate certificate error:', error);
@@ -114,37 +119,37 @@ const certificateController = {
           {
             model: User,
             as: 'student',
-            attributes: ['id', 'fullName', 'email']
+            attributes: ['id', 'fullName', 'email'],
           },
           {
             model: User,
             as: 'company',
-            attributes: ['id', 'companyName', 'email']
+            attributes: ['id', 'companyName', 'email'],
           },
           {
             model: Internship,
             as: 'internship',
-            attributes: ['id', 'title', 'description']
-          }
-        ]
+            attributes: ['id', 'title', 'description'],
+          },
+        ],
       });
 
       if (!certificate || !certificate.isValid) {
         return res.status(404).json({
           success: false,
-          message: 'Certificate not found'
+          message: 'Certificate not found',
         });
       }
 
       res.json({
         success: true,
-        data: { certificate }
+        data: { certificate },
       });
     } catch (error) {
       console.error('Get certificate error:', error);
       res.status(500).json({
         success: false,
-        message: 'Failed to fetch certificate'
+        message: 'Failed to fetch certificate',
       });
     }
   },
@@ -160,28 +165,28 @@ const certificateController = {
 
       const result = await withTransaction(async (transaction) => {
         const certificate = await Certificate.findOne({
-          where: { 
+          where: {
             certificateId: req.params.certificateId,
-            isValid: true 
+            isValid: true,
           },
           include: [
             {
               model: User,
               as: 'student',
-              attributes: ['id', 'fullName']
+              attributes: ['id', 'fullName'],
             },
             {
               model: User,
               as: 'company',
-              attributes: ['id', 'companyName']
+              attributes: ['id', 'companyName'],
             },
             {
               model: Internship,
               as: 'internship',
-              attributes: ['id', 'title']
-            }
+              attributes: ['id', 'title'],
+            },
           ],
-          transaction
+          transaction,
         });
 
         if (!certificate) {
@@ -192,13 +197,15 @@ const certificateController = {
       });
 
       if (!result) {
-        return res.status(404).json({ success: false, message: 'Certificate not found or invalid' });
+        return res
+          .status(404)
+          .json({ success: false, message: 'Certificate not found or invalid' });
       }
 
       const response = {
         success: true,
         message: 'Certificate is valid',
-        data: { 
+        data: {
           certificate: {
             id: result.id,
             certificateId: result.certificateId,
@@ -208,9 +215,9 @@ const certificateController = {
             startDate: result.startDate,
             endDate: result.endDate,
             performance: result.performance,
-            issuedAt: result.issuedAt
-          }
-        }
+            issuedAt: result.issuedAt,
+          },
+        },
       };
 
       await cache.set(cacheKey, response, 3600); // Cache for 1 hour
@@ -225,34 +232,34 @@ const certificateController = {
   getUserCertificates: async (req, res) => {
     try {
       const certificates = await Certificate.findAll({
-        where: { 
+        where: {
           studentId: req.user.id,
-          isValid: true 
+          isValid: true,
         },
         include: [
           {
             model: User,
             as: 'company',
-            attributes: ['id', 'companyName']
+            attributes: ['id', 'companyName'],
           },
           {
             model: Internship,
             as: 'internship',
-            attributes: ['id', 'title']
-          }
+            attributes: ['id', 'title'],
+          },
         ],
-        order: [['issuedAt', 'DESC']]
+        order: [['issuedAt', 'DESC']],
       });
 
       res.json({
         success: true,
-        data: { certificates }
+        data: { certificates },
       });
     } catch (error) {
       console.error('Get user certificates error:', error);
       res.status(500).json({
         success: false,
-        message: 'Failed to fetch certificates'
+        message: 'Failed to fetch certificates',
       });
     }
   },
@@ -267,14 +274,14 @@ const certificateController = {
           id,
           studentId: req.user.id,
           isValid: true,
-          isRevoked: false
-        }
+          isRevoked: false,
+        },
       });
 
       if (!certificate) {
         return res.status(404).json({
           success: false,
-          message: 'Certificate not found or not authorized'
+          message: 'Certificate not found or not authorized',
         });
       }
 
@@ -283,20 +290,20 @@ const certificateController = {
 
       await certificate.update({
         shareToken,
-        shareExpiresAt
+        shareExpiresAt,
       });
 
       res.json({
         success: true,
         data: {
-          shareUrl: `${process.env.CLIENT_URL}/certificates/share/${shareToken}`
-        }
+          shareUrl: `${process.env.CLIENT_URL}/certificates/share/${shareToken}`,
+        },
       });
     } catch (error) {
       console.error('Generate share link error:', error);
       res.status(500).json({
         success: false,
-        message: 'Failed to generate share link'
+        message: 'Failed to generate share link',
       });
     }
   },
@@ -309,14 +316,14 @@ const certificateController = {
       const certificate = await Certificate.findOne({
         where: {
           id,
-          companyId: req.user.id
-        }
+          companyId: req.user.id,
+        },
       });
 
       if (!certificate) {
         return res.status(404).json({
           success: false,
-          message: 'Certificate not found or not authorized'
+          message: 'Certificate not found or not authorized',
         });
       }
 
@@ -324,7 +331,7 @@ const certificateController = {
         isRevoked: true,
         revokedAt: new Date(),
         revokedReason: reason,
-        isValid: false
+        isValid: false,
       });
 
       // Notify student
@@ -335,19 +342,19 @@ const certificateController = {
         type: 'certificate_revoked',
         metadata: {
           certificateId: certificate.id,
-          reason
-        }
+          reason,
+        },
       });
 
       res.json({
         success: true,
-        message: 'Certificate revoked successfully'
+        message: 'Certificate revoked successfully',
       });
     } catch (error) {
       console.error('Revoke certificate error:', error);
       res.status(500).json({
         success: false,
-        message: 'Failed to revoke certificate'
+        message: 'Failed to revoke certificate',
       });
     }
   },
@@ -359,14 +366,14 @@ const certificateController = {
       const certificate = await Certificate.findOne({
         where: {
           id,
-          companyId: req.user.id
-        }
+          companyId: req.user.id,
+        },
       });
 
       if (!certificate) {
         return res.status(404).json({
           success: false,
-          message: 'Certificate not found or not authorized'
+          message: 'Certificate not found or not authorized',
         });
       }
 
@@ -375,10 +382,10 @@ const certificateController = {
         where: { certificateId: id },
         attributes: [
           [sequelize.fn('DATE', sequelize.col('viewedAt')), 'date'],
-          [sequelize.fn('COUNT', sequelize.col('id')), 'count']
+          [sequelize.fn('COUNT', sequelize.col('id')), 'count'],
         ],
         group: [sequelize.fn('DATE', sequelize.col('viewedAt'))],
-        order: [[sequelize.fn('DATE', sequelize.col('viewedAt')), 'ASC']]
+        order: [[sequelize.fn('DATE', sequelize.col('viewedAt')), 'ASC']],
       });
 
       // Get verification statistics
@@ -389,17 +396,17 @@ const certificateController = {
         data: {
           totalViews: certificate.viewCount,
           views,
-          verifications
-        }
+          verifications,
+        },
       });
     } catch (error) {
       console.error('Get certificate analytics error:', error);
       res.status(500).json({
         success: false,
-        message: 'Failed to fetch certificate analytics'
+        message: 'Failed to fetch certificate analytics',
       });
     }
-  }
+  },
 };
 
 // Aliases for route compatibility
@@ -415,5 +422,5 @@ module.exports = {
   getCertificateById,
   addCertificate,
   updateCertificate,
-  deleteCertificate
-}; 
+  deleteCertificate,
+};

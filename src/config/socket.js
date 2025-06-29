@@ -9,14 +9,19 @@ let io;
 const initializeSocket = (server) => {
   io = socketIO(server, {
     cors: {
-      origin: process.env.FRONTEND_URL || '*',
+      origin: [
+        process.env.FRONTEND_URL || 'http://localhost:3000',
+        process.env.CLIENT_URL || 'http://localhost:3000',
+        'http://localhost:3000',
+        'http://localhost:80',
+      ],
       methods: ['GET', 'POST'],
-      credentials: true
+      credentials: true,
     },
     pingTimeout: 60000,
     pingInterval: 25000,
     connectTimeout: 45000,
-    maxHttpBufferSize: 1e8
+    maxHttpBufferSize: 1e8,
   });
 
   // Authentication middleware
@@ -31,7 +36,10 @@ const initializeSocket = (server) => {
       socket.user = decoded;
       next();
     } catch (error) {
-      logger.error('Socket authentication error:', error instanceof Error ? error.stack : JSON.stringify(error));
+      logger.error(
+        'Socket authentication error:',
+        error instanceof Error ? error.stack : JSON.stringify(error)
+      );
       next(new AppError('Authentication failed', 401));
     }
   });
@@ -63,7 +71,7 @@ const initializeSocket = (server) => {
     socket.on('send_message', async (data) => {
       try {
         const { recipientId, message } = data;
-        
+
         // Validate message
         if (!message || !recipientId) {
           throw new AppError('Invalid message data', 400);
@@ -73,14 +81,14 @@ const initializeSocket = (server) => {
         io.to(recipientId).emit('receive_message', {
           senderId: socket.user.id,
           message,
-          timestamp: new Date()
+          timestamp: new Date(),
         });
 
         // Emit confirmation to sender
         socket.emit('message_sent', {
           recipientId,
           message,
-          timestamp: new Date()
+          timestamp: new Date(),
         });
 
         logger.info(`Message sent from ${socket.user.id} to ${recipientId}`);
@@ -95,7 +103,7 @@ const initializeSocket = (server) => {
       const { recipientId, isTyping } = data;
       io.to(recipientId).emit('user_typing', {
         userId: socket.user.id,
-        isTyping
+        isTyping,
       });
     });
 
@@ -105,7 +113,7 @@ const initializeSocket = (server) => {
       io.to(senderId).emit('message_read_receipt', {
         messageId,
         readBy: socket.user.id,
-        timestamp: new Date()
+        timestamp: new Date(),
       });
     });
   });
@@ -127,5 +135,5 @@ const getIO = () => {
 
 module.exports = {
   initializeSocket,
-  getIO
+  getIO,
 };

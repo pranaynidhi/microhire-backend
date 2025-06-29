@@ -5,13 +5,19 @@
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
+    "start:prod": "NODE_ENV=production node src/server.js",
     "dev": "nodemon src/server.js",
     "test": "jest --detectOpenHandles --forceExit",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
+    "test:prod": "NODE_ENV=test jest --detectOpenHandles --forceExit",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
+    "db:migrate": "node -e \"require('./src/models').syncDatabase()\"",
+    "db:seed": "node -e \"require('./src/utils/seed')()\"",
+    "logs": "tail -f logs/combined.log",
+    "logs:error": "tail -f logs/error.log",
     "prepare": "husky install"
   },
   "keywords": [
