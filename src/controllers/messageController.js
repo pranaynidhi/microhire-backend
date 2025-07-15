@@ -1,7 +1,7 @@
-const { Message, User } = require('../models');
 const { Op } = require('sequelize');
 const path = require('path');
 const fs = require('fs');
+const { Message, User } = require('../models');
 
 const sendMessage = async (req, res) => {
   try {
@@ -10,13 +10,13 @@ const sendMessage = async (req, res) => {
 
     // Validate receiver
     const receiver = await User.findOne({
-      where: { id: receiverId, isActive: true }
+      where: { id: receiverId, isActive: true },
     });
 
     if (!receiver) {
       return res.status(404).json({
         success: false,
-        message: 'Receiver not found'
+        message: 'Receiver not found',
       });
     }
 
@@ -41,7 +41,7 @@ const sendMessage = async (req, res) => {
       conversationId,
       messageType,
       fileUrl,
-      fileName
+      fileName,
     });
 
     // Emit real-time event
@@ -52,22 +52,22 @@ const sendMessage = async (req, res) => {
           sender: {
             id: req.user.id,
             fullName: req.user.fullName,
-            role: req.user.role
-          }
-        }
+            role: req.user.role,
+          },
+        },
       });
     }
 
     res.status(201).json({
       success: true,
       message: 'Message sent successfully',
-      data: { message }
+      data: { message },
     });
   } catch (error) {
     console.error('Send message error:', error);
     res.status(500).json({
       success: false,
-      message: 'Failed to send message'
+      message: 'Failed to send message',
     });
   }
 };
@@ -146,10 +146,7 @@ const getConversations = async (req, res) => {
     // Get all unique conversations for the user
     const conversations = await Message.findAll({
       where: {
-        [Op.or]: [
-          { senderId: userId },
-          { receiverId: userId }
-        ],
+        [Op.or]: [{ senderId: userId }, { receiverId: userId }],
         isDeleted: false,
       },
       attributes: [
@@ -183,9 +180,8 @@ const getConversations = async (req, res) => {
           order: [['createdAt', 'DESC']],
         });
 
-        const otherUser = lastMessage.senderId === userId 
-          ? lastMessage.receiver 
-          : lastMessage.sender;
+        const otherUser =
+          lastMessage.senderId === userId ? lastMessage.receiver : lastMessage.sender;
 
         const unreadCount = await Message.count({
           where: {
@@ -325,18 +321,15 @@ const deleteMessage = async (req, res) => {
     const message = await Message.findOne({
       where: {
         id,
-        [Op.or]: [
-          { senderId: userId },
-          { receiverId: userId }
-        ],
-        isDeleted: false
-      }
+        [Op.or]: [{ senderId: userId }, { receiverId: userId }],
+        isDeleted: false,
+      },
     });
 
     if (!message) {
       return res.status(404).json({
         success: false,
-        message: 'Message not found or you are not authorized to delete it'
+        message: 'Message not found or you are not authorized to delete it',
       });
     }
 
@@ -350,25 +343,25 @@ const deleteMessage = async (req, res) => {
 
     await message.update({
       isDeleted: true,
-      deletedAt: new Date()
+      deletedAt: new Date(),
     });
 
     // Emit real-time event
     if (req.io) {
       req.io.to(`conversation_${message.conversationId}`).emit('message_deleted', {
-        messageId: message.id
+        messageId: message.id,
       });
     }
 
     res.json({
       success: true,
-      message: 'Message deleted successfully'
+      message: 'Message deleted successfully',
     });
   } catch (error) {
     console.error('Delete message error:', error);
     res.status(500).json({
       success: false,
-      message: 'Failed to delete message'
+      message: 'Failed to delete message',
     });
   }
 };

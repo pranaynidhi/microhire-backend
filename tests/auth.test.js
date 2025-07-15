@@ -18,7 +18,7 @@ describe('Authentication Tests', () => {
       password: 'Test123!@#',
       role: 'student',
       isActive: true,
-      emailVerified: true
+      emailVerified: true,
     });
 
     testCompany = await User.create({
@@ -28,7 +28,7 @@ describe('Authentication Tests', () => {
       role: 'business',
       companyName: 'Test Company',
       isActive: true,
-      emailVerified: true
+      emailVerified: true,
     });
 
     const { accessToken: studentAccessToken } = generateTokens(testStudent.id);
@@ -94,7 +94,7 @@ describe('Authentication Tests', () => {
         password: 'Test123!@#',
         role: 'student',
         emailVerificationToken: 'test-token',
-        emailVerified: false
+        emailVerified: false,
       });
 
       const response = await request(app)
@@ -103,7 +103,7 @@ describe('Authentication Tests', () => {
 
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
-      
+
       // Clean up
       await user.destroy();
     });

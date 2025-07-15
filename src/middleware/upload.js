@@ -6,7 +6,7 @@ const logger = require('../utils/logger');
 
 // Ensure upload directories exist
 const uploadDirs = ['uploads/resumes', 'uploads/logos', 'uploads/portfolios'];
-uploadDirs.forEach(dir => {
+uploadDirs.forEach((dir) => {
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
   }
@@ -16,7 +16,7 @@ uploadDirs.forEach(dir => {
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     let uploadPath = 'uploads/';
-    
+
     if (file.fieldname === 'resume') {
       uploadPath += 'resumes/';
     } else if (file.fieldname === 'logo') {
@@ -24,14 +24,14 @@ const storage = multer.diskStorage({
     } else if (file.fieldname === 'portfolio') {
       uploadPath += 'portfolios/';
     }
-    
+
     cb(null, uploadPath);
   },
   filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
     const ext = path.extname(file.originalname).toLowerCase();
-    cb(null, file.fieldname + '-' + uniqueSuffix + ext);
-  }
+    cb(null, `${file.fieldname}-${uniqueSuffix}${ext}`);
+  },
 });
 
 // File filter
@@ -42,7 +42,7 @@ const fileFilter = (req, file, cb) => {
       'application/pdf': ['.pdf'],
       'image/jpeg': ['.jpg', '.jpeg'],
       'image/png': ['.png'],
-      'image/gif': ['.gif']
+      'image/gif': ['.gif'],
     };
 
     // Check file type
@@ -73,46 +73,44 @@ const upload = multer({
   storage,
   fileFilter,
   limits: {
-    fileSize: 5 * 1024 * 1024 // 5MB
-  }
+    fileSize: 5 * 1024 * 1024, // 5MB
+  },
 });
 
 // Upload middleware
-const uploadMiddleware = (fieldName) => {
-  return async (req, res, next) => {
-    try {
-      // Handle single file upload
-      upload.single(fieldName)(req, res, (err) => {
-        if (err) {
-          if (err instanceof multer.MulterError) {
-            if (err.code === 'LIMIT_FILE_SIZE') {
-              return next(new AppError('File size too large. Maximum size is 5MB', 400));
-            }
-            return next(new AppError(err.message, 400));
+const uploadMiddleware = (fieldName) => async (req, res, next) => {
+  try {
+    // Handle single file upload
+    upload.single(fieldName)(req, res, (err) => {
+      if (err) {
+        if (err instanceof multer.MulterError) {
+          if (err.code === 'LIMIT_FILE_SIZE') {
+            return next(new AppError('File size too large. Maximum size is 5MB', 400));
           }
-          return next(err);
+          return next(new AppError(err.message, 400));
         }
+        return next(err);
+      }
 
-        if (!req.file) {
-          return next(new AppError('No file uploaded', 400));
-        }
+      if (!req.file) {
+        return next(new AppError('No file uploaded', 400));
+      }
 
-        // Add file information to request
-        req.fileInfo = {
-          filename: req.file.filename,
-          originalname: req.file.originalname,
-          mimetype: req.file.mimetype,
-          size: req.file.size,
-          path: req.file.path
-        };
+      // Add file information to request
+      req.fileInfo = {
+        filename: req.file.filename,
+        originalname: req.file.originalname,
+        mimetype: req.file.mimetype,
+        size: req.file.size,
+        path: req.file.path,
+      };
 
-        next();
-      });
-    } catch (error) {
-      logger.error('Error in upload middleware:', error);
-      next(error);
-    }
-  };
+      next();
+    });
+  } catch (error) {
+    logger.error('Error in upload middleware:', error);
+    next(error);
+  }
 };
 
 // Delete file middleware
@@ -125,7 +123,7 @@ const deleteFileMiddleware = async (req, res, next) => {
     }
 
     const filePath = path.join('uploads', filename);
-    
+
     if (fs.existsSync(filePath)) {
       fs.unlinkSync(filePath);
       logger.info(`File deleted: ${filePath}`);
@@ -146,11 +144,11 @@ const cleanupOldFiles = async () => {
     for (const dir of uploadDirs) {
       const files = await fs.promises.readdir(dir);
       const now = Date.now();
-      
+
       for (const file of files) {
         const filePath = path.join(dir, file);
         const stats = await fs.promises.stat(filePath);
-        
+
         // Remove files older than 24 hours
         if (now - stats.mtime.getTime() > 24 * 60 * 60 * 1000) {
           await fs.promises.unlink(filePath);
@@ -170,5 +168,5 @@ if (process.env.NODE_ENV !== 'test') {
 
 module.exports = {
   uploadMiddleware,
-  deleteFileMiddleware
+  deleteFileMiddleware,
 };

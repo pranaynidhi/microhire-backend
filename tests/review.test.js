@@ -4,7 +4,11 @@ const { User, Internship, Review } = require('../src/models');
 const { generateTokens } = require('../src/controllers/authController');
 
 describe('Reviews', () => {
-  let companyToken, studentToken, companyId, studentId, internshipId;
+  let companyToken;
+  let studentToken;
+  let companyId;
+  let studentId;
+  let internshipId;
 
   beforeEach(async () => {
     try {
@@ -17,11 +21,11 @@ describe('Reviews', () => {
         role: 'business',
         companyName: 'Test Company Inc.',
         isActive: true,
-        emailVerified: true
+        emailVerified: true,
       });
       companyId = company.id;
       const { accessToken } = generateTokens(company.id);
-      companyToken = 'Bearer ' + accessToken;
+      companyToken = `Bearer ${accessToken}`;
 
       // Create student user with unique email
       const student = await User.create({
@@ -30,26 +34,26 @@ describe('Reviews', () => {
         password: 'Test123!@#',
         role: 'student',
         isActive: true,
-        emailVerified: true
+        emailVerified: true,
       });
       studentId = student.id;
       const { accessToken: studentAccessToken } = generateTokens(student.id);
-      studentToken = 'Bearer ' + studentAccessToken;
+      studentToken = `Bearer ${studentAccessToken}`;
 
       // Create completed internship with valid dates
       const internship = await Internship.create({
         title: 'Test Internship',
         description: 'Test description',
         requirements: 'Test requirements',
-        companyId: companyId,
-        studentId: studentId,
+        companyId,
+        studentId,
         location: 'Remote',
         type: 'remote',
         duration: 3,
         stipend: 1000,
         startDate: new Date('2024-01-01'),
         deadline: new Date('2025-12-31'), // Future date
-        status: 'closed'
+        status: 'closed',
       });
       internshipId = internship.id;
     } catch (error) {
@@ -66,7 +70,7 @@ describe('Reviews', () => {
         .send({
           internshipId,
           rating: 5,
-          comment: 'Great internship experience!'
+          comment: 'Great internship experience!',
         });
 
       expect([201, 400, 500]).toContain(res.status);
@@ -79,14 +83,14 @@ describe('Reviews', () => {
           title: 'Incomplete Internship',
           description: 'Test description',
           requirements: 'Test requirements',
-          companyId: companyId,
+          companyId,
           location: 'Remote',
           type: 'remote',
           duration: 3,
           stipend: 1000,
           startDate: new Date('2024-01-01'),
           deadline: new Date('2025-12-31'), // Future date
-          status: 'active'
+          status: 'active',
         });
 
         const res = await request(server)
@@ -95,7 +99,7 @@ describe('Reviews', () => {
           .send({
             internshipId: incompleteInternship.id,
             rating: 5,
-            comment: 'Great internship experience!'
+            comment: 'Great internship experience!',
           });
 
         expect([400, 404, 500]).toContain(res.status);

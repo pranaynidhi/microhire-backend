@@ -12,17 +12,20 @@ const authenticate = async (req, res, next) => {
     }
     const token = authHeader.split('Bearer ')[1];
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    
+
     // Fetch full user object from database
     const user = await User.findByPk(decoded.userId);
     if (!user || !user.isActive) {
       throw new AppError('User not found or inactive', 401);
     }
-    
+
     req.user = user;
     next();
   } catch (error) {
-    logger.error('Authentication error:', error instanceof Error ? error.stack : JSON.stringify(error));
+    logger.error(
+      'Authentication error:',
+      error instanceof Error ? error.stack : JSON.stringify(error)
+    );
     next(new AppError('Invalid or expired token', 401));
   }
 };
@@ -64,5 +67,5 @@ module.exports = {
   isCompany,
   isStudent,
   requireEmailVerification,
-  requireAdmin
+  requireAdmin,
 };

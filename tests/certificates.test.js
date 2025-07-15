@@ -3,8 +3,12 @@ const { server } = require('./setupTest');
 const { User, Certificate, Internship } = require('../src/models');
 const { generateTokens } = require('../src/controllers/authController');
 
-let studentToken, companyToken, adminToken;
-let student, company, admin;
+let studentToken;
+let companyToken;
+let adminToken;
+let student;
+let company;
+let admin;
 let internshipId;
 
 beforeEach(async () => {
@@ -17,9 +21,9 @@ beforeEach(async () => {
       password: 'Test123!@#',
       role: 'student',
       isActive: true,
-      emailVerified: true
+      emailVerified: true,
     });
-    
+
     company = await User.create({
       fullName: 'Test Company',
       email: `company${timestamp}@test.com`,
@@ -27,7 +31,7 @@ beforeEach(async () => {
       role: 'business',
       companyName: 'Test Company',
       isActive: true,
-      emailVerified: true
+      emailVerified: true,
     });
 
     admin = await User.create({
@@ -36,7 +40,7 @@ beforeEach(async () => {
       password: 'Test123!@#',
       role: 'admin',
       isActive: true,
-      emailVerified: true
+      emailVerified: true,
     });
 
     // Create a completed internship for certificate tests
@@ -54,17 +58,17 @@ beforeEach(async () => {
       category: 'Development',
       companyId: company.id,
       studentId: student.id,
-      status: 'closed' // Use 'closed' instead of 'completed'
+      status: 'closed', // Use 'closed' instead of 'completed'
     });
     internshipId = internship.id;
 
     const { accessToken: studentAccessToken } = generateTokens(student.id);
     const { accessToken: companyAccessToken } = generateTokens(company.id);
     const { accessToken: adminAccessToken } = generateTokens(admin.id);
-    
-    studentToken = 'Bearer ' + studentAccessToken;
-    companyToken = 'Bearer ' + companyAccessToken;
-    adminToken = 'Bearer ' + adminAccessToken;
+
+    studentToken = `Bearer ${studentAccessToken}`;
+    companyToken = `Bearer ${companyAccessToken}`;
+    adminToken = `Bearer ${adminAccessToken}`;
   } catch (error) {
     console.error('Certificate test setup error:', error);
     console.error('Error details:', error.message);
@@ -97,7 +101,9 @@ describe('Certificates API', () => {
       expect(res.status).toBe(401);
     });
     it('should get certificate by id (student)', async () => {
-      const res = await request(server).get('/api/certificates/1').set('Authorization', studentToken);
+      const res = await request(server)
+        .get('/api/certificates/1')
+        .set('Authorization', studentToken);
       expect([200, 201, 400, 404, 500]).toContain(res.status);
     });
   });
@@ -111,9 +117,9 @@ describe('Certificates API', () => {
       const res = await request(server)
         .post('/api/certificates')
         .set('Authorization', companyToken)
-        .send({ 
+        .send({
           name: 'Test Certificate',
-          internshipId: internshipId
+          internshipId,
         });
       expect([200, 201, 400, 404, 500]).toContain(res.status);
     }, 30000);
@@ -128,9 +134,9 @@ describe('Certificates API', () => {
       const res = await request(server)
         .put('/api/certificates/1')
         .set('Authorization', companyToken)
-        .send({ 
+        .send({
           name: 'Updated Certificate',
-          internshipId: internshipId
+          internshipId,
         });
       expect([200, 201, 400, 404, 500]).toContain(res.status);
     }, 30000);
@@ -138,7 +144,9 @@ describe('Certificates API', () => {
 
   describe('PATCH /api/certificates/:id/revoke', () => {
     it('should require authentication', async () => {
-      const res = await request(server).patch('/api/certificates/1/revoke').send({ reason: 'Test' });
+      const res = await request(server)
+        .patch('/api/certificates/1/revoke')
+        .send({ reason: 'Test' });
       expect([401, 404]).toContain(res.status);
     });
     it('should revoke certificate (student)', async () => {
@@ -160,7 +168,7 @@ describe('Certificates API', () => {
         .post('/api/certificates/generate')
         .set('Authorization', companyToken)
         .send({
-          internshipId: internshipId
+          internshipId,
         });
       expect([200, 201, 400, 404, 500]).toContain(res.status);
     }, 30000);
@@ -211,4 +219,4 @@ describe('Certificates API', () => {
       expect([200, 201, 400, 404, 500]).toContain(res.status);
     });
   });
-}); 
+});

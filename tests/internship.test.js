@@ -18,11 +18,11 @@ describe('Internships', () => {
       role: 'business',
       companyName: 'Test Company',
       isActive: true,
-      emailVerified: true
+      emailVerified: true,
     });
     companyId = company.id;
     const { accessToken: companyAccessToken } = generateTokens(company.id);
-    companyToken = 'Bearer ' + companyAccessToken;
+    companyToken = `Bearer ${companyAccessToken}`;
 
     // Create student user
     const student = await User.create({
@@ -31,10 +31,10 @@ describe('Internships', () => {
       password: 'Test123!@#',
       role: 'student',
       isActive: true,
-      emailVerified: true
+      emailVerified: true,
     });
     const { accessToken: studentAccessToken } = generateTokens(student.id);
-    studentToken = 'Bearer ' + studentAccessToken;
+    studentToken = `Bearer ${studentAccessToken}`;
   });
 
   describe('POST /api/internships', () => {
@@ -51,7 +51,7 @@ describe('Internships', () => {
           duration: '3 months',
           deadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
           type: 'onsite',
-          category: 'Development'
+          category: 'Development',
         });
 
       expect([201, 400, 500]).toContain(res.status);
@@ -63,7 +63,7 @@ describe('Internships', () => {
         .set('Authorization', companyToken)
         .send({
           title: 'Test',
-          description: 'Test'
+          description: 'Test',
         });
 
       expect([400, 500]).toContain(res.status);
@@ -82,7 +82,7 @@ describe('Internships', () => {
         deadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
         type: 'onsite',
         category: 'Development',
-        companyId
+        companyId,
       });
 
       await Internship.create({
@@ -95,14 +95,12 @@ describe('Internships', () => {
         deadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
         type: 'remote',
         category: 'Design',
-        companyId
+        companyId,
       });
     });
 
     it('should get all internships', async () => {
-      const res = await request(server)
-        .get('/api/internships')
-        .set('Authorization', studentToken);
+      const res = await request(server).get('/api/internships').set('Authorization', studentToken);
 
       expect([200, 500]).toContain(res.status);
     });

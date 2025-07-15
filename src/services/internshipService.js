@@ -1,5 +1,5 @@
-const { Internship, User, Application } = require('../models');
 const { Op } = require('sequelize');
+const { Internship, User, Application } = require('../models');
 const withTransaction = require('../utils/transaction');
 const cache = require('../utils/cache');
 const { AppError } = require('../utils/errors');
@@ -8,10 +8,13 @@ const logger = require('../utils/logger');
 class InternshipService {
   static async createInternship(data, companyId) {
     return withTransaction(async (transaction) => {
-      const internship = await Internship.create({
-        ...data,
-        companyId
-      }, { transaction });
+      const internship = await Internship.create(
+        {
+          ...data,
+          companyId,
+        },
+        { transaction }
+      );
 
       await cache.del(`company:${companyId}:internships`);
       return internship;
@@ -27,11 +30,15 @@ class InternshipService {
     }
 
     const internship = await Internship.findByPk(id, {
-      include: includeCompany ? [{
-        model: User,
-        as: 'company',
-        attributes: ['id', 'companyName', 'email', 'logoUrl']
-      }] : []
+      include: includeCompany
+        ? [
+            {
+              model: User,
+              as: 'company',
+              attributes: ['id', 'companyName', 'email', 'logoUrl'],
+            },
+          ]
+        : [],
     });
 
     if (internship) {
@@ -45,7 +52,7 @@ class InternshipService {
     return withTransaction(async (transaction) => {
       const internship = await Internship.findOne({
         where: { id, companyId },
-        transaction
+        transaction,
       });
 
       if (!internship) {
@@ -64,7 +71,7 @@ class InternshipService {
     return withTransaction(async (transaction) => {
       const internship = await Internship.findOne({
         where: { id, companyId },
-        transaction
+        transaction,
       });
 
       if (!internship) {
@@ -89,7 +96,7 @@ class InternshipService {
 
     const whereClause = {
       status: 'active',
-      deadline: { [Op.gt]: new Date() }
+      deadline: { [Op.gt]: new Date() },
     };
 
     if (filters.category) {
@@ -107,20 +114,22 @@ class InternshipService {
     if (filters.query) {
       whereClause[Op.or] = [
         { title: { [Op.like]: `%${filters.query}%` } },
-        { description: { [Op.like]: `%${filters.query}%` } }
+        { description: { [Op.like]: `%${filters.query}%` } },
       ];
     }
 
     const result = await Internship.findAndCountAll({
       where: whereClause,
-      include: [{
-        model: User,
-        as: 'company',
-        attributes: ['id', 'companyName', 'email', 'logoUrl']
-      }],
+      include: [
+        {
+          model: User,
+          as: 'company',
+          attributes: ['id', 'companyName', 'email', 'logoUrl'],
+        },
+      ],
       order: [['createdAt', 'DESC']],
       limit: parseInt(limit),
-      offset: (parseInt(page) - 1) * parseInt(limit)
+      offset: (parseInt(page) - 1) * parseInt(limit),
     });
 
     const response = {
@@ -129,8 +138,8 @@ class InternshipService {
         currentPage: parseInt(page),
         totalPages: Math.ceil(result.count / parseInt(limit)),
         totalItems: result.count,
-        itemsPerPage: parseInt(limit)
-      }
+        itemsPerPage: parseInt(limit),
+      },
     };
 
     await cache.set(cacheKey, response, 300);

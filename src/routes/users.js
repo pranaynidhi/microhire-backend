@@ -1,4 +1,5 @@
 const express = require('express');
+const bcrypt = require('bcryptjs');
 const {
   getProfile,
   updateProfile,
@@ -8,7 +9,6 @@ const {
 const { authenticate, requireEmailVerification } = require('../middleware/auth');
 const webpush = require('../services/webPushService');
 const User = require('../models/User');
-const bcrypt = require('bcryptjs');
 const { AppError } = require('../utils/errors');
 const logger = require('../utils/logger');
 
@@ -223,7 +223,7 @@ router.get('/me/applications', getMyApplications);
  */
 router.get('/me/internships', getMyInternships);
 
-let subscriptions = [];
+const subscriptions = [];
 
 /**
  * @swagger
@@ -343,6 +343,11 @@ router.post('/notify', async (req, res) => {
   const results = [];
   for (const sub of subscriptions) {
     try {
+      // Validate subscription before sending
+      if (!sub || !sub.endpoint || !sub.keys || !sub.keys.p256dh || !sub.keys.auth) {
+        results.push({ success: false, error: 'Invalid subscription format' });
+        continue;
+      }
       await webpush.sendNotification(sub, payload);
       results.push({ success: true });
     } catch (err) {
@@ -388,19 +393,19 @@ router.get('/:id', authenticate, async (req, res, next) => {
   try {
     const { id } = req.params;
     const user = await User.findByPk(id, {
-      attributes: { exclude: ['password', 'twoFASecret'] }
+      attributes: { exclude: ['password', 'twoFASecret'] },
     });
-    
+
     if (!user) {
-      return res.status(404).json({ 
-        success: false, 
-        message: 'User not found' 
+      return res.status(404).json({
+        success: false,
+        message: 'User not found',
       });
     }
-    
-    res.json({ 
-      success: true, 
-      user 
+
+    res.json({
+      success: true,
+      user,
     });
   } catch (error) {
     next(error);
@@ -451,47 +456,47 @@ router.get('/:id', authenticate, async (req, res, next) => {
 router.put('/me/password', authenticate, async (req, res, next) => {
   try {
     const { currentPassword, newPassword } = req.body;
-    
+
     if (!currentPassword || !newPassword) {
       return res.status(400).json({
         success: false,
-        message: 'Current password and new password are required'
+        message: 'Current password and new password are required',
       });
     }
-    
+
     if (newPassword.length < 6) {
       return res.status(400).json({
         success: false,
-        message: 'New password must be at least 6 characters long'
+        message: 'New password must be at least 6 characters long',
       });
     }
-    
+
     const user = await User.findByPk(req.user.id);
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: 'User not found'
+        message: 'User not found',
       });
     }
-    
+
     // Verify current password
     const isCurrentPasswordValid = await bcrypt.compare(currentPassword, user.password);
     if (!isCurrentPasswordValid) {
       return res.status(400).json({
         success: false,
-        message: 'Current password is incorrect'
+        message: 'Current password is incorrect',
       });
     }
-    
+
     // Hash new password
     const hashedNewPassword = await bcrypt.hash(newPassword, 12);
-    
+
     // Update password
     await user.update({ password: hashedNewPassword });
-    
+
     res.json({
       success: true,
-      message: 'Password changed successfully'
+      message: 'Password changed successfully',
     });
   } catch (error) {
     next(error);
@@ -537,37 +542,37 @@ router.put('/me/password', authenticate, async (req, res, next) => {
 router.delete('/me/delete', authenticate, async (req, res, next) => {
   try {
     const { password } = req.body;
-    
+
     if (!password) {
       return res.status(400).json({
         success: false,
-        message: 'Password is required for account deletion'
+        message: 'Password is required for account deletion',
       });
     }
-    
+
     const user = await User.findByPk(req.user.id);
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: 'User not found'
+        message: 'User not found',
       });
     }
-    
+
     // Verify password
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
       return res.status(400).json({
         success: false,
-        message: 'Invalid password'
+        message: 'Invalid password',
       });
     }
-    
+
     // Delete user account (this will cascade to related data due to paranoid: true)
     await user.destroy();
-    
+
     res.json({
       success: true,
-      message: 'Account deleted successfully'
+      message: 'Account deleted successfully',
     });
   } catch (error) {
     next(error);

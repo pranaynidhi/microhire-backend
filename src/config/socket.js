@@ -27,7 +27,7 @@ const initializeSocket = (server) => {
   // Authentication middleware
   io.use(async (socket, next) => {
     try {
-      const token = socket.handshake.auth.token;
+      const { token } = socket.handshake.auth;
       if (!token) {
         throw new AppError('Authentication token required', 401);
       }

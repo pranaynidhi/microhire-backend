@@ -40,7 +40,9 @@ class EmailService {
         <h2 style="color: #2563eb;">Welcome to MicroHire, ${user.fullName}!</h2>
         <p>Thank you for joining MicroHire, Nepal's premier micro-internship platform.</p>
         
-        ${user.role === 'student' ? `
+        ${
+          user.role === 'student'
+            ? `
           <p>As a student, you can now:</p>
           <ul>
             <li>Browse exciting internship opportunities</li>
@@ -48,7 +50,8 @@ class EmailService {
             <li>Track your application status</li>
             <li>Connect with top companies in Nepal</li>
           </ul>
-        ` : `
+        `
+            : `
           <p>As a business, you can now:</p>
           <ul>
             <li>Post internship opportunities</li>
@@ -56,7 +59,8 @@ class EmailService {
             <li>Connect with talented students</li>
             <li>Build your team with fresh talent</li>
           </ul>
-        `}
+        `
+        }
         
         <p>Get started by logging into your dashboard:</p>
         <a href="${process.env.CLIENT_URL}/dashboard" 
@@ -117,7 +121,8 @@ class EmailService {
       },
       rejected: {
         subject: `Application Update for ${internship.title}`,
-        message: 'Thank you for your interest. Unfortunately, we have decided to move forward with other candidates.',
+        message:
+          'Thank you for your interest. Unfortunately, we have decided to move forward with other candidates.',
         color: '#ef4444',
       },
     };
@@ -133,14 +138,20 @@ class EmailService {
         <div style="background-color: #f8fafc; padding: 20px; border-radius: 8px; margin: 20px 0;">
           <h3 style="margin: 0 0 10px 0;">${internship.title}</h3>
           <p><strong>Company:</strong> ${company.companyName}</p>
-          <p><strong>Status:</strong> <span style="color: ${statusInfo.color}; font-weight: bold; text-transform: capitalize;">${status}</span></p>
+          <p><strong>Status:</strong> <span style="color: ${
+            statusInfo.color
+          }; font-weight: bold; text-transform: capitalize;">${status}</span></p>
         </div>
         
-        ${status === 'accepted' ? `
+        ${
+          status === 'accepted'
+            ? `
           <p>The company will contact you soon with next steps. You can also reach out to them directly through the platform.</p>
-        ` : `
+        `
+            : `
           <p>Don't be discouraged! Keep applying to other opportunities on MicroHire.</p>
-        `}
+        `
+        }
         
         <a href="${process.env.CLIENT_URL}/dashboard/applications" 
            style="background-color: #2563eb; color: white; padding: 12px 24px; 
@@ -160,13 +171,19 @@ class EmailService {
 
   async sendDeadlineReminder(student, internships) {
     const subject = 'Application Deadlines Approaching';
-    const internshipList = internships.map(internship => `
+    const internshipList = internships
+      .map(
+        (internship) => `
       <li style="margin-bottom: 10px;">
         <strong>${internship.title}</strong> at ${internship.company.companyName}
         <br>
-        <span style="color: #ef4444;">Deadline: ${new Date(internship.deadline).toLocaleDateString()}</span>
+        <span style="color: #ef4444;">Deadline: ${new Date(
+          internship.deadline
+        ).toLocaleDateString()}</span>
       </li>
-    `).join('');
+    `
+      )
+      .join('');
 
     const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">

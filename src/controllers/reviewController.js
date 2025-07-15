@@ -1,8 +1,8 @@
+const { Op } = require('sequelize');
 const Review = require('../models/Review');
 const User = require('../models/User');
 const Internship = require('../models/Internship');
 const Application = require('../models/Application');
-const { Op } = require('sequelize');
 const ReviewReport = require('../models/ReviewReport');
 const sequelize = require('../config/database');
 const withTransaction = require('../utils/transaction');
@@ -18,15 +18,15 @@ const reviewController = {
         const internship = await Internship.findOne({
           where: {
             id: req.body.internshipId,
-            status: 'closed'
+            status: 'closed',
           },
-          transaction
+          transaction,
         });
 
         if (!internship) {
           res.status(404).json({
             success: false,
-            message: 'Internship not found or not completed'
+            message: 'Internship not found or not completed',
           });
           return null;
         }
@@ -35,7 +35,7 @@ const reviewController = {
         if (req.user.role === 'student' && internship.studentId !== req.user.id) {
           res.status(403).json({
             success: false,
-            message: 'Not authorized to review this internship'
+            message: 'Not authorized to review this internship',
           });
           return null;
         }
@@ -43,7 +43,7 @@ const reviewController = {
         if (req.user.role === 'business' && internship.companyId !== req.user.id) {
           res.status(403).json({
             success: false,
-            message: 'Not authorized to review this internship'
+            message: 'Not authorized to review this internship',
           });
           return null;
         }
@@ -52,34 +52,37 @@ const reviewController = {
         const existingReview = await Review.findOne({
           where: {
             reviewerId: req.user.id,
-            internshipId: req.body.internshipId
+            internshipId: req.body.internshipId,
           },
-          transaction
+          transaction,
         });
 
         if (existingReview) {
           res.status(400).json({
             success: false,
-            message: 'You have already reviewed this internship'
+            message: 'You have already reviewed this internship',
           });
           return null;
         }
 
         // Create review
-        const review = await Review.create({
-          reviewerId: req.user.id,
-          revieweeId: req.user.role === 'student' ? internship.companyId : internship.studentId,
-          internshipId: req.body.internshipId,
-          rating: req.body.rating,
-          comment: req.body.comment,
-          type: req.user.role === 'student' ? 'student_to_company' : 'company_to_student'
-        }, { transaction });
+        const review = await Review.create(
+          {
+            reviewerId: req.user.id,
+            revieweeId: req.user.role === 'student' ? internship.companyId : internship.studentId,
+            internshipId: req.body.internshipId,
+            rating: req.body.rating,
+            comment: req.body.comment,
+            type: req.user.role === 'student' ? 'student_to_company' : 'company_to_student',
+          },
+          { transaction }
+        );
 
         // Invalidate caches
         await Promise.all([
           cache.del(`internship:${req.body.internshipId}:reviews`),
           cache.del(`user:${review.revieweeId}:reviews`),
-          cache.del(`user:${review.reviewerId}:reviews`)
+          cache.del(`user:${review.reviewerId}:reviews`),
         ]);
 
         return review;
@@ -88,14 +91,14 @@ const reviewController = {
       res.status(201).json({
         success: true,
         message: 'Review submitted successfully',
-        data: { review: result }
+        data: { review: result },
       });
     } catch (error) {
       logger.error('Create review error:', error);
       if (!res.headersSent) {
         res.status(500).json({
           success: false,
-          message: 'Internal server error'
+          message: 'Internal server error',
         });
       }
     }
@@ -109,24 +112,24 @@ const reviewController = {
       const offset = (page - 1) * limit;
 
       const reviews = await Review.findAndCountAll({
-        where: { 
+        where: {
           revieweeId: userId,
-          isVisible: true 
+          isVisible: true,
         },
         include: [
           {
             model: User,
             as: 'reviewer',
-            attributes: ['id', 'fullName', 'companyName']
+            attributes: ['id', 'fullName', 'companyName'],
           },
           {
             model: Internship,
-            attributes: ['id', 'title']
-          }
+            attributes: ['id', 'title'],
+          },
         ],
         order: [['createdAt', 'DESC']],
         limit: parseInt(limit),
-        offset: offset
+        offset,
       });
 
       res.json({
@@ -137,15 +140,15 @@ const reviewController = {
             currentPage: parseInt(page),
             totalPages: Math.ceil(reviews.count / limit),
             totalItems: reviews.count,
-            itemsPerPage: parseInt(limit)
-          }
-        }
+            itemsPerPage: parseInt(limit),
+          },
+        },
       });
     } catch (error) {
       console.error('Get user reviews error:', error);
       res.status(500).json({
         success: false,
-        message: 'Failed to fetch reviews'
+        message: 'Failed to fetch reviews',
       });
     }
   },
@@ -158,25 +161,25 @@ const reviewController = {
       const offset = (page - 1) * limit;
 
       const reviews = await Review.findAndCountAll({
-        where: { 
+        where: {
           revieweeId: companyId,
           type: 'student_to_company',
-          isVisible: true 
+          isVisible: true,
         },
         include: [
           {
             model: User,
             as: 'reviewer',
-            attributes: ['id', 'fullName']
+            attributes: ['id', 'fullName'],
           },
           {
             model: Internship,
-            attributes: ['id', 'title']
-          }
+            attributes: ['id', 'title'],
+          },
         ],
         order: [['createdAt', 'DESC']],
         limit: parseInt(limit),
-        offset: offset
+        offset,
       });
 
       res.json({
@@ -187,15 +190,15 @@ const reviewController = {
             currentPage: parseInt(page),
             totalPages: Math.ceil(reviews.count / limit),
             totalItems: reviews.count,
-            itemsPerPage: parseInt(limit)
-          }
-        }
+            itemsPerPage: parseInt(limit),
+          },
+        },
       });
     } catch (error) {
       console.error('Get company reviews error:', error);
       res.status(500).json({
         success: false,
-        message: 'Failed to fetch company reviews'
+        message: 'Failed to fetch company reviews',
       });
     }
   },
@@ -207,14 +210,14 @@ const reviewController = {
       const review = await Review.findOne({
         where: {
           id: req.params.id,
-          reviewerId: req.user.id
-        }
+          reviewerId: req.user.id,
+        },
       });
 
       if (!review) {
         return res.status(404).json({
           success: false,
-          message: 'Review not found or you are not authorized to update it'
+          message: 'Review not found or you are not authorized to update it',
         });
       }
 
@@ -225,30 +228,30 @@ const reviewController = {
           {
             model: User,
             as: 'reviewer',
-            attributes: ['id', 'fullName', 'email']
+            attributes: ['id', 'fullName', 'email'],
           },
           {
             model: User,
             as: 'reviewee',
-            attributes: ['id', 'fullName', 'email']
+            attributes: ['id', 'fullName', 'email'],
           },
           {
             model: Internship,
-            attributes: ['id', 'title']
-          }
-        ]
+            attributes: ['id', 'title'],
+          },
+        ],
       });
 
       res.json({
         success: true,
         message: 'Review updated successfully',
-        data: { review: updatedReview }
+        data: { review: updatedReview },
       });
     } catch (error) {
       console.error('Update review error:', error);
       res.status(500).json({
         success: false,
-        message: 'Failed to update review'
+        message: 'Failed to update review',
       });
     }
   },
@@ -258,14 +261,14 @@ const reviewController = {
       const review = await Review.findOne({
         where: {
           id: req.params.id,
-          reviewerId: req.user.id
-        }
+          reviewerId: req.user.id,
+        },
       });
 
       if (!review) {
         return res.status(404).json({
           success: false,
-          message: 'Review not found or you are not authorized to delete it'
+          message: 'Review not found or you are not authorized to delete it',
         });
       }
 
@@ -273,13 +276,13 @@ const reviewController = {
 
       res.json({
         success: true,
-        message: 'Review deleted successfully'
+        message: 'Review deleted successfully',
       });
     } catch (error) {
       console.error('Delete review error:', error);
       res.status(500).json({
         success: false,
-        message: 'Failed to delete review'
+        message: 'Failed to delete review',
       });
     }
   },
@@ -290,58 +293,69 @@ const reviewController = {
 
       // Get basic stats
       const basicStats = await Review.findAll({
-        where: { 
+        where: {
           revieweeId: userId,
           isVisible: true,
-          status: 'approved'
+          status: 'approved',
         },
         attributes: [
           [sequelize.fn('AVG', sequelize.col('rating')), 'averageRating'],
           [sequelize.fn('COUNT', sequelize.col('id')), 'totalReviews'],
-          [sequelize.fn('COUNT', sequelize.literal('CASE WHEN rating = 5 THEN 1 END')), 'fiveStars'],
-          [sequelize.fn('COUNT', sequelize.literal('CASE WHEN rating = 4 THEN 1 END')), 'fourStars'],
-          [sequelize.fn('COUNT', sequelize.literal('CASE WHEN rating = 3 THEN 1 END')), 'threeStars'],
+          [
+            sequelize.fn('COUNT', sequelize.literal('CASE WHEN rating = 5 THEN 1 END')),
+            'fiveStars',
+          ],
+          [
+            sequelize.fn('COUNT', sequelize.literal('CASE WHEN rating = 4 THEN 1 END')),
+            'fourStars',
+          ],
+          [
+            sequelize.fn('COUNT', sequelize.literal('CASE WHEN rating = 3 THEN 1 END')),
+            'threeStars',
+          ],
           [sequelize.fn('COUNT', sequelize.literal('CASE WHEN rating = 2 THEN 1 END')), 'twoStars'],
-          [sequelize.fn('COUNT', sequelize.literal('CASE WHEN rating = 1 THEN 1 END')), 'oneStar']
-        ]
+          [sequelize.fn('COUNT', sequelize.literal('CASE WHEN rating = 1 THEN 1 END')), 'oneStar'],
+        ],
       });
 
       // Get recent trends
       const recentTrends = await Review.findAll({
-        where: { 
+        where: {
           revieweeId: userId,
           isVisible: true,
           status: 'approved',
           createdAt: {
-            [Op.gte]: new Date(new Date() - 30 * 24 * 60 * 60 * 1000) // Last 30 days
-          }
+            [Op.gte]: new Date(new Date() - 30 * 24 * 60 * 60 * 1000), // Last 30 days
+          },
         },
         attributes: [
           [sequelize.fn('DATE', sequelize.col('createdAt')), 'date'],
           [sequelize.fn('AVG', sequelize.col('rating')), 'averageRating'],
-          [sequelize.fn('COUNT', sequelize.col('id')), 'reviewCount']
+          [sequelize.fn('COUNT', sequelize.col('id')), 'reviewCount'],
         ],
         group: [sequelize.fn('DATE', sequelize.col('createdAt'))],
-        order: [[sequelize.fn('DATE', sequelize.col('createdAt')), 'ASC']]
+        order: [[sequelize.fn('DATE', sequelize.col('createdAt')), 'ASC']],
       });
 
       // Get category-wise ratings
       const categoryStats = await Review.findAll({
-        where: { 
+        where: {
           revieweeId: userId,
           isVisible: true,
-          status: 'approved'
+          status: 'approved',
         },
-        include: [{
-          model: Internship,
-          attributes: ['category']
-        }],
+        include: [
+          {
+            model: Internship,
+            attributes: ['category'],
+          },
+        ],
         attributes: [
           [sequelize.col('Internship.category'), 'category'],
           [sequelize.fn('AVG', sequelize.col('rating')), 'averageRating'],
-          [sequelize.fn('COUNT', sequelize.col('id')), 'reviewCount']
+          [sequelize.fn('COUNT', sequelize.col('id')), 'reviewCount'],
         ],
-        group: [sequelize.col('Internship.category')]
+        group: [sequelize.col('Internship.category')],
       });
 
       res.json({
@@ -349,14 +363,14 @@ const reviewController = {
         data: {
           basicStats: basicStats[0],
           recentTrends,
-          categoryStats
-        }
+          categoryStats,
+        },
       });
     } catch (error) {
       console.error('Get review stats error:', error);
       res.status(500).json({
         success: false,
-        message: 'Failed to fetch review statistics'
+        message: 'Failed to fetch review statistics',
       });
     }
   },
@@ -371,7 +385,7 @@ const reviewController = {
       if (!review) {
         return res.status(404).json({
           success: false,
-          message: 'Review not found'
+          message: 'Review not found',
         });
       }
 
@@ -379,14 +393,14 @@ const reviewController = {
       const existingReport = await ReviewReport.findOne({
         where: {
           reviewId,
-          reporterId
-        }
+          reporterId,
+        },
       });
 
       if (existingReport) {
         return res.status(409).json({
           success: false,
-          message: 'You have already reported this review'
+          message: 'You have already reported this review',
         });
       }
 
@@ -395,32 +409,32 @@ const reviewController = {
         reviewId,
         reporterId,
         reason,
-        description
+        description,
       });
 
       // Update review report count
       await review.update({
         reportCount: review.reportCount + 1,
-        lastReportedAt: new Date()
+        lastReportedAt: new Date(),
       });
 
       // If report count reaches threshold, hide review
       if (review.reportCount >= 3) {
         await review.update({
           isVisible: false,
-          status: 'pending'
+          status: 'pending',
         });
       }
 
       res.json({
         success: true,
-        message: 'Review reported successfully'
+        message: 'Review reported successfully',
       });
     } catch (error) {
       console.error('Report review error:', error);
       res.status(500).json({
         success: false,
-        message: 'Failed to report review'
+        message: 'Failed to report review',
       });
     }
   },
@@ -444,24 +458,24 @@ const reviewController = {
               {
                 model: User,
                 as: 'reviewer',
-                attributes: ['id', 'fullName', 'email']
+                attributes: ['id', 'fullName', 'email'],
               },
               {
                 model: User,
                 as: 'reviewee',
-                attributes: ['id', 'fullName', 'email']
-              }
-            ]
+                attributes: ['id', 'fullName', 'email'],
+              },
+            ],
           },
           {
             model: User,
             as: 'reporter',
-            attributes: ['id', 'fullName', 'email']
-          }
+            attributes: ['id', 'fullName', 'email'],
+          },
         ],
         order: [['createdAt', 'DESC']],
         limit: parseInt(limit),
-        offset: offset
+        offset,
       });
 
       res.json({
@@ -472,15 +486,15 @@ const reviewController = {
             currentPage: parseInt(page),
             totalPages: Math.ceil(reports.count / limit),
             totalItems: reports.count,
-            itemsPerPage: parseInt(limit)
-          }
-        }
+            itemsPerPage: parseInt(limit),
+          },
+        },
       });
     } catch (error) {
       console.error('Get review reports error:', error);
       res.status(500).json({
         success: false,
-        message: 'Failed to fetch review reports'
+        message: 'Failed to fetch review reports',
       });
     }
   },
@@ -494,32 +508,29 @@ const reviewController = {
       if (!review) {
         return res.status(404).json({
           success: false,
-          message: 'Review not found'
+          message: 'Review not found',
         });
       }
 
       await review.update({
         status,
         adminNotes,
-        isVisible: status === 'approved'
+        isVisible: status === 'approved',
       });
 
       // Update all reports for this review
-      await ReviewReport.update(
-        { status: 'resolved' },
-        { where: { reviewId } }
-      );
+      await ReviewReport.update({ status: 'resolved' }, { where: { reviewId } });
 
       res.json({
         success: true,
         message: 'Review moderated successfully',
-        data: { review }
+        data: { review },
       });
     } catch (error) {
       console.error('Moderate review error:', error);
       res.status(500).json({
         success: false,
-        message: 'Failed to moderate review'
+        message: 'Failed to moderate review',
       });
     }
   },
@@ -535,19 +546,21 @@ const reviewController = {
 
       const result = await withTransaction(async (transaction) => {
         const reviews = await Review.findAndCountAll({
-          where: { 
+          where: {
             revieweeId: req.params.userId,
-            isVisible: true
+            isVisible: true,
           },
-          include: [{
-            model: User,
-            as: 'reviewer',
-            attributes: ['id', 'fullName', 'role']
-          }],
+          include: [
+            {
+              model: User,
+              as: 'reviewer',
+              attributes: ['id', 'fullName', 'role'],
+            },
+          ],
           order: [['createdAt', 'DESC']],
           limit: parseInt(req.query.limit) || 10,
           offset: (parseInt(req.query.page) - 1) * (parseInt(req.query.limit) || 10),
-          transaction
+          transaction,
         });
 
         return reviews;
@@ -561,9 +574,9 @@ const reviewController = {
             currentPage: parseInt(req.query.page) || 1,
             totalPages: Math.ceil(result.count / (parseInt(req.query.limit) || 10)),
             totalItems: result.count,
-            itemsPerPage: parseInt(req.query.limit) || 10
-          }
-        }
+            itemsPerPage: parseInt(req.query.limit) || 10,
+          },
+        },
       };
 
       await cache.set(cacheKey, response, 300); // Cache for 5 minutes
@@ -573,7 +586,7 @@ const reviewController = {
       logger.error('Get reviews error:', error);
       throw error;
     }
-  }
+  },
 };
 
 const getAllReviews = async (req, res) => {
@@ -584,11 +597,11 @@ const getAllReviews = async (req, res) => {
       include: [
         { model: User, as: 'reviewer', attributes: ['id', 'fullName', 'email'] },
         { model: User, as: 'reviewee', attributes: ['id', 'fullName', 'email'] },
-        { model: Internship, as: 'internship', attributes: ['id', 'title'] }
+        { model: Internship, as: 'internship', attributes: ['id', 'title'] },
       ],
       order: [['createdAt', 'DESC']],
       limit: parseInt(limit),
-      offset: offset
+      offset,
     });
     res.json({
       success: true,
@@ -598,9 +611,9 @@ const getAllReviews = async (req, res) => {
           currentPage: parseInt(page),
           totalPages: Math.ceil(reviews.count / limit),
           totalItems: reviews.count,
-          itemsPerPage: parseInt(limit)
-        }
-      }
+          itemsPerPage: parseInt(limit),
+        },
+      },
     });
   } catch (error) {
     console.error('Get all reviews error:', error);
@@ -614,8 +627,8 @@ const getReviewById = async (req, res) => {
       include: [
         { model: User, as: 'reviewer', attributes: ['id', 'fullName', 'email'] },
         { model: User, as: 'reviewee', attributes: ['id', 'fullName', 'email'] },
-        { model: Internship, as: 'internship', attributes: ['id', 'title'] }
-      ]
+        { model: Internship, as: 'internship', attributes: ['id', 'title'] },
+      ],
     });
     if (!review) {
       return res.status(404).json({ success: false, message: 'Review not found' });
@@ -630,5 +643,5 @@ const getReviewById = async (req, res) => {
 module.exports = {
   ...reviewController,
   getAllReviews,
-  getReviewById
+  getReviewById,
 };

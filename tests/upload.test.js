@@ -3,8 +3,10 @@ const { server } = require('./setupTest');
 const { User, Upload } = require('../src/models');
 const { generateTokens } = require('../src/controllers/authController');
 
-let studentToken, companyToken;
-let student, company;
+let studentToken;
+let companyToken;
+let student;
+let company;
 
 beforeEach(async () => {
   const timestamp = Date.now() + Math.floor(Math.random() * 10000);
@@ -15,9 +17,9 @@ beforeEach(async () => {
     password: 'Test123!@#',
     role: 'student',
     isActive: true,
-    emailVerified: true
+    emailVerified: true,
   });
-  
+
   company = await User.create({
     fullName: 'Test Company',
     email: `company${timestamp}@test.com`,
@@ -25,13 +27,13 @@ beforeEach(async () => {
     role: 'business',
     companyName: 'Test Company',
     isActive: true,
-    emailVerified: true
+    emailVerified: true,
   });
 
   const { accessToken: studentAccessToken } = generateTokens(student.id);
   const { accessToken: companyAccessToken } = generateTokens(company.id);
-  studentToken = 'Bearer ' + studentAccessToken;
-  companyToken = 'Bearer ' + companyAccessToken;
+  studentToken = `Bearer ${studentAccessToken}`;
+  companyToken = `Bearer ${companyAccessToken}`;
 });
 
 afterEach(async () => {
@@ -62,10 +64,8 @@ describe('Upload Endpoints', () => {
     });
 
     it('should get user files (student)', async () => {
-      const res = await request(server)
-        .get('/api/upload/files')
-        .set('Authorization', studentToken);
+      const res = await request(server).get('/api/upload/files').set('Authorization', studentToken);
       expect([200, 500]).toContain(res.status);
     });
   });
-}); 
+});

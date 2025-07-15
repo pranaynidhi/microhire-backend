@@ -1,22 +1,22 @@
-const { Application, Internship, User } = require('../models');
 const { Op } = require('sequelize');
+const { Application, Internship, User } = require('../models');
 const withTransaction = require('../utils/transaction');
 const cache = require('../utils/cache');
 const { AppError } = require('../utils/errors');
 const logger = require('../utils/logger');
-const notificationHelpers = require('../controllers/notificationController').notificationHelpers;
+const { notificationHelpers } = require('./notificationController');
 
 const createApplication = async (req, res) => {
   try {
     const result = await withTransaction(async (transaction) => {
       // Check if internship exists and is active
       const internship = await Internship.findOne({
-        where: { 
+        where: {
           id: req.body.internshipId,
           status: 'active',
-          deadline: { [Op.gt]: new Date() }
+          deadline: { [Op.gt]: new Date() },
         },
-        transaction
+        transaction,
       });
 
       if (!internship) {
@@ -27,9 +27,9 @@ const createApplication = async (req, res) => {
       const existingApplication = await Application.findOne({
         where: {
           studentId: req.user.id,
-          internshipId: req.body.internshipId
+          internshipId: req.body.internshipId,
         },
-        transaction
+        transaction,
       });
 
       if (existingApplication) {
@@ -39,7 +39,7 @@ const createApplication = async (req, res) => {
       // Check if max applicants reached
       const applicationCount = await Application.count({
         where: { internshipId: req.body.internshipId },
-        transaction
+        transaction,
       });
 
       if (applicationCount >= internship.maxApplicants) {
@@ -47,18 +47,21 @@ const createApplication = async (req, res) => {
       }
 
       // Create application
-      const application = await Application.create({
-        studentId: req.user.id,
-        internshipId: req.body.internshipId,
-        coverLetter: req.body.coverLetter,
-        status: 'pending'
-      }, { transaction });
+      const application = await Application.create(
+        {
+          studentId: req.user.id,
+          internshipId: req.body.internshipId,
+          coverLetter: req.body.coverLetter,
+          status: 'pending',
+        },
+        { transaction }
+      );
 
       // Invalidate caches
       await Promise.all([
         cache.del(`internship:${req.body.internshipId}:applications`),
         cache.del(`student:${req.user.id}:applications`),
-        cache.del(`company:${internship.companyId}:applications`)
+        cache.del(`company:${internship.companyId}:applications`),
       ]);
 
       // Send notification
@@ -74,11 +77,13 @@ const createApplication = async (req, res) => {
     res.status(201).json({
       success: true,
       message: 'Application submitted successfully',
-      data: { application: result }
+      data: { application: result },
     });
   } catch (error) {
     if (error.name === 'SequelizeValidationError') {
-      return res.status(400).json({ success: false, message: error.errors.map(e => e.message).join(', ') });
+      return res
+        .status(400)
+        .json({ success: false, message: error.errors.map((e) => e.message).join(', ') });
     }
     logger.error('Create application error:', error);
     throw error;
@@ -96,11 +101,11 @@ const getApplicationsByInternship = async (req, res) => {
 
     const result = await withTransaction(async (transaction) => {
       const internship = await Internship.findOne({
-        where: { 
+        where: {
           id: req.params.internshipId,
-          companyId: req.user.id
+          companyId: req.user.id,
         },
-        transaction
+        transaction,
       });
 
       if (!internship) {
@@ -109,15 +114,17 @@ const getApplicationsByInternship = async (req, res) => {
 
       const applications = await Application.findAndCountAll({
         where: { internshipId: req.params.internshipId },
-        include: [{
-          model: User,
-          as: 'student',
-          attributes: ['id', 'fullName', 'email', 'resumeUrl']
-        }],
+        include: [
+          {
+            model: User,
+            as: 'student',
+            attributes: ['id', 'fullName', 'email', 'resumeUrl'],
+          },
+        ],
         order: [['createdAt', 'DESC']],
         limit: parseInt(req.query.limit) || 10,
         offset: (parseInt(req.query.page) - 1) * (parseInt(req.query.limit) || 10),
-        transaction
+        transaction,
       });
 
       return applications;
@@ -131,9 +138,9 @@ const getApplicationsByInternship = async (req, res) => {
           currentPage: parseInt(req.query.page) || 1,
           totalPages: Math.ceil(result.count / (parseInt(req.query.limit) || 10)),
           totalItems: result.count,
-          itemsPerPage: parseInt(req.query.limit) || 10
-        }
-      }
+          itemsPerPage: parseInt(req.query.limit) || 10,
+        },
+      },
     };
 
     await cache.set(cacheKey, response, 300); // Cache for 5 minutes
@@ -150,28 +157,33 @@ const updateApplicationStatus = async (req, res) => {
     const result = await withTransaction(async (transaction) => {
       const application = await Application.findOne({
         where: { id: req.params.id },
-        include: [{
-          model: Internship,
-          as: 'internship',
-          where: { companyId: req.user.id }
-        }],
-        transaction
+        include: [
+          {
+            model: Internship,
+            as: 'internship',
+            where: { companyId: req.user.id },
+          },
+        ],
+        transaction,
       });
 
       if (!application) {
         throw new AppError('Application not found', 404);
       }
 
-      await application.update({
-        status: req.body.status,
-        reviewedAt: new Date()
-      }, { transaction });
+      await application.update(
+        {
+          status: req.body.status,
+          reviewedAt: new Date(),
+        },
+        { transaction }
+      );
 
       // Invalidate caches
       await Promise.all([
         cache.del(`internship:${application.internshipId}:applications`),
         cache.del(`student:${application.studentId}:applications`),
-        cache.del(`company:${req.user.id}:applications`)
+        cache.del(`company:${req.user.id}:applications`),
       ]);
 
       // Send notification
@@ -188,7 +200,7 @@ const updateApplicationStatus = async (req, res) => {
     res.json({
       success: true,
       message: 'Application status updated successfully',
-      data: { application: result }
+      data: { application: result },
     });
   } catch (error) {
     logger.error('Update application status error:', error);
@@ -199,20 +211,23 @@ const updateApplicationStatus = async (req, res) => {
 // Get all applications (filtered by role)
 const getAllApplications = async (req, res) => {
   try {
-    let where = {};
+    const where = {};
     if (req.user.role === 'student') {
       where.studentId = req.user.id;
     } else if (req.user.role === 'business') {
       // Get all applications for internships owned by this company
-      const internships = await Internship.findAll({ where: { companyId: req.user.id }, attributes: ['id'] });
-      where.internshipId = internships.map(i => i.id);
+      const internships = await Internship.findAll({
+        where: { companyId: req.user.id },
+        attributes: ['id'],
+      });
+      where.internshipId = internships.map((i) => i.id);
     }
     const applications = await Application.findAll({
       where,
       include: [
         { model: User, as: 'student', attributes: ['id', 'fullName', 'email'] },
-        { model: Internship, as: 'internship', attributes: ['id', 'title'] }
-      ]
+        { model: Internship, as: 'internship', attributes: ['id', 'title'] },
+      ],
     });
     res.json({ success: true, data: { applications } });
   } catch (error) {
@@ -228,17 +243,14 @@ const getApplicationById = async (req, res) => {
     const application = await Application.findByPk(id, {
       include: [
         { model: User, as: 'student', attributes: ['id', 'fullName', 'email'] },
-        { model: Internship, as: 'internship', attributes: ['id', 'title', 'companyId'] }
-      ]
+        { model: Internship, as: 'internship', attributes: ['id', 'title', 'companyId'] },
+      ],
     });
     if (!application) {
       return res.status(404).json({ success: false, message: 'Application not found.' });
     }
     // Only the student or the company that owns the internship can view
-    if (
-      application.studentId !== req.user.id &&
-      application.internship.companyId !== req.user.id
-    ) {
+    if (application.studentId !== req.user.id && application.internship.companyId !== req.user.id) {
       return res.status(403).json({ success: false, message: 'Forbidden.' });
     }
     res.json({ success: true, data: { application } });

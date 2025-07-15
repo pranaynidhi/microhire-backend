@@ -1,19 +1,19 @@
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
-const User = require('../models/User');
-const emailService = require('../services/emailService');
 const bcrypt = require('bcryptjs');
 const { Op } = require('sequelize');
+const User = require('../models/User');
+const emailService = require('../services/emailService');
 
 const generateTokens = (userId) => {
   const accessToken = jwt.sign({ userId }, process.env.JWT_SECRET, {
-    expiresIn: process.env.JWT_ACCESS_EXPIRES_IN || '15m'
+    expiresIn: process.env.JWT_ACCESS_EXPIRES_IN || '1d',
   });
-  
+
   const refreshToken = jwt.sign({ userId }, process.env.JWT_REFRESH_SECRET, {
-    expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d'
+    expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d',
   });
-  
+
   return { accessToken, refreshToken };
 };
 
@@ -38,7 +38,7 @@ const register = async (req, res) => {
     if (existingUser) {
       return res.status(400).json({
         success: false,
-        message: 'User with this email already exists'
+        message: 'User with this email already exists',
       });
     }
 
@@ -53,7 +53,7 @@ const register = async (req, res) => {
       password,
       role,
       emailVerificationToken,
-      emailVerificationExpires
+      emailVerificationExpires,
     };
 
     if (role === 'student') {
@@ -81,12 +81,12 @@ const register = async (req, res) => {
       data: {
         user: user.getPublicProfile(),
         accessToken,
-        refreshToken
-      }
+        refreshToken,
+      },
     });
   } catch (error) {
     console.error('Registration error:', error);
-    
+
     if (error.name === 'SequelizeValidationError') {
       return res.status(400).json({
         success: false,
@@ -100,7 +100,7 @@ const register = async (req, res) => {
 
     res.status(500).json({
       success: false,
-      message: 'Internal server error'
+      message: 'Internal server error',
     });
   }
 };
@@ -113,7 +113,9 @@ const verifyEmail = async (req, res, next) => {
     }
     const user = await User.findOne({ where: { emailVerificationToken: token } });
     if (!user) {
-      return res.status(400).json({ success: false, message: 'Invalid or expired verification token' });
+      return res
+        .status(400)
+        .json({ success: false, message: 'Invalid or expired verification token' });
     }
     if (user.emailVerified) {
       return res.status(400).json({ success: false, message: 'Email already verified' });
@@ -135,7 +137,7 @@ const refreshToken = async (req, res) => {
     if (!refreshToken) {
       return res.status(400).json({
         success: false,
-        message: 'Refresh token is required'
+        message: 'Refresh token is required',
       });
     }
 
@@ -145,7 +147,7 @@ const refreshToken = async (req, res) => {
     if (!user || !user.isActive) {
       return res.status(401).json({
         success: false,
-        message: 'Invalid refresh token'
+        message: 'Invalid refresh token',
       });
     }
 
@@ -155,14 +157,14 @@ const refreshToken = async (req, res) => {
       success: true,
       data: {
         accessToken,
-        refreshToken: newRefreshToken
-      }
+        refreshToken: newRefreshToken,
+      },
     });
   } catch (error) {
     console.error('Refresh token error:', error);
     res.status(401).json({
       success: false,
-      message: 'Invalid refresh token'
+      message: 'Invalid refresh token',
     });
   }
 };
@@ -174,6 +176,17 @@ const login = async (req, res) => {
     if (!user || !user.isActive) {
       return res.status(401).json({ success: false, message: 'Invalid credentials' });
     }
+
+    // Check if email is verified
+    if (!user.emailVerified) {
+      return res.status(401).json({
+        success: false,
+        message:
+          'Please verify your email address before logging in. Check your inbox for a verification link.',
+        code: 'EMAIL_NOT_VERIFIED',
+      });
+    }
+
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(401).json({ success: false, message: 'Invalid credentials' });
@@ -185,12 +198,55 @@ const login = async (req, res) => {
       data: {
         user: user.getPublicProfile(),
         accessToken,
-        refreshToken
-      }
+        refreshToken,
+      },
     });
   } catch (error) {
     console.error('Login error:', error);
     res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+};
+
+const resendVerificationEmail = async (req, res) => {
+  try {
+    const { email } = req.body;
+    const user = await User.findOne({ where: { email } });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found',
+      });
+    }
+
+    if (user.emailVerified) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email is already verified',
+      });
+    }
+
+    // Generate new verification token
+    const emailVerificationToken = crypto.randomBytes(32).toString('hex');
+    const emailVerificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
+    user.emailVerificationToken = emailVerificationToken;
+    user.emailVerificationExpires = emailVerificationExpires;
+    await user.save();
+
+    // Send verification email
+    await emailService.sendVerificationEmail(user.email, emailVerificationToken);
+
+    res.json({
+      success: true,
+      message: 'Verification email sent successfully. Please check your inbox.',
+    });
+  } catch (error) {
+    console.error('Resend verification email error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to send verification email',
+    });
   }
 };
 
@@ -199,5 +255,6 @@ module.exports = {
   verifyEmail,
   refreshToken,
   login,
+  resendVerificationEmail,
   generateTokens,
 };

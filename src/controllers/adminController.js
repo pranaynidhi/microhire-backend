@@ -1,11 +1,11 @@
 // controllers/adminController.js
+const { Op } = require('sequelize');
 const User = require('../models/User');
 const Internship = require('../models/Internship');
 const Application = require('../models/Application');
 const Report = require('../models/Report');
 const Review = require('../models/Review');
 const SystemSettings = require('../models/SystemSettings');
-const { Op } = require('sequelize');
 
 const adminController = {
   getUsers: async (req, res) => {
@@ -21,8 +21,8 @@ const adminController = {
         where: whereClause,
         attributes: { exclude: ['password'] },
         limit: parseInt(limit),
-        offset: offset,
-        order: [['createdAt', 'DESC']]
+        offset,
+        order: [['createdAt', 'DESC']],
       });
 
       res.json({
@@ -33,15 +33,15 @@ const adminController = {
             currentPage: parseInt(page),
             totalPages: Math.ceil(users.count / limit),
             totalItems: users.count,
-            itemsPerPage: parseInt(limit)
-          }
-        }
+            itemsPerPage: parseInt(limit),
+          },
+        },
       });
     } catch (error) {
       console.error('Get users error:', error);
       res.status(500).json({
         success: false,
-        message: 'Failed to fetch users'
+        message: 'Failed to fetch users',
       });
     }
   },
@@ -59,8 +59,8 @@ const adminController = {
         where: whereClause,
         attributes: { exclude: ['password'] },
         limit: parseInt(limit),
-        offset: offset,
-        order: [['createdAt', 'DESC']]
+        offset,
+        order: [['createdAt', 'DESC']],
       });
 
       res.json({
@@ -71,15 +71,15 @@ const adminController = {
             currentPage: parseInt(page),
             totalPages: Math.ceil(users.count / limit),
             totalItems: users.count,
-            itemsPerPage: parseInt(limit)
-          }
-        }
+            itemsPerPage: parseInt(limit),
+          },
+        },
       });
     } catch (error) {
       console.error('Get all users error:', error);
       res.status(500).json({
         success: false,
-        message: 'Failed to fetch users'
+        message: 'Failed to fetch users',
       });
     }
   },
@@ -93,37 +93,32 @@ const adminController = {
       if (!user) {
         return res.status(404).json({
           success: false,
-          message: 'User not found'
+          message: 'User not found',
         });
       }
 
-      await user.update({ 
+      await user.update({
         isActive: status === 'active',
-        adminNotes: reason 
+        adminNotes: reason,
       });
 
       res.json({
         success: true,
         message: `User ${status === 'active' ? 'activated' : 'deactivated'} successfully`,
-        data: { user }
+        data: { user },
       });
     } catch (error) {
       console.error('Update user status error:', error);
       res.status(500).json({
         success: false,
-        message: 'Failed to update user status'
+        message: 'Failed to update user status',
       });
     }
   },
 
   getInternships: async (req, res) => {
     try {
-      const { 
-        page = 1, 
-        limit = 20, 
-        status, 
-        search 
-      } = req.query;
+      const { page = 1, limit = 20, status, search } = req.query;
 
       const offset = (page - 1) * limit;
       const whereClause = {};
@@ -135,20 +130,22 @@ const adminController = {
       if (search) {
         whereClause[Op.or] = [
           { title: { [Op.like]: `%${search}%` } },
-          { description: { [Op.like]: `%${search}%` } }
+          { description: { [Op.like]: `%${search}%` } },
         ];
       }
 
       const internships = await Internship.findAndCountAll({
         where: whereClause,
-        include: [{
-          model: User,
-          as: 'company',
-          attributes: ['id', 'companyName', 'email']
-        }],
+        include: [
+          {
+            model: User,
+            as: 'company',
+            attributes: ['id', 'companyName', 'email'],
+          },
+        ],
         order: [['createdAt', 'DESC']],
         limit: parseInt(limit),
-        offset: offset
+        offset,
       });
 
       res.json({
@@ -159,15 +156,15 @@ const adminController = {
             currentPage: parseInt(page),
             totalPages: Math.ceil(internships.count / limit),
             totalItems: internships.count,
-            itemsPerPage: parseInt(limit)
-          }
-        }
+            itemsPerPage: parseInt(limit),
+          },
+        },
       });
     } catch (error) {
       console.error('Get internships error:', error);
       res.status(500).json({
         success: false,
-        message: 'Failed to fetch internships'
+        message: 'Failed to fetch internships',
       });
     }
   },
@@ -181,37 +178,32 @@ const adminController = {
       if (!internship) {
         return res.status(404).json({
           success: false,
-          message: 'Internship not found'
+          message: 'Internship not found',
         });
       }
 
-      await internship.update({ 
+      await internship.update({
         status,
-        adminNotes: reason 
+        adminNotes: reason,
       });
 
       res.json({
         success: true,
         message: `Internship ${status} successfully`,
-        data: { internship }
+        data: { internship },
       });
     } catch (error) {
       console.error('Moderate internship error:', error);
       res.status(500).json({
         success: false,
-        message: 'Failed to moderate internship'
+        message: 'Failed to moderate internship',
       });
     }
   },
 
   getReports: async (req, res) => {
     try {
-      const { 
-        page = 1, 
-        limit = 20, 
-        status = 'pending',
-        type 
-      } = req.query;
+      const { page = 1, limit = 20, status = 'pending', type } = req.query;
 
       const offset = (page - 1) * limit;
       const whereClause = { status };
@@ -226,24 +218,24 @@ const adminController = {
           {
             model: User,
             as: 'reporter',
-            attributes: ['id', 'fullName', 'email']
+            attributes: ['id', 'fullName', 'email'],
           },
           {
             model: User,
             as: 'reportedUser',
             attributes: ['id', 'fullName', 'email'],
-            required: false
+            required: false,
           },
           {
             model: Internship,
             as: 'reportedInternship',
             attributes: ['id', 'title'],
-            required: false
-          }
+            required: false,
+          },
         ],
         order: [['createdAt', 'DESC']],
         limit: parseInt(limit),
-        offset: offset
+        offset,
       });
 
       res.json({
@@ -254,15 +246,15 @@ const adminController = {
             currentPage: parseInt(page),
             totalPages: Math.ceil(reports.count / limit),
             totalItems: reports.count,
-            itemsPerPage: parseInt(limit)
-          }
-        }
+            itemsPerPage: parseInt(limit),
+          },
+        },
       });
     } catch (error) {
       console.error('Get reports error:', error);
       res.status(500).json({
         success: false,
-        message: 'Failed to fetch reports'
+        message: 'Failed to fetch reports',
       });
     }
   },
@@ -276,16 +268,13 @@ const adminController = {
       if (!report) {
         return res.status(404).json({
           success: false,
-          message: 'Report not found'
+          message: 'Report not found',
         });
       }
 
       // Take action based on admin decision
       if (action === 'suspend_user' && report.reportedUserId) {
-        await User.update(
-          { isActive: false },
-          { where: { id: report.reportedUserId } }
-        );
+        await User.update({ isActive: false }, { where: { id: report.reportedUserId } });
       } else if (action === 'remove_internship' && report.reportedInternshipId) {
         await Internship.update(
           { status: 'closed' },
@@ -297,19 +286,19 @@ const adminController = {
         status,
         adminNotes,
         resolvedAt: new Date(),
-        resolvedBy: req.user.id
+        resolvedBy: req.user.id,
       });
 
       res.json({
         success: true,
         message: 'Report resolved successfully',
-        data: { report }
+        data: { report },
       });
     } catch (error) {
       console.error('Resolve report error:', error);
       res.status(500).json({
         success: false,
-        message: 'Failed to resolve report'
+        message: 'Failed to resolve report',
       });
     }
   },
@@ -318,46 +307,106 @@ const adminController = {
     try {
       // Get pending items counts
       const pendingReports = await Report.count({
-        where: { status: 'pending' }
+        where: { status: 'pending' },
       });
 
       const pendingReviews = await Review.count({
-        where: { status: 'pending' }
+        where: { status: 'pending' },
       });
 
       const pendingInternships = await Internship.count({
-        where: { status: 'pending' }
+        where: { status: 'pending' },
       });
 
-      // Get recent activities
+      // Get system statistics
+      const totalUsers = await User.count();
+      const activeUsers = await User.count({
+        where: { isActive: true },
+      });
+
+      const totalInternships = await Internship.count();
+      const activeInternships = await Internship.count({
+        where: { status: 'active' },
+      });
+
+      const totalApplications = await Application.count();
+
+      // User distribution by role
+      const usersByRole = await User.findAll({
+        attributes: [
+          'role',
+          [require('sequelize').fn('COUNT', require('sequelize').col('id')), 'count'],
+        ],
+        group: ['role'],
+      });
+
+      // Application status distribution
+      const applicationsByStatus = await Application.findAll({
+        attributes: [
+          'status',
+          [require('sequelize').fn('COUNT', require('sequelize').col('id')), 'count'],
+        ],
+        group: ['status'],
+      });
+
+      // Recent activities
+      const recentUsers = await User.findAll({
+        order: [['createdAt', 'DESC']],
+        limit: 5,
+        attributes: ['id', 'fullName', 'email', 'role', 'createdAt'],
+      });
+
       const recentReports = await Report.findAll({
         where: { status: 'pending' },
         include: [
           {
             model: User,
             as: 'reporter',
-            attributes: ['id', 'fullName', 'email']
-          }
+            attributes: ['id', 'fullName', 'email'],
+          },
         ],
         order: [['createdAt', 'DESC']],
-        limit: 5
+        limit: 5,
       });
 
-      const recentUsers = await User.findAll({
+      const recentInternships = await Internship.findAll({
+        include: [
+          {
+            model: User,
+            as: 'company',
+            attributes: ['companyName'],
+          },
+        ],
         order: [['createdAt', 'DESC']],
         limit: 5,
-        attributes: { exclude: ['password'] }
+        attributes: ['id', 'title', 'status', 'createdAt'],
       });
 
-      // Get system health metrics
-      const totalUsers = await User.count();
-      const activeUsers = await User.count({
-        where: { isActive: true }
+      // Platform growth metrics (last 30 days)
+      const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+
+      const newUsersThisMonth = await User.count({
+        where: {
+          createdAt: {
+            [Op.gte]: thirtyDaysAgo,
+          },
+        },
       });
 
-      const totalInternships = await Internship.count();
-      const activeInternships = await Internship.count({
-        where: { status: 'active' }
+      const newInternshipsThisMonth = await Internship.count({
+        where: {
+          createdAt: {
+            [Op.gte]: thirtyDaysAgo,
+          },
+        },
+      });
+
+      const newApplicationsThisMonth = await Application.count({
+        where: {
+          createdAt: {
+            [Op.gte]: thirtyDaysAgo,
+          },
+        },
       });
 
       res.json({
@@ -366,25 +415,43 @@ const adminController = {
           pendingItems: {
             reports: pendingReports,
             reviews: pendingReviews,
-            internships: pendingInternships
-          },
-          recentActivities: {
-            reports: recentReports,
-            users: recentUsers
+            internships: pendingInternships,
           },
           systemHealth: {
             totalUsers,
             activeUsers,
             totalInternships,
-            activeInternships
-          }
-        }
+            activeInternships,
+            totalApplications,
+            usersByRole,
+            applicationsByStatus,
+          },
+          recentActivities: {
+            users: recentUsers,
+            reports: recentReports,
+            internships: recentInternships,
+          },
+          growth: {
+            newUsersThisMonth,
+            newInternshipsThisMonth,
+            newApplicationsThisMonth,
+          },
+          metrics: {
+            userGrowthRate: (
+              (newUsersThisMonth / Math.max(totalUsers - newUsersThisMonth, 1)) *
+              100
+            ).toFixed(1),
+            activeUserRate: ((activeUsers / totalUsers) * 100).toFixed(1),
+            averageApplicationsPerInternship:
+              totalInternships > 0 ? (totalApplications / totalInternships).toFixed(1) : 0,
+          },
+        },
       });
     } catch (error) {
       console.error('Get dashboard overview error:', error);
       res.status(500).json({
         success: false,
-        message: 'Failed to fetch dashboard overview'
+        message: 'Failed to fetch dashboard overview',
       });
     }
   },
@@ -394,13 +461,13 @@ const adminController = {
       const settings = await SystemSettings.findAll();
       res.json({
         success: true,
-        data: { settings }
+        data: { settings },
       });
     } catch (error) {
       console.error('Get system settings error:', error);
       res.status(500).json({
         success: false,
-        message: 'Failed to fetch system settings'
+        message: 'Failed to fetch system settings',
       });
     }
   },
@@ -412,19 +479,19 @@ const adminController = {
       for (const [key, value] of Object.entries(settings)) {
         await SystemSettings.upsert({
           key,
-          value: JSON.stringify(value)
+          value: JSON.stringify(value),
         });
       }
 
       res.json({
         success: true,
-        message: 'System settings updated successfully'
+        message: 'System settings updated successfully',
       });
     } catch (error) {
       console.error('Update system settings error:', error);
       res.status(500).json({
         success: false,
-        message: 'Failed to update system settings'
+        message: 'Failed to update system settings',
       });
     }
   },
@@ -432,23 +499,23 @@ const adminController = {
   getUserById: async (req, res) => {
     try {
       const user = await User.findByPk(req.params.id, {
-        attributes: { exclude: ['password'] }
+        attributes: { exclude: ['password'] },
       });
       if (!user) {
         return res.status(404).json({
           success: false,
-          message: 'User not found'
+          message: 'User not found',
         });
       }
       res.json({
         success: true,
-        data: { user }
+        data: { user },
       });
     } catch (error) {
       console.error('Get user by ID error:', error);
       res.status(500).json({
         success: false,
-        message: 'Failed to fetch user'
+        message: 'Failed to fetch user',
       });
     }
   },
@@ -460,20 +527,20 @@ const adminController = {
       if (!user) {
         return res.status(404).json({
           success: false,
-          message: 'User not found'
+          message: 'User not found',
         });
       }
       await user.update({ role });
       res.json({
         success: true,
         message: 'User role updated successfully',
-        data: { user }
+        data: { user },
       });
     } catch (error) {
       console.error('Update user role error:', error);
       res.status(500).json({
         success: false,
-        message: 'Failed to update user role'
+        message: 'Failed to update user role',
       });
     }
   },
@@ -484,20 +551,20 @@ const adminController = {
       if (!user) {
         return res.status(404).json({
           success: false,
-          message: 'User not found'
+          message: 'User not found',
         });
       }
       await user.update({ isActive: false });
       res.json({
         success: true,
         message: 'User suspended successfully',
-        data: { user }
+        data: { user },
       });
     } catch (error) {
       console.error('Suspend user error:', error);
       res.status(500).json({
         success: false,
-        message: 'Failed to suspend user'
+        message: 'Failed to suspend user',
       });
     }
   },
@@ -508,20 +575,20 @@ const adminController = {
       if (!user) {
         return res.status(404).json({
           success: false,
-          message: 'User not found'
+          message: 'User not found',
         });
       }
       await user.update({ isActive: true });
       res.json({
         success: true,
         message: 'User unsuspended successfully',
-        data: { user }
+        data: { user },
       });
     } catch (error) {
       console.error('Unsuspend user error:', error);
       res.status(500).json({
         success: false,
-        message: 'Failed to unsuspend user'
+        message: 'Failed to unsuspend user',
       });
     }
   },
@@ -532,22 +599,99 @@ const adminController = {
       if (!user) {
         return res.status(404).json({
           success: false,
-          message: 'User not found'
+          message: 'User not found',
         });
       }
       await user.destroy();
       res.json({
         success: true,
-        message: 'User deleted successfully'
+        message: 'User deleted successfully',
       });
     } catch (error) {
       console.error('Delete user error:', error);
       res.status(500).json({
         success: false,
-        message: 'Failed to delete user'
+        message: 'Failed to delete user',
       });
     }
-  }
+  },
+
+  banUser: async (req, res) => {
+    try {
+      const user = await User.findByPk(req.params.id);
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: 'User not found',
+        });
+      }
+      await user.update({
+        isActive: false,
+        status: 'banned',
+      });
+      res.json({
+        success: true,
+        message: 'User banned successfully',
+        data: { user },
+      });
+    } catch (error) {
+      console.error('Ban user error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to ban user',
+      });
+    }
+  },
+
+  unbanUser: async (req, res) => {
+    try {
+      const user = await User.findByPk(req.params.id);
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: 'User not found',
+        });
+      }
+      await user.update({
+        isActive: true,
+        status: 'active',
+      });
+      res.json({
+        success: true,
+        message: 'User unbanned successfully',
+        data: { user },
+      });
+    } catch (error) {
+      console.error('Unban user error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to unban user',
+      });
+    }
+  },
+
+  deleteInternship: async (req, res) => {
+    try {
+      const internship = await Internship.findByPk(req.params.id);
+      if (!internship) {
+        return res.status(404).json({
+          success: false,
+          message: 'Internship not found',
+        });
+      }
+      await internship.destroy();
+      res.json({
+        success: true,
+        message: 'Internship deleted successfully',
+      });
+    } catch (error) {
+      console.error('Delete internship error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to delete internship',
+      });
+    }
+  },
 };
 
 module.exports = adminController;

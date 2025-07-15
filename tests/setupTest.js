@@ -4,6 +4,7 @@ require('dotenv').config();
 const express = require('express');
 const http = require('http');
 const models = require('../src/models');
+
 const { sequelize } = models;
 const logger = require('../src/utils/logger');
 const errorHandler = require('../src/middleware/errorHandler');
@@ -19,14 +20,30 @@ jest.mock('../src/utils/cache', () => ({
   get: jest.fn(),
   set: jest.fn(),
   del: jest.fn(),
-  quit: jest.fn()
+  quit: jest.fn(),
 }));
 
 // Mock realtime service to prevent notification errors
 jest.mock('../src/services/realtimeService', () => ({
-  sendNotificationToUser: jest.fn(),
-  sendMessageToUser: jest.fn(),
-  broadcastToRoom: jest.fn()
+  RealtimeService: jest.fn(),
+  initializeRealtimeService: jest.fn(() => ({
+    sendNotificationToUser: jest.fn(),
+    sendMessageNotification: jest.fn(),
+    sendApplicationUpdate: jest.fn(),
+    broadcastInternshipUpdate: jest.fn(),
+    sendSystemAnnouncement: jest.fn(),
+    getOnlineUsersCount: jest.fn(() => 0),
+    sendUserStatusUpdate: jest.fn(),
+  })),
+  getRealtimeService: jest.fn(() => ({
+    sendNotificationToUser: jest.fn(),
+    sendMessageNotification: jest.fn(),
+    sendApplicationUpdate: jest.fn(),
+    broadcastInternshipUpdate: jest.fn(),
+    sendSystemAnnouncement: jest.fn(),
+    getOnlineUsersCount: jest.fn(() => 0),
+    sendUserStatusUpdate: jest.fn(),
+  })),
 }));
 
 const redis = require('../src/utils/cache');
@@ -109,4 +126,4 @@ afterEach(async () => {
   }
 });
 
-module.exports = { app, server }; 
+module.exports = { app, server };

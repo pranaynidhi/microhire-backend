@@ -3,8 +3,12 @@ const { server } = require('./setupTest');
 const { User } = require('../src/models');
 const { generateTokens } = require('../src/controllers/authController');
 
-let studentToken, companyToken;
-let student, company, studentId, companyId;
+let studentToken;
+let companyToken;
+let student;
+let company;
+let studentId;
+let companyId;
 
 beforeEach(async () => {
   const timestamp = Date.now() + Math.floor(Math.random() * 10000);
@@ -16,11 +20,11 @@ beforeEach(async () => {
     role: 'business',
     companyName: 'Test Company',
     isActive: true,
-    emailVerified: true
+    emailVerified: true,
   });
   companyId = company.id;
   const { accessToken: companyAccessToken } = generateTokens(company.id);
-  companyToken = 'Bearer ' + companyAccessToken;
+  companyToken = `Bearer ${companyAccessToken}`;
 
   // Create student user
   student = await User.create({
@@ -29,11 +33,11 @@ beforeEach(async () => {
     password: 'Test123!@#',
     role: 'student',
     isActive: true,
-    emailVerified: true
+    emailVerified: true,
   });
   studentId = student.id;
   const { accessToken: studentAccessToken } = generateTokens(student.id);
-  studentToken = 'Bearer ' + studentAccessToken;
+  studentToken = `Bearer ${studentAccessToken}`;
 });
 
 afterEach(async () => {
@@ -48,15 +52,11 @@ describe('Users API', () => {
       expect(res.status).toBe(401);
     });
     it('should get current user profile (student, authenticated)', async () => {
-      const res = await request(server)
-        .get('/api/users/me')
-        .set('Authorization', studentToken);
+      const res = await request(server).get('/api/users/me').set('Authorization', studentToken);
       expect([200, 201, 400, 403, 404, 500]).toContain(res.status);
     });
     it('should get current user profile (company, authenticated)', async () => {
-      const res = await request(server)
-        .get('/api/users/me')
-        .set('Authorization', companyToken);
+      const res = await request(server).get('/api/users/me').set('Authorization', companyToken);
       expect([200, 201, 400, 403, 404, 500]).toContain(res.status);
     });
   });
@@ -135,4 +135,4 @@ describe('Users API', () => {
       expect([200, 201, 400, 403, 404, 500]).toContain(res.status);
     });
   });
-}); 
+});

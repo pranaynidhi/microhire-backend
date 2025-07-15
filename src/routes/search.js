@@ -1,4 +1,5 @@
 const express = require('express');
+
 const router = express.Router();
 const { authenticate, requireEmailVerification } = require('../middleware/auth');
 const { AppError } = require('../utils/errors');
@@ -46,7 +47,12 @@ const searchController = require('../controllers/searchController');
 // router.get('/', authenticate, ...);
 
 // Search internships
-router.get('/internships', authenticate, requireEmailVerification, searchController.searchInternships);
+router.get(
+  '/internships',
+  authenticate,
+  requireEmailVerification,
+  searchController.searchInternships
+);
 
 // Search companies
 router.get('/companies', authenticate, requireEmailVerification, searchController.searchCompanies);

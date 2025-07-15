@@ -41,14 +41,14 @@ class ModerationService {
         contentType,
         reason,
         details,
-        status: 'pending'
+        status: 'pending',
       });
 
       logger.info('Content reported:', {
         reportId: report._id,
         contentType,
         contentId,
-        reason
+        reason,
       });
 
       return report;
@@ -88,7 +88,7 @@ class ModerationService {
       logger.info('Report reviewed:', {
         reportId,
         action,
-        moderatorId
+        moderatorId,
       });
 
       return report;
@@ -132,7 +132,7 @@ class ModerationService {
 
       logger.info('Content removed:', {
         contentType,
-        contentId
+        contentId,
       });
     } catch (error) {
       logger.error('Error removing content:', error);
@@ -152,7 +152,7 @@ class ModerationService {
       user.warnings.push({
         type: contentType,
         reason,
-        date: new Date()
+        date: new Date(),
       });
 
       // Check if user should be suspended
@@ -162,13 +162,19 @@ class ModerationService {
 
       await user.save();
 
-      logger.info('User warned:', JSON.stringify({
-        userId,
-        contentType,
-        reason
-      }));
+      logger.info(
+        'User warned:',
+        JSON.stringify({
+          userId,
+          contentType,
+          reason,
+        })
+      );
     } catch (error) {
-      logger.error('Error warning user:', error instanceof Error ? error.stack : JSON.stringify(error));
+      logger.error(
+        'Error warning user:',
+        error instanceof Error ? error.stack : JSON.stringify(error)
+      );
       throw error;
     }
   }
@@ -189,7 +195,7 @@ class ModerationService {
         reports,
         total,
         page,
-        totalPages: Math.ceil(total / limit)
+        totalPages: Math.ceil(total / limit),
       };
     } catch (error) {
       logger.error('Error getting pending reports:', error);
@@ -198,4 +204,4 @@ class ModerationService {
   }
 }
 
-module.exports = ModerationService; 
+module.exports = ModerationService;

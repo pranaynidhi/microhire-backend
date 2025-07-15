@@ -6,25 +6,26 @@ const options = {
     info: {
       title: 'MicroHire API Documentation',
       version: '1.0.0',
-      description: 'Comprehensive API documentation for MicroHire platform - an internship and job platform connecting students with companies',
+      description:
+        'Comprehensive API documentation for MicroHire platform - an internship and job platform connecting students with companies',
       contact: {
         name: 'MicroHire API Support',
-        email: 'support@microhire.com'
+        email: 'support@microhire.com',
       },
       license: {
         name: 'ISC',
-        url: 'https://opensource.org/licenses/ISC'
-      }
+        url: 'https://opensource.org/licenses/ISC',
+      },
     },
     servers: [
       {
         url: process.env.API_URL || 'http://localhost:5000',
-        description: 'Development server'
+        description: 'Development server',
       },
       {
         url: 'https://api.microhire.com',
-        description: 'Production server'
-      }
+        description: 'Production server',
+      },
     ],
     components: {
       securitySchemes: {
@@ -32,8 +33,8 @@ const options = {
           type: 'http',
           scheme: 'bearer',
           bearerFormat: 'JWT',
-          description: 'JWT token obtained from login endpoint'
-        }
+          description: 'JWT token obtained from login endpoint',
+        },
       },
       schemas: {
         User: {
@@ -53,8 +54,8 @@ const options = {
             emailVerified: { type: 'boolean' },
             twoFAEnabled: { type: 'boolean' },
             createdAt: { type: 'string', format: 'date-time' },
-            updatedAt: { type: 'string', format: 'date-time' }
-          }
+            updatedAt: { type: 'string', format: 'date-time' },
+          },
         },
         Internship: {
           type: 'object',
@@ -71,8 +72,8 @@ const options = {
             skills: { type: 'array', items: { type: 'string' } },
             status: { type: 'string', enum: ['active', 'inactive', 'closed'] },
             createdAt: { type: 'string', format: 'date-time' },
-            updatedAt: { type: 'string', format: 'date-time' }
-          }
+            updatedAt: { type: 'string', format: 'date-time' },
+          },
         },
         Application: {
           type: 'object',
@@ -80,13 +81,16 @@ const options = {
             id: { type: 'integer' },
             internshipId: { type: 'integer' },
             studentId: { type: 'integer' },
-            status: { type: 'string', enum: ['pending', 'reviewed', 'accepted', 'rejected', 'withdrawn'] },
+            status: {
+              type: 'string',
+              enum: ['pending', 'reviewed', 'accepted', 'rejected', 'withdrawn'],
+            },
             coverLetter: { type: 'string' },
             resume: { type: 'string' },
             portfolio: { type: 'string' },
             createdAt: { type: 'string', format: 'date-time' },
-            updatedAt: { type: 'string', format: 'date-time' }
-          }
+            updatedAt: { type: 'string', format: 'date-time' },
+          },
         },
         Message: {
           type: 'object',
@@ -96,8 +100,8 @@ const options = {
             senderId: { type: 'integer' },
             content: { type: 'string' },
             read: { type: 'boolean' },
-            createdAt: { type: 'string', format: 'date-time' }
-          }
+            createdAt: { type: 'string', format: 'date-time' },
+          },
         },
         Notification: {
           type: 'object',
@@ -109,8 +113,8 @@ const options = {
             message: { type: 'string' },
             read: { type: 'boolean' },
             data: { type: 'object' },
-            createdAt: { type: 'string', format: 'date-time' }
-          }
+            createdAt: { type: 'string', format: 'date-time' },
+          },
         },
         Review: {
           type: 'object',
@@ -122,8 +126,8 @@ const options = {
             comment: { type: 'string' },
             type: { type: 'string', enum: ['student', 'company'] },
             status: { type: 'string', enum: ['active', 'reported', 'moderated'] },
-            createdAt: { type: 'string', format: 'date-time' }
-          }
+            createdAt: { type: 'string', format: 'date-time' },
+          },
         },
         Certificate: {
           type: 'object',
@@ -138,8 +142,8 @@ const options = {
             expiryDate: { type: 'string', format: 'date' },
             status: { type: 'string', enum: ['active', 'revoked', 'expired'] },
             certificateUrl: { type: 'string' },
-            createdAt: { type: 'string', format: 'date-time' }
-          }
+            createdAt: { type: 'string', format: 'date-time' },
+          },
         },
         Error: {
           type: 'object',
@@ -147,17 +151,17 @@ const options = {
             success: { type: 'boolean' },
             message: { type: 'string' },
             error: { type: 'string' },
-            statusCode: { type: 'integer' }
-          }
+            statusCode: { type: 'integer' },
+          },
         },
         Success: {
           type: 'object',
           properties: {
             success: { type: 'boolean' },
             message: { type: 'string' },
-            data: { type: 'object' }
-          }
-        }
+            data: { type: 'object' },
+          },
+        },
       },
       responses: {
         UnauthorizedError: {
@@ -165,38 +169,40 @@ const options = {
           content: {
             'application/json': {
               schema: {
-                $ref: '#/components/schemas/Error'
-              }
-            }
-          }
+                $ref: '#/components/schemas/Error',
+              },
+            },
+          },
         },
         ValidationError: {
           description: 'Validation error',
           content: {
             'application/json': {
               schema: {
-                $ref: '#/components/schemas/Error'
-              }
-            }
-          }
+                $ref: '#/components/schemas/Error',
+              },
+            },
+          },
         },
         NotFoundError: {
           description: 'Resource not found',
           content: {
             'application/json': {
               schema: {
-                $ref: '#/components/schemas/Error'
-              }
-            }
-          }
-        }
-      }
+                $ref: '#/components/schemas/Error',
+              },
+            },
+          },
+        },
+      },
     },
-    security: [{
-      bearerAuth: []
-    }]
+    security: [
+      {
+        bearerAuth: [],
+      },
+    ],
   },
-  apis: ['./src/routes/*.js']
+  apis: ['./src/routes/*.js'],
 };
 
 const specs = swaggerJsdoc(options);

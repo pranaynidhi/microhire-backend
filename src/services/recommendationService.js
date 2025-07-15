@@ -1,12 +1,12 @@
+const NodeCache = require('node-cache');
 const { AppError } = require('../utils/errors');
 const logger = require('../utils/logger');
 const { User, Internship, Application, Review } = require('../models');
-const NodeCache = require('node-cache');
 
 // Cache configuration
 const cache = new NodeCache({
   stdTTL: 3600, // 1 hour
-  checkperiod: 600 // Check for expired keys every 10 minutes
+  checkperiod: 600, // Check for expired keys every 10 minutes
 });
 
 class RecommendationService {
@@ -33,28 +33,26 @@ class RecommendationService {
       const internships = await Internship.find({
         status: 'open',
         deadline: { $gt: new Date() },
-        skills: { $in: userSkills }
+        skills: { $in: userSkills },
       })
         .sort({ deadline: 1 })
         .limit(limit * 2); // Get more than needed for filtering
 
       // Score and rank internships
-      const scoredInternships = internships.map(internship => {
+      const scoredInternships = internships.map((internship) => {
         const score = this.calculateInternshipScore(internship, userSkills, userPreferences);
         return { ...internship.toObject(), score };
       });
 
       // Sort by score and take top recommendations
-      const recommendations = scoredInternships
-        .sort((a, b) => b.score - a.score)
-        .slice(0, limit);
+      const recommendations = scoredInternships.sort((a, b) => b.score - a.score).slice(0, limit);
 
       // Cache recommendations
       cache.set(cacheKey, recommendations);
 
       logger.info('Generated internship recommendations:', {
         userId,
-        count: recommendations.length
+        count: recommendations.length,
       });
 
       return recommendations;
@@ -69,7 +67,7 @@ class RecommendationService {
     let score = 0;
 
     // Skill match score (0-40 points)
-    const skillMatchCount = internship.skills.filter(skill => userSkills.includes(skill)).length;
+    const skillMatchCount = internship.skills.filter((skill) => userSkills.includes(skill)).length;
     score += (skillMatchCount / internship.skills.length) * 40;
 
     // Location preference score (0-20 points)
@@ -114,29 +112,26 @@ class RecommendationService {
       const candidates = await User.find({
         role: 'student',
         status: 'active',
-        skills: { $in: internship.skills }
-      })
-        .limit(limit * 2);
+        skills: { $in: internship.skills },
+      }).limit(limit * 2);
 
       // Score and rank candidates
       const scoredCandidates = await Promise.all(
-        candidates.map(async candidate => {
+        candidates.map(async (candidate) => {
           const score = await this.calculateCandidateScore(candidate, internship);
           return { ...candidate.toObject(), score };
         })
       );
 
       // Sort by score and take top recommendations
-      const recommendations = scoredCandidates
-        .sort((a, b) => b.score - a.score)
-        .slice(0, limit);
+      const recommendations = scoredCandidates.sort((a, b) => b.score - a.score).slice(0, limit);
 
       // Cache recommendations
       cache.set(cacheKey, recommendations);
 
       logger.info('Generated candidate recommendations:', {
         internshipId,
-        count: recommendations.length
+        count: recommendations.length,
       });
 
       return recommendations;
@@ -151,7 +146,9 @@ class RecommendationService {
     let score = 0;
 
     // Skill match score (0-40 points)
-    const skillMatchCount = internship.skills.filter(skill => candidate.skills.includes(skill)).length;
+    const skillMatchCount = internship.skills.filter((skill) =>
+      candidate.skills.includes(skill)
+    ).length;
     score += (skillMatchCount / internship.skills.length) * 40;
 
     // Experience score (0-20 points)
@@ -167,14 +164,15 @@ class RecommendationService {
     // Application history score (0-10 points)
     const successfulApplications = await Application.countDocuments({
       userId: candidate._id,
-      status: 'accepted'
+      status: 'accepted',
     });
     score += Math.min(successfulApplications * 2, 10);
 
     // Review score (0-10 points)
     const reviews = await Review.find({ userId: candidate._id });
     if (reviews.length > 0) {
-      const averageRating = reviews.reduce((acc, review) => acc + review.rating, 0) / reviews.length;
+      const averageRating =
+        reviews.reduce((acc, review) => acc + review.rating, 0) / reviews.length;
       score += averageRating * 2;
     }
 
@@ -195,4 +193,4 @@ class RecommendationService {
   }
 }
 
-module.exports = RecommendationService; 
+module.exports = RecommendationService;

@@ -1,8 +1,12 @@
 const express = require('express');
+
 const router = express.Router();
-const { authenticate, isStudent, isCompany, requireEmailVerification } = require('../middleware/auth');
-const { AppError } = require('../utils/errors');
-const logger = require('../utils/logger');
+const {
+  authenticate,
+  isStudent,
+  isCompany,
+  requireEmailVerification,
+} = require('../middleware/auth');
 const applicationController = require('../controllers/applicationController');
 const { Application, Internship, Interview } = require('../models');
 
@@ -183,7 +187,13 @@ router.get('/:id', authenticate, applicationController.getApplicationById);
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.post('/', authenticate, isStudent, requireEmailVerification, applicationController.createApplication);
+router.post(
+  '/',
+  authenticate,
+  isStudent,
+  requireEmailVerification,
+  applicationController.createApplication
+);
 
 /**
  * @swagger
@@ -247,7 +257,13 @@ router.post('/', authenticate, isStudent, requireEmailVerification, applicationC
  *       404:
  *         $ref: '#/components/responses/NotFoundError'
  */
-router.patch('/:id/status', authenticate, isCompany, requireEmailVerification, applicationController.updateApplicationStatus);
+router.patch(
+  '/:id/status',
+  authenticate,
+  isCompany,
+  requireEmailVerification,
+  applicationController.updateApplicationStatus
+);
 
 /**
  * @swagger
@@ -282,7 +298,13 @@ router.patch('/:id/status', authenticate, isCompany, requireEmailVerification, a
  *       404:
  *         $ref: '#/components/responses/NotFoundError'
  */
-router.delete('/:id', authenticate, isStudent, requireEmailVerification, applicationController.deleteApplication);
+router.delete(
+  '/:id',
+  authenticate,
+  isStudent,
+  requireEmailVerification,
+  applicationController.deleteApplication
+);
 
 /**
  * @swagger
@@ -336,50 +358,58 @@ router.delete('/:id', authenticate, isStudent, requireEmailVerification, applica
  *       404:
  *         $ref: '#/components/responses/NotFoundError'
  */
-router.post('/:id/feedback', authenticate, isCompany, requireEmailVerification, async (req, res, next) => {
-  try {
-    const { id } = req.params;
-    const { feedback, rating } = req.body;
-    
-    if (!feedback) {
-      return res.status(400).json({
-        success: false,
-        message: 'Feedback is required'
+router.post(
+  '/:id/feedback',
+  authenticate,
+  isCompany,
+  requireEmailVerification,
+  async (req, res, next) => {
+    try {
+      const { id } = req.params;
+      const { feedback, rating } = req.body;
+
+      if (!feedback) {
+        return res.status(400).json({
+          success: false,
+          message: 'Feedback is required',
+        });
+      }
+
+      const application = await Application.findByPk(id, {
+        include: [
+          {
+            model: Internship,
+            where: { companyId: req.user.id },
+          },
+        ],
       });
-    }
-    
-    const application = await Application.findByPk(id, {
-      include: [
-        {
-          model: Internship,
-          where: { companyId: req.user.id }
-        }
-      ]
-    });
-    
-    if (!application) {
-      return res.status(404).json({
-        success: false,
-        message: 'Application not found or you do not have permission to add feedback'
+
+      if (!application) {
+        return res.status(404).json({
+          success: false,
+          message: 'Application not found or you do not have permission to add feedback',
+        });
+      }
+
+      // Update application with feedback
+      await application.update({
+        feedback,
+        rating: rating || null,
+        reviewedAt: new Date(),
       });
+
+      res.json({
+        success: true,
+        message: 'Feedback added successfully',
+        application,
+      });
+      
+    } catch (error) {
+      next(error);
+      
     }
-    
-    // Update application with feedback
-    await application.update({
-      feedback,
-      rating: rating || null,
-      reviewedAt: new Date()
-    });
-    
-    res.json({
-      success: true,
-      message: 'Feedback added successfully',
-      application
-    });
-  } catch (error) {
-    next(error);
   }
-});
+);
 
 /**
  * @swagger
@@ -443,57 +473,65 @@ router.post('/:id/feedback', authenticate, isCompany, requireEmailVerification, 
  *       404:
  *         $ref: '#/components/responses/NotFoundError'
  */
-router.post('/:id/interview', authenticate, isCompany, requireEmailVerification, async (req, res, next) => {
-  try {
-    const { id } = req.params;
-    const { interviewDate, interviewType, location, notes } = req.body;
-    
-    if (!interviewDate || !interviewType) {
-      return res.status(400).json({
-        success: false,
-        message: 'Interview date and type are required'
+router.post(
+  '/:id/interview',
+  authenticate,
+  isCompany,
+  requireEmailVerification,
+  async (req, res, next) => {
+    try {
+      const { id } = req.params;
+      const { interviewDate, interviewType, location, notes } = req.body;
+
+      if (!interviewDate || !interviewType) {
+        return res.status(400).json({
+          success: false,
+          message: 'Interview date and type are required',
+        });
+      }
+
+      const application = await Application.findByPk(id, {
+        include: [
+          {
+            model: Internship,
+            where: { companyId: req.user.id },
+          },
+        ],
       });
-    }
-    
-    const application = await Application.findByPk(id, {
-      include: [
-        {
-          model: Internship,
-          where: { companyId: req.user.id }
-        }
-      ]
-    });
-    
-    if (!application) {
-      return res.status(404).json({
-        success: false,
-        message: 'Application not found or you do not have permission to schedule interview'
+
+      if (!application) {
+        return res.status(404).json({
+          success: false,
+          message: 'Application not found or you do not have permission to schedule interview',
+        });
+      }
+
+      // Create interview record
+      const interview = await Interview.create({
+        applicationId: id,
+        interviewDate: new Date(interviewDate),
+        interviewType,
+        location: location || null,
+        notes: notes || null,
+        status: 'scheduled',
       });
+
+      // Update application status
+      await application.update({
+        status: 'interview_scheduled',
+      });
+
+      res.json({
+        success: true,
+        message: 'Interview scheduled successfully',
+        interview,
+      });
+      
+    } catch (error) {
+      next(error);
+      
     }
-    
-    // Create interview record
-    const interview = await Interview.create({
-      applicationId: id,
-      interviewDate: new Date(interviewDate),
-      interviewType,
-      location: location || null,
-      notes: notes || null,
-      status: 'scheduled'
-    });
-    
-    // Update application status
-    await application.update({
-      status: 'interview_scheduled'
-    });
-    
-    res.json({
-      success: true,
-      message: 'Interview scheduled successfully',
-      interview
-    });
-  } catch (error) {
-    next(error);
   }
-});
+);
 
 module.exports = router;

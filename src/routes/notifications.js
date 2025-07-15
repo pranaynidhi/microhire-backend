@@ -1,4 +1,5 @@
 const express = require('express');
+
 const router = express.Router();
 const { authenticate, requireEmailVerification } = require('../middleware/auth');
 const { AppError } = require('../utils/errors');
@@ -55,7 +56,12 @@ router.get('/', authenticate, requireEmailVerification, notificationController.g
  *       200:
  *         description: Notification marked as read
  */
-router.patch('/:id/read', authenticate, requireEmailVerification, notificationController.markAsRead);
+router.patch(
+  '/:id/read',
+  authenticate,
+  requireEmailVerification,
+  notificationController.markAsRead
+);
 
 /**
  * @swagger
@@ -68,7 +74,12 @@ router.patch('/:id/read', authenticate, requireEmailVerification, notificationCo
  *       200:
  *         description: All notifications marked as read
  */
-router.patch('/read-all', authenticate, requireEmailVerification, notificationController.markAllAsRead);
+router.patch(
+  '/read-all',
+  authenticate,
+  requireEmailVerification,
+  notificationController.markAllAsRead
+);
 
 /**
  * @swagger
@@ -86,7 +97,12 @@ router.patch('/read-all', authenticate, requireEmailVerification, notificationCo
  *       200:
  *         description: Notification deleted
  */
-router.delete('/:id', authenticate, requireEmailVerification, notificationController.deleteNotification);
+router.delete(
+  '/:id',
+  authenticate,
+  requireEmailVerification,
+  notificationController.deleteNotification
+);
 
 /**
  * @swagger
@@ -99,6 +115,11 @@ router.delete('/:id', authenticate, requireEmailVerification, notificationContro
  *       200:
  *         description: All notifications deleted
  */
-router.delete('/', authenticate, requireEmailVerification, notificationController.deleteAllNotifications);
+router.delete(
+  '/',
+  authenticate,
+  requireEmailVerification,
+  notificationController.deleteAllNotifications
+);
 
 module.exports = router;

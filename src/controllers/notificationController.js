@@ -1,7 +1,7 @@
-const { Notification, User } = require('../models');
 const { Op } = require('sequelize');
+const { Notification, User } = require('../models');
 const emailService = require('../services/emailService');
-const realtimeService = require('../services/realtimeService');
+const { getRealtimeService } = require('../services/realtimeService');
 
 const createNotification = async (userId, title, message, type, metadata = {}) => {
   try {
@@ -17,24 +17,32 @@ const createNotification = async (userId, title, message, type, metadata = {}) =
     });
 
     // Send real-time notification
-    realtimeService.sendNotificationToUser(userId, notification);
+    try {
+      const realtimeService = getRealtimeService();
+      realtimeService.sendNotificationToUser(userId, notification);
+    } catch (error) {
+      // Ignore realtime service errors in case it's not initialized
+      console.log('Realtime service not available:', error.message);
+    }
 
     // Send email notification if user has email
     if (user.email) {
       try {
-        await emailService.sendEmail(
-          user.email,
-          title,
-          `<h2>${title}</h2><p>${message}</p>`
-        );
+        await emailService.sendEmail(user.email, title, `<h2>${title}</h2><p>${message}</p>`);
       } catch (error) {
-        console.error('Send email notification error:', error instanceof Error ? error.stack : JSON.stringify(error));
+        console.error(
+          'Send email notification error:',
+          error instanceof Error ? error.stack : JSON.stringify(error)
+        );
       }
     }
 
     return notification;
   } catch (error) {
-    console.error('Create notification error:', error instanceof Error ? error.stack : JSON.stringify(error));
+    console.error(
+      'Create notification error:',
+      error instanceof Error ? error.stack : JSON.stringify(error)
+    );
     throw error;
   }
 };
@@ -47,10 +55,7 @@ const getNotifications = async (req, res) => {
     const offset = (page - 1) * limit;
     const whereClause = {
       userId,
-      [Op.or]: [
-        { expiresAt: null },
-        { expiresAt: { [Op.gt]: new Date() } }
-      ],
+      [Op.or]: [{ expiresAt: null }, { expiresAt: { [Op.gt]: new Date() } }],
     };
 
     if (unreadOnly === 'true') {
@@ -157,10 +162,7 @@ const getUnreadCount = async (req, res) => {
       where: {
         userId,
         isRead: false,
-        [Op.or]: [
-          { expiresAt: null },
-          { expiresAt: { [Op.gt]: new Date() } }
-        ],
+        [Op.or]: [{ expiresAt: null }, { expiresAt: { [Op.gt]: new Date() } }],
       },
     });
 

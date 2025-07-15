@@ -1,7 +1,6 @@
 const { AppError } = require('../utils/errors');
 const logger = require('../utils/logger');
 const { User, Internship, Application, Review, sequelize } = require('../models');
-const { Op } = require('sequelize');
 
 class AnalyticsService {
   // Track user activity
@@ -11,17 +10,23 @@ class AnalyticsService {
         throw new AppError('Invalid tracking data', 400);
       }
 
-      logger.info('User activity tracked:', JSON.stringify({
-        userId,
-        action,
-        metadata,
-        timestamp: new Date()
-      }));
+      logger.info(
+        'User activity tracked:',
+        JSON.stringify({
+          userId,
+          action,
+          metadata,
+          timestamp: new Date(),
+        })
+      );
 
       // Store in database or analytics service
       // Implementation depends on your analytics storage solution
     } catch (error) {
-      logger.error('Error tracking user activity:', error instanceof Error ? error.stack : JSON.stringify(error));
+      logger.error(
+        'Error tracking user activity:',
+        error instanceof Error ? error.stack : JSON.stringify(error)
+      );
       throw error;
     }
   }
@@ -36,16 +41,17 @@ class AnalyticsService {
 
       const [applications, reviews] = await Promise.all([
         Application.findAll({ where: { userId } }),
-        Review.findAll({ where: { userId } })
+        Review.findAll({ where: { userId } }),
       ]);
 
       return {
         totalApplications: applications.length,
-        acceptedApplications: applications.filter(app => app.status === 'accepted').length,
+        acceptedApplications: applications.filter((app) => app.status === 'accepted').length,
         totalReviews: reviews.length,
-        averageRating: reviews.length > 0 
-          ? reviews.reduce((acc, review) => acc + review.rating, 0) / reviews.length 
-          : 0
+        averageRating:
+          reviews.length > 0
+            ? reviews.reduce((acc, review) => acc + review.rating, 0) / reviews.length
+            : 0,
       };
     } catch (error) {
       logger.error('Error getting user analytics:', error);
@@ -56,37 +62,38 @@ class AnalyticsService {
   // Get company analytics
   static async getCompanyAnalytics(companyId) {
     try {
-      const company = await User.findOne({ 
-        where: { 
-          id: companyId, 
-          role: 'company' 
-        }
+      const company = await User.findOne({
+        where: {
+          id: companyId,
+          role: 'company',
+        },
       });
-      
+
       if (!company) {
         throw new AppError('Company not found', 404);
       }
 
       const [internships, applications, reviews] = await Promise.all([
         Internship.findAll({ where: { companyId } }),
-        Application.findAll({ 
+        Application.findAll({
           where: { companyId },
-          include: [{ model: Internship, where: { companyId } }]
+          include: [{ model: Internship, where: { companyId } }],
         }),
-        Review.findAll({ 
+        Review.findAll({
           where: { companyId },
-          include: [{ model: Internship, where: { companyId } }]
-        })
+          include: [{ model: Internship, where: { companyId } }],
+        }),
       ]);
 
       return {
         totalInternships: internships.length,
-        activeInternships: internships.filter(internship => internship.status === 'open').length,
+        activeInternships: internships.filter((internship) => internship.status === 'open').length,
         totalApplications: applications.length,
         totalReviews: reviews.length,
-        averageRating: reviews.length > 0 
-          ? reviews.reduce((acc, review) => acc + review.rating, 0) / reviews.length 
-          : 0
+        averageRating:
+          reviews.length > 0
+            ? reviews.reduce((acc, review) => acc + review.rating, 0) / reviews.length
+            : 0,
       };
     } catch (error) {
       logger.error('Error getting company analytics:', error);
@@ -97,25 +104,18 @@ class AnalyticsService {
   // Get platform analytics
   static async getPlatformAnalytics() {
     try {
-      const [
-        totalUsers,
-        totalCompanies,
-        totalInternships,
-        totalApplications,
-        totalReviews
-      ] = await Promise.all([
-        User.count({ where: { role: 'student' } }),
-        User.count({ where: { role: 'company' } }),
-        Internship.count(),
-        Application.count(),
-        Review.count()
-      ]);
+      const [totalUsers, totalCompanies, totalInternships, totalApplications, totalReviews] =
+        await Promise.all([
+          User.count({ where: { role: 'student' } }),
+          User.count({ where: { role: 'company' } }),
+          Internship.count(),
+          Application.count(),
+          Review.count(),
+        ]);
 
       const averageRating = await Review.findAll({
-        attributes: [
-          [sequelize.fn('AVG', sequelize.col('rating')), 'averageRating']
-        ],
-        raw: true
+        attributes: [[sequelize.fn('AVG', sequelize.col('rating')), 'averageRating']],
+        raw: true,
       });
 
       return {
@@ -124,7 +124,10 @@ class AnalyticsService {
         totalInternships,
         totalApplications,
         totalReviews,
-        averageRating: parseFloat(averageRating[0]?.averageRating) || 0
+        averageRating:
+          averageRating[0] && averageRating[0].averageRating
+            ? parseFloat(averageRating[0].averageRating)
+            : 0,
       };
     } catch (error) {
       logger.error('Error getting platform analytics:', error);
@@ -159,4 +162,4 @@ class AnalyticsService {
   }
 }
 
-module.exports = AnalyticsService; 
+module.exports = AnalyticsService;

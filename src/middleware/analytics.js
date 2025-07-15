@@ -1,42 +1,40 @@
 const Analytics = require('../models/Analytics');
 
-const trackEvent = (eventType) => {
-  return async (req, res, next) => {
-    try {
-      const analyticsData = {
-        eventType,
-        userId: req.user ? req.user.id : null,
-        ipAddress: req.ip,
-        userAgent: req.get('User-Agent'),
-        metadata: {
-          path: req.path,
-          method: req.method,
-          query: req.query,
-          timestamp: new Date()
-        }
+const trackEvent = (eventType) => async (req, res, next) => {
+  try {
+    const analyticsData = {
+      eventType,
+      userId: req.user ? req.user.id : null,
+      ipAddress: req.ip,
+      userAgent: req.get('User-Agent'),
+      metadata: {
+        path: req.path,
+        method: req.method,
+        query: req.query,
+        timestamp: new Date(),
+      },
+    };
+
+    // Add specific metadata based on event type
+    if (eventType === 'internship_posted' && req.body) {
+      analyticsData.metadata.internshipData = {
+        title: req.body.title,
+        category: req.body.category,
+        type: req.body.type,
+        location: req.body.location,
       };
-
-      // Add specific metadata based on event type
-      if (eventType === 'internship_posted' && req.body) {
-        analyticsData.metadata.internshipData = {
-          title: req.body.title,
-          category: req.body.category,
-          type: req.body.type,
-          location: req.body.location
-        };
-      }
-
-      if (eventType === 'application_submitted' && req.body) {
-        analyticsData.targetId = req.body.internshipId;
-      }
-
-      await Analytics.create(analyticsData);
-    } catch (error) {
-      console.error('Analytics tracking error:', error);
-      // Don't fail the request if analytics fails
     }
-    next();
-  };
+
+    if (eventType === 'application_submitted' && req.body) {
+      analyticsData.targetId = req.body.internshipId;
+    }
+
+    await Analytics.create(analyticsData);
+  } catch (error) {
+    console.error('Analytics tracking error:', error);
+    // Don't fail the request if analytics fails
+  }
+  next();
 };
 
 const trackUserSession = async (req, res, next) => {
@@ -55,8 +53,8 @@ const trackUserSession = async (req, res, next) => {
       os: getOS(req.get('User-Agent')),
       metadata: {
         path: req.path,
-        method: req.method
-      }
+        method: req.method,
+      },
     });
   }
   next();
@@ -74,8 +72,8 @@ const trackPageView = async (req, res, next) => {
       metadata: {
         path: req.path,
         method: req.method,
-        query: req.query
-      }
+        query: req.query,
+      },
     });
   }
   next();
@@ -87,7 +85,11 @@ const getDeviceType = (userAgent) => {
   if (/(tablet|ipad|playbook|silk)|(android(?!.*mobi))/i.test(ua)) {
     return 'tablet';
   }
-  if (/Mobile|Android|iP(hone|od)|IEMobile|BlackBerry|Kindle|Silk-Accelerated|(hpw|web)OS|Opera M(obi|ini)/.test(ua)) {
+  if (
+    /Mobile|Android|iP(hone|od)|IEMobile|BlackBerry|Kindle|Silk-Accelerated|(hpw|web)OS|Opera M(obi|ini)/.test(
+      ua
+    )
+  ) {
     return 'mobile';
   }
   return 'desktop';
@@ -116,5 +118,5 @@ const getOS = (userAgent) => {
 module.exports = {
   trackEvent,
   trackUserSession,
-  trackPageView
+  trackPageView,
 };

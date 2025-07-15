@@ -17,10 +17,10 @@ const ErrorTypes = {
   AUTHORIZATION_ERROR: 'AuthorizationError',
   NOT_FOUND_ERROR: 'NotFoundError',
   CONFLICT_ERROR: 'ConflictError',
-  DATABASE_ERROR: 'DatabaseError'
+  DATABASE_ERROR: 'DatabaseError',
 };
 
 module.exports = {
   AppError,
-  ErrorTypes
+  ErrorTypes,
 };

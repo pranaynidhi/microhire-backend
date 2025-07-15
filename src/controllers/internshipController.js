@@ -1,5 +1,5 @@
-const { Internship, User, Application } = require('../models');
 const { Op } = require('sequelize');
+const { Internship, User, Application } = require('../models');
 const withTransaction = require('../utils/transaction');
 const cache = require('../utils/cache');
 const { AppError, ErrorTypes } = require('../utils/errors');
@@ -8,10 +8,13 @@ const logger = require('../utils/logger');
 const createInternship = async (req, res) => {
   try {
     const result = await withTransaction(async (transaction) => {
-      const internship = await Internship.create({
-        ...req.body,
-        companyId: req.user.id
-      }, { transaction });
+      const internship = await Internship.create(
+        {
+          ...req.body,
+          companyId: req.user.id,
+        },
+        { transaction }
+      );
 
       // Invalidate cache
       await cache.del(`company:${req.user.id}:internships`);
@@ -22,33 +25,26 @@ const createInternship = async (req, res) => {
     res.status(201).json({
       success: true,
       message: 'Internship created successfully',
-      data: { internship: result }
+      data: { internship: result },
     });
   } catch (error) {
     logger.error('Create internship error:', error);
-    
+
     if (error.name === 'SequelizeValidationError') {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Validation error', 
-        errors: error.errors.map(e => e.message) 
+      return res.status(400).json({
+        success: false,
+        message: 'Validation error',
+        errors: error.errors.map((e) => e.message),
       });
     }
-    
+
     res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };
 
 const getAllInternships = async (req, res) => {
   try {
-    const {
-      page = 1,
-      limit = 10,
-      search,
-      location,
-      type,
-      category,
-    } = req.query;
+    const { page = 1, limit = 10, search, location, type, category } = req.query;
 
     const offset = (page - 1) * limit;
     const whereClause = {
@@ -122,13 +118,7 @@ const getInternshipById = async (req, res) => {
         {
           model: User,
           as: 'company',
-          attributes: [
-            'id',
-            'companyName',
-            'email',
-            'companyDescription',
-            'website',
-          ],
+          attributes: ['id', 'companyName', 'email', 'companyDescription', 'website'],
         },
       ],
     });
@@ -166,13 +156,15 @@ const getInternships = async (req, res) => {
 
     const internships = await Internship.findAndCountAll({
       where: { status: 'active' },
-      include: [{
-        model: User,
-        as: 'company',
-        attributes: ['id', 'companyName', 'email']
-      }],
+      include: [
+        {
+          model: User,
+          as: 'company',
+          attributes: ['id', 'companyName', 'email'],
+        },
+      ],
       limit: parseInt(req.query.limit) || 10,
-      offset: (parseInt(req.query.page) - 1) * (parseInt(req.query.limit) || 10)
+      offset: (parseInt(req.query.page) - 1) * (parseInt(req.query.limit) || 10),
     });
 
     const response = {
@@ -183,9 +175,9 @@ const getInternships = async (req, res) => {
           currentPage: parseInt(req.query.page) || 1,
           totalPages: Math.ceil(internships.count / (parseInt(req.query.limit) || 10)),
           totalItems: internships.count,
-          itemsPerPage: parseInt(req.query.limit) || 10
-        }
-      }
+          itemsPerPage: parseInt(req.query.limit) || 10,
+        },
+      },
     };
 
     await cache.set(cacheKey, response, 300); // Cache for 5 minutes

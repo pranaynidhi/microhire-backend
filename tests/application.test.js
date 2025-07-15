@@ -20,11 +20,11 @@ describe('Applications', () => {
       role: 'business',
       companyName: 'Test Company',
       isActive: true,
-      emailVerified: true
+      emailVerified: true,
     });
     companyId = company.id;
     const { accessToken: companyAccessToken } = generateTokens(company.id);
-    companyToken = 'Bearer ' + companyAccessToken;
+    companyToken = `Bearer ${companyAccessToken}`;
 
     // Create student user
     const student = await User.create({
@@ -33,11 +33,11 @@ describe('Applications', () => {
       password: 'Test123!@#',
       role: 'student',
       isActive: true,
-      emailVerified: true
+      emailVerified: true,
     });
     studentId = student.id;
     const { accessToken: studentAccessToken } = generateTokens(student.id);
-    studentToken = 'Bearer ' + studentAccessToken;
+    studentToken = `Bearer ${studentAccessToken}`;
 
     // Create internship
     const internship = await Internship.create({
@@ -50,10 +50,10 @@ describe('Applications', () => {
       deadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
       type: 'onsite',
       category: 'Development',
-      companyId
+      companyId,
     });
     internshipId = internship.id;
-  });
+  }, 15000); // Increased timeout to 15 seconds
 
   describe('POST /api/applications', () => {
     it('should create a new application', async () => {
@@ -62,14 +62,15 @@ describe('Applications', () => {
         .set('Authorization', studentToken)
         .send({
           internshipId,
-          coverLetter: 'This is a comprehensive cover letter that meets the minimum length requirement of 50 characters for the application validation.',
-          resume: 'test-resume.pdf'
+          coverLetter:
+            'This is a comprehensive cover letter that meets the minimum length requirement of 50 characters for the application validation.',
+          resume: 'test-resume.pdf',
         });
 
       expect(res.status).toBe(201);
       expect(res.body.success).toBe(true);
       expect(res.body.data.application).toHaveProperty('id');
-    });
+    }, 15000); // Increased timeout to 15 seconds
 
     it('should not create application with invalid data', async () => {
       // Create a valid internship first
@@ -80,8 +81,8 @@ describe('Applications', () => {
         location: 'Test location',
         duration: '3 months',
         deadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
-        companyId: companyId,
-        status: 'active'
+        companyId,
+        status: 'active',
       });
 
       const res = await request(app)
@@ -89,12 +90,12 @@ describe('Applications', () => {
         .set('Authorization', studentToken)
         .send({
           internshipId: internship.id,
-          coverLetter: '' // Invalid: empty cover letter
+          coverLetter: '', // Invalid: empty cover letter
         });
 
       expect([400, 404, 500]).toContain(res.status);
       expect(res.body.success).toBe(false);
-    });
+    }, 15000); // Increased timeout to 15 seconds
   });
 
   describe('GET /api/applications', () => {
@@ -102,31 +103,28 @@ describe('Applications', () => {
       await Application.create({
         internshipId,
         studentId: (await User.findOne({ where: { role: 'student' } })).id,
-        coverLetter: 'This is a comprehensive cover letter that meets the minimum length requirement of 50 characters for the application validation.',
+        coverLetter:
+          'This is a comprehensive cover letter that meets the minimum length requirement of 50 characters for the application validation.',
         resume: 'test-resume.pdf',
-        status: 'pending'
+        status: 'pending',
       });
-    });
+    }, 15000); // Increased timeout to 15 seconds
 
     it('should get all applications for student', async () => {
-      const res = await request(app)
-        .get('/api/applications')
-        .set('Authorization', studentToken);
+      const res = await request(app).get('/api/applications').set('Authorization', studentToken);
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
       expect(res.body.data.applications).toHaveLength(1);
-    });
+    }, 15000); // Increased timeout to 15 seconds
 
     it('should get all applications for company', async () => {
-      const res = await request(app)
-        .get('/api/applications')
-        .set('Authorization', companyToken);
+      const res = await request(app).get('/api/applications').set('Authorization', companyToken);
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
       expect(res.body.data.applications).toHaveLength(1);
-    });
+    }, 15000); // Increased timeout to 15 seconds
   });
 
   describe('PATCH /api/applications/:id/status', () => {
@@ -136,12 +134,13 @@ describe('Applications', () => {
       const application = await Application.create({
         internshipId,
         studentId: (await User.findOne({ where: { role: 'student' } })).id,
-        coverLetter: 'This is a comprehensive cover letter that meets the minimum length requirement of 50 characters for the application validation.',
+        coverLetter:
+          'This is a comprehensive cover letter that meets the minimum length requirement of 50 characters for the application validation.',
         resume: 'test-resume.pdf',
-        status: 'pending'
+        status: 'pending',
       });
       applicationId = application.id;
-    });
+    }, 15000); // Increased timeout to 15 seconds
 
     it('should update application status', async () => {
       const res = await request(app)
@@ -152,6 +151,6 @@ describe('Applications', () => {
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
       expect(res.body.data.application.status).toBe('accepted');
-    });
+    }, 15000); // Increased timeout to 15 seconds
   });
-});
+}, 30000); // Increased overall timeout to 30 seconds

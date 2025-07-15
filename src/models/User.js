@@ -1,6 +1,6 @@
 const { DataTypes } = require('sequelize');
-const { sequelize } = require('../config/database');
 const bcrypt = require('bcryptjs');
+const { sequelize } = require('../config/database');
 
 const User = sequelize.define(
   'User',
@@ -36,8 +36,8 @@ const User = sequelize.define(
         len: [8, 255],
         is: {
           args: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?])[A-Za-z\d!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]{8,}$/,
-          msg: 'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character'
-        }
+          msg: 'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character',
+        },
       },
       field: 'password',
     },
@@ -133,7 +133,7 @@ const User = sequelize.define(
       type: DataTypes.BOOLEAN,
       defaultValue: false,
       field: 'two_fa_enabled',
-    }
+    },
   },
   {
     timestamps: true,

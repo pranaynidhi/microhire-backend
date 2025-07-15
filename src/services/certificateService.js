@@ -3,12 +3,12 @@ const fs = require('fs');
 const path = require('path');
 const QRCode = require('qrcode');
 
-const generateCertificatePDF = async (certificate) => {
-  return new Promise(async (resolve, reject) => {
+const generateCertificatePDF = async (certificate) =>
+  new Promise(async (resolve, reject) => {
     try {
       const doc = new PDFDocument({
         size: 'A4',
-        layout: 'landscape'
+        layout: 'landscape',
       });
 
       // Generate QR code with verification URL
@@ -37,7 +37,12 @@ const generateCertificatePDF = async (certificate) => {
         .text(`at ${certificate.companyName}`, { align: 'center' })
         .moveDown()
         .fontSize(16)
-        .text(`Duration: ${new Date(certificate.startDate).toLocaleDateString()} - ${new Date(certificate.endDate).toLocaleDateString()}`, { align: 'center' })
+        .text(
+          `Duration: ${new Date(certificate.startDate).toLocaleDateString()} - ${new Date(
+            certificate.endDate
+          ).toLocaleDateString()}`,
+          { align: 'center' }
+        )
         .moveDown()
         .fontSize(14)
         .text(`Certificate ID: ${certificate.certificateId}`, { align: 'center' })
@@ -46,7 +51,7 @@ const generateCertificatePDF = async (certificate) => {
       // Add QR code
       doc.image(qrCodeDataUrl, {
         fit: [100, 100],
-        align: 'center'
+        align: 'center',
       });
 
       // Add footer
@@ -56,7 +61,11 @@ const generateCertificatePDF = async (certificate) => {
         .text(verificationUrl, { align: 'center' });
 
       // Save PDF
-      const pdfPath = path.join(__dirname, '../uploads/certificates', `${certificate.certificateId}.pdf`);
+      const pdfPath = path.join(
+        __dirname,
+        '../uploads/certificates',
+        `${certificate.certificateId}.pdf`
+      );
       const stream = fs.createWriteStream(pdfPath);
       doc.pipe(stream);
       doc.end();
@@ -68,8 +77,7 @@ const generateCertificatePDF = async (certificate) => {
       reject(error);
     }
   });
-};
 
 module.exports = {
-  generateCertificatePDF
+  generateCertificatePDF,
 };

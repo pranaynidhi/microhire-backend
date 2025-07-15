@@ -28,7 +28,7 @@ const cache = {
     } catch (error) {
       logger.error('Cache delete error:', error);
     }
-  }
+  },
 };
 
 module.exports = cache;

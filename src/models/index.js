@@ -20,8 +20,9 @@ const Conversation = require('./Conversation');
 // Define associations
 User.hasMany(Internship, {
   foreignKey: 'companyId',
-  as: 'internships', 
-  onDelete: 'CASCADE',});
+  as: 'internships',
+  onDelete: 'CASCADE',
+});
 
 Internship.belongsTo(User, {
   foreignKey: 'companyId',
@@ -92,21 +93,21 @@ Notification.belongsTo(User, {
 
 User.hasMany(File, {
   foreignKey: 'userId',
-  as: 'files' 
+  as: 'files',
 });
 
 File.belongsTo(User, {
   foreignKey: 'userId',
-  as: 'user' 
+  as: 'user',
 });
 User.hasMany(Review, {
   foreignKey: 'reviewerId',
-  as: 'givenReviews'
+  as: 'givenReviews',
 });
 
 User.hasMany(Review, {
   foreignKey: 'revieweeId',
-  as: 'receivedReviews'
+  as: 'receivedReviews',
 });
 
 Review.belongsTo(User, { foreignKey: 'reviewerId', as: 'reviewer' });
@@ -205,7 +206,7 @@ const syncDatabase = async () => {
   try {
     await sequelize.authenticate();
     console.log('✅ Database connection established successfully.');
-    
+
     // Use force: true to drop and recreate all tables
     // This resolves circular dependency issues during table creation
     await sequelize.sync({ force: true });
@@ -226,7 +227,7 @@ const initializeDatabase = async () => {
   try {
     await sequelize.authenticate();
     console.log('✅ Database connection established successfully.');
-    
+
     // Ensure admin account exists
     await ensureAdminAccount();
   } catch (error) {
@@ -240,18 +241,18 @@ const ensureAdminAccount = async () => {
   try {
     const adminEmail = process.env.ADMIN_EMAIL || 'admin@microhire.com';
     const adminPassword = process.env.ADMIN_PASSWORD || 'Admin@123';
-    
+
     const existingAdmin = await User.findOne({
-      where: { 
+      where: {
         email: adminEmail,
-        role: 'admin'
-      }
+        role: 'admin',
+      },
     });
-    
+
     if (!existingAdmin) {
       const bcrypt = require('bcryptjs');
       const hashedPassword = await bcrypt.hash(adminPassword, 12);
-      
+
       await User.create({
         fullName: 'System Administrator',
         email: adminEmail,
@@ -262,9 +263,9 @@ const ensureAdminAccount = async () => {
         companyName: 'MicroHire Platform',
         contactPerson: 'System Admin',
         companyDescription: 'Platform administrator for MicroHire',
-        website: 'https://microhire.com'
+        website: 'https://microhire.com',
       });
-      
+
       console.log('✅ Admin account created successfully');
       console.log(`📧 Admin Email: ${adminEmail}`);
       console.log(`🔑 Admin Password: ${adminPassword}`);
@@ -288,17 +289,31 @@ User.addHook('afterSync', async () => {
 
 // Internship model indexes
 Internship.addHook('afterSync', async () => {
-  await sequelize.query('CREATE INDEX idx_internships_company ON Internships(companyId);').catch(() => {});
-  await sequelize.query('CREATE INDEX idx_internships_status ON Internships(status);').catch(() => {});
-  await sequelize.query('CREATE INDEX idx_internships_deadline ON Internships(deadline);').catch(() => {});
-  await sequelize.query('CREATE INDEX idx_internships_category ON Internships(category);').catch(() => {});
+  await sequelize
+    .query('CREATE INDEX idx_internships_company ON Internships(companyId);')
+    .catch(() => {});
+  await sequelize
+    .query('CREATE INDEX idx_internships_status ON Internships(status);')
+    .catch(() => {});
+  await sequelize
+    .query('CREATE INDEX idx_internships_deadline ON Internships(deadline);')
+    .catch(() => {});
+  await sequelize
+    .query('CREATE INDEX idx_internships_category ON Internships(category);')
+    .catch(() => {});
 });
 
 // Application model indexes
 Application.addHook('afterSync', async () => {
-  await sequelize.query('CREATE INDEX idx_applications_student ON Applications(studentId);').catch(() => {});
-  await sequelize.query('CREATE INDEX idx_applications_internship ON Applications(internshipId);').catch(() => {});
-  await sequelize.query('CREATE INDEX idx_applications_status ON Applications(status);').catch(() => {});
+  await sequelize
+    .query('CREATE INDEX idx_applications_student ON Applications(studentId);')
+    .catch(() => {});
+  await sequelize
+    .query('CREATE INDEX idx_applications_internship ON Applications(internshipId);')
+    .catch(() => {});
+  await sequelize
+    .query('CREATE INDEX idx_applications_status ON Applications(status);')
+    .catch(() => {});
 });
 
 module.exports = {

@@ -11,28 +11,23 @@ console.log('DB_USER:', process.env.DB_USER);
 console.log('DB_PASSWORD:', process.env.DB_PASSWORD ? '***SET***' : '***NOT SET***');
 console.log('NODE_ENV:', process.env.NODE_ENV);
 
-const sequelize = new Sequelize(
-  process.env.DB_NAME,
-  process.env.DB_USER,
-  process.env.DB_PASSWORD,
-  {
-    host: process.env.DB_HOST,
-    port: process.env.DB_PORT,
-    dialect: 'mysql',
-    logging: (msg) => logger.debug(msg),
-    pool: {
-      max: 10,
-      min: 5,
-      acquire: 30000,
-      idle: 10000
-    },
-    define: {
-      timestamps: true,
-      underscored: true,
-      paranoid: true // Soft deletes
-    }
-  }
-);
+const sequelize = new Sequelize(process.env.DB_NAME, process.env.DB_USER, process.env.DB_PASSWORD, {
+  host: process.env.DB_HOST,
+  port: process.env.DB_PORT,
+  dialect: 'mysql',
+  logging: (msg) => logger.debug(msg),
+  pool: {
+    max: 10,
+    min: 5,
+    acquire: 30000,
+    idle: 10000,
+  },
+  define: {
+    timestamps: true,
+    underscored: true,
+    paranoid: true, // Soft deletes
+  },
+});
 
 const connectDB = async () => {
   try {
@@ -79,7 +74,6 @@ const connectDB = async () => {
         }
       }
     });
-
   } catch (error) {
     console.error('❌ Error connecting to database:', error);
     logger.error('Error connecting to database:', error);
@@ -90,5 +84,5 @@ const connectDB = async () => {
 
 module.exports = {
   sequelize,
-  connectDB
+  connectDB,
 };

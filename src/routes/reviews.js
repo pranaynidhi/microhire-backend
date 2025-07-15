@@ -1,7 +1,14 @@
 // routes/reviews.js
 const express = require('express');
+
 const router = express.Router();
-const { authenticate, isStudent, isCompany, requireEmailVerification, requireAdmin } = require('../middleware/auth');
+const {
+  authenticate,
+  isStudent,
+  isCompany,
+  requireEmailVerification,
+  requireAdmin,
+} = require('../middleware/auth');
 const { AppError } = require('../utils/errors');
 const logger = require('../utils/logger');
 const reviewController = require('../controllers/reviewController');
@@ -124,7 +131,13 @@ router.get('/company/:companyId', reviewController.getCompanyReviews);
  *       200:
  *         description: Review updated
  */
-router.put('/:id', authenticate, isStudent, requireEmailVerification, reviewController.updateReview);
+router.put(
+  '/:id',
+  authenticate,
+  isStudent,
+  requireEmailVerification,
+  reviewController.updateReview
+);
 
 /**
  * @swagger
@@ -142,7 +155,13 @@ router.put('/:id', authenticate, isStudent, requireEmailVerification, reviewCont
  *       200:
  *         description: Review deleted
  */
-router.delete('/:id', authenticate, isStudent, requireEmailVerification, reviewController.deleteReview);
+router.delete(
+  '/:id',
+  authenticate,
+  isStudent,
+  requireEmailVerification,
+  reviewController.deleteReview
+);
 
 /**
  * @swagger
@@ -186,7 +205,12 @@ router.get('/stats/:userId', reviewController.getReviewStats);
  *       201:
  *         description: Review reported
  */
-router.post('/:reviewId/report', authenticate, requireEmailVerification, reviewController.reportReview);
+router.post(
+  '/:reviewId/report',
+  authenticate,
+  requireEmailVerification,
+  reviewController.reportReview
+);
 
 /**
  * @swagger
@@ -232,6 +256,11 @@ router.get('/', authenticate, requireEmailVerification, reviewController.getAllR
 router.get('/:id', authenticate, requireEmailVerification, reviewController.getReviewById);
 
 // Report review
-router.post('/:reviewId/report', authenticate, requireEmailVerification, reviewController.reportReview);
+router.post(
+  '/:reviewId/report',
+  authenticate,
+  requireEmailVerification,
+  reviewController.reportReview
+);
 
 module.exports = router;

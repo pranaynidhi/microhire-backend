@@ -1,8 +1,7 @@
 const express = require('express');
+
 const router = express.Router();
-const { authenticate, isStudent, requireEmailVerification } = require('../middleware/auth');
-const { AppError } = require('../utils/errors');
-const logger = require('../utils/logger');
+const { authenticate, requireEmailVerification } = require('../middleware/auth');
 const certificateController = require('../controllers/certificateController');
 
 /**
@@ -55,7 +54,12 @@ router.get('/', authenticate, requireEmailVerification, certificateController.ge
  *       200:
  *         description: Certificate details
  */
-router.get('/:id', authenticate, requireEmailVerification, certificateController.getCertificateById);
+router.get(
+  '/:id',
+  authenticate,
+  requireEmailVerification,
+  certificateController.getCertificateById
+);
 
 /**
  * @swagger
@@ -104,7 +108,12 @@ router.put('/:id', authenticate, requireEmailVerification, certificateController
  *       200:
  *         description: Certificate revoked
  */
-router.delete('/:id', authenticate, requireEmailVerification, certificateController.deleteCertificate);
+router.delete(
+  '/:id',
+  authenticate,
+  requireEmailVerification,
+  certificateController.deleteCertificate
+);
 
 router.post('/generate', authenticate, certificateController.generateCertificate);
 router.get('/verify/:certificateId', certificateController.verifyCertificate);

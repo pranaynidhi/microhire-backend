@@ -1,8 +1,7 @@
 const express = require('express');
+
 const router = express.Router();
 const { authenticate, isCompany, requireEmailVerification } = require('../middleware/auth');
-const { AppError } = require('../utils/errors');
-const logger = require('../utils/logger');
 const internshipController = require('../controllers/internshipController');
 const { Internship, Application, User, Bookmark } = require('../models');
 
@@ -202,7 +201,13 @@ router.get('/:id', authenticate, internshipController.getInternshipById);
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.post('/', authenticate, isCompany, requireEmailVerification, internshipController.createInternship);
+router.post(
+  '/',
+  authenticate,
+  isCompany,
+  requireEmailVerification,
+  internshipController.createInternship
+);
 
 /**
  * @swagger
@@ -284,7 +289,13 @@ router.post('/', authenticate, isCompany, requireEmailVerification, internshipCo
  *       404:
  *         $ref: '#/components/responses/NotFoundError'
  */
-router.put('/:id', authenticate, isCompany, requireEmailVerification, internshipController.updateInternship);
+router.put(
+  '/:id',
+  authenticate,
+  isCompany,
+  requireEmailVerification,
+  internshipController.updateInternship
+);
 
 /**
  * @swagger
@@ -319,7 +330,13 @@ router.put('/:id', authenticate, isCompany, requireEmailVerification, internship
  *       404:
  *         $ref: '#/components/responses/NotFoundError'
  */
-router.delete('/:id', authenticate, isCompany, requireEmailVerification, internshipController.deleteInternship);
+router.delete(
+  '/:id',
+  authenticate,
+  isCompany,
+  requireEmailVerification,
+  internshipController.deleteInternship
+);
 
 /**
  * @swagger
@@ -390,60 +407,68 @@ router.delete('/:id', authenticate, isCompany, requireEmailVerification, interns
  *       404:
  *         $ref: '#/components/responses/NotFoundError'
  */
-router.get('/:id/applications', authenticate, isCompany, requireEmailVerification, async (req, res, next) => {
-  try {
-    const { id } = req.params;
-    const { page = 1, limit = 10, status } = req.query;
-    
-    const internship = await Internship.findByPk(id);
-    if (!internship) {
-      return res.status(404).json({
-        success: false,
-        message: 'Internship not found'
-      });
-    }
-    
-    // Check if the current user owns this internship
-    if (internship.companyId !== req.user.id) {
-      return res.status(403).json({
-        success: false,
-        message: 'You can only view applications for your own internships'
-      });
-    }
-    
-    const whereClause = { internshipId: id };
-    if (status) {
-      whereClause.status = status;
-    }
-    
-    const applications = await Application.findAndCountAll({
-      where: whereClause,
-      include: [
-        {
-          model: User,
-          as: 'applicant',
-          attributes: ['id', 'fullName', 'email', 'bio', 'skills']
-        }
-      ],
-      limit: parseInt(limit),
-      offset: (parseInt(page) - 1) * parseInt(limit),
-      order: [['createdAt', 'DESC']]
-    });
-    
-    res.json({
-      success: true,
-      applications: applications.rows,
-      pagination: {
-        page: parseInt(page),
-        limit: parseInt(limit),
-        total: applications.count,
-        pages: Math.ceil(applications.count / parseInt(limit))
+router.get(
+  '/:id/applications',
+  authenticate,
+  isCompany,
+  requireEmailVerification,
+  async (req, res, next) => {
+    try {
+      const { id } = req.params;
+      const { page = 1, limit = 10, status } = req.query;
+
+      const internship = await Internship.findByPk(id);
+      if (!internship) {
+        return res.status(404).json({
+          success: false,
+          message: 'Internship not found',
+        });
       }
-    });
-  } catch (error) {
-    next(error);
+
+      // Check if the current user owns this internship
+      if (internship.companyId !== req.user.id) {
+        return res.status(403).json({
+          success: false,
+          message: 'You can only view applications for your own internships',
+        });
+      }
+
+      const whereClause = { internshipId: id };
+      if (status) {
+        whereClause.status = status;
+      }
+
+      const applications = await Application.findAndCountAll({
+        where: whereClause,
+        include: [
+          {
+            model: User,
+            as: 'applicant',
+            attributes: ['id', 'fullName', 'email', 'bio', 'skills'],
+          },
+        ],
+        limit: parseInt(limit),
+        offset: (parseInt(page) - 1) * parseInt(limit),
+        order: [['createdAt', 'DESC']],
+      });
+
+      res.json({
+        success: true,
+        applications: applications.rows,
+        pagination: {
+          page: parseInt(page),
+          limit: parseInt(limit),
+          total: applications.count,
+          pages: Math.ceil(applications.count / parseInt(limit)),
+        },
+      });
+      
+    } catch (error) {
+      next(error);
+      
+    }
   }
-});
+);
 
 /**
  * @swagger
@@ -476,39 +501,41 @@ router.post('/:id/bookmark', authenticate, async (req, res, next) => {
   try {
     const { id } = req.params;
     const userId = req.user.id;
-    
+
     const internship = await Internship.findByPk(id);
     if (!internship) {
       return res.status(404).json({
         success: false,
-        message: 'Internship not found'
+        message: 'Internship not found',
       });
     }
-    
+
     // Check if already bookmarked
     const existingBookmark = await Bookmark.findOne({
-      where: { userId, internshipId: id }
+      where: { userId, internshipId: id },
     });
-    
+
     if (existingBookmark) {
       return res.status(400).json({
         success: false,
-        message: 'Internship is already bookmarked'
+        message: 'Internship is already bookmarked',
       });
     }
-    
+
     // Create bookmark
     await Bookmark.create({
       userId,
-      internshipId: id
+      internshipId: id,
     });
-    
+
     res.json({
       success: true,
-      message: 'Internship bookmarked successfully'
+      message: 'Internship bookmarked successfully',
     });
+    
   } catch (error) {
     next(error);
+    
   }
 });
 
@@ -543,26 +570,28 @@ router.delete('/:id/bookmark', authenticate, async (req, res, next) => {
   try {
     const { id } = req.params;
     const userId = req.user.id;
-    
+
     const bookmark = await Bookmark.findOne({
-      where: { userId, internshipId: id }
+      where: { userId, internshipId: id },
     });
-    
+
     if (!bookmark) {
       return res.status(404).json({
         success: false,
-        message: 'Bookmark not found'
+        message: 'Bookmark not found',
       });
     }
-    
+
     await bookmark.destroy();
-    
+
     res.json({
       success: true,
-      message: 'Bookmark removed successfully'
+      message: 'Bookmark removed successfully',
     });
+    
   } catch (error) {
     next(error);
+    
   }
 });
 

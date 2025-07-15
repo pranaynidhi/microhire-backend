@@ -1,4 +1,5 @@
 const express = require('express');
+
 const router = express.Router();
 const { authenticate, isCompany, requireEmailVerification } = require('../middleware/auth');
 const { AppError } = require('../utils/errors');
@@ -36,7 +37,12 @@ const analyticsController = require('../controllers/analyticsController');
  *         $ref: '#/components/responses/UnauthorizedError'
  */
 // Get dashboard statistics (role-specific)
-router.get('/dashboard', authenticate, requireEmailVerification, analyticsController.getDashboardStats);
+router.get(
+  '/dashboard',
+  authenticate,
+  requireEmailVerification,
+  analyticsController.getDashboardStats
+);
 
 /**
  * @swagger
@@ -67,9 +73,20 @@ router.get('/dashboard', authenticate, requireEmailVerification, analyticsContro
 router.get('/user', authenticate, requireEmailVerification, analyticsController.getUserAnalytics);
 
 // Get company analytics (company only)
-router.get('/company', authenticate, isCompany, requireEmailVerification, analyticsController.getCompanyAnalytics);
+router.get(
+  '/company',
+  authenticate,
+  isCompany,
+  requireEmailVerification,
+  analyticsController.getCompanyAnalytics
+);
 
 // Get platform analytics (admin only)
-router.get('/platform', authenticate, requireEmailVerification, analyticsController.getPlatformAnalytics);
+router.get(
+  '/platform',
+  authenticate,
+  requireEmailVerification,
+  analyticsController.getPlatformAnalytics
+);
 
 module.exports = router;

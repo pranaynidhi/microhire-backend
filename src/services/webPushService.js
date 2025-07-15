@@ -32,12 +32,12 @@ const sendNotification = async (subscription, payload) => {
  */
 const sendNotificationToMany = async (subscriptions, payload) => {
   const results = [];
-  
+
   for (const subscription of subscriptions) {
     const result = await sendNotification(subscription, payload);
     results.push(result);
   }
-  
+
   return results;
 };
 
@@ -46,17 +46,16 @@ const sendNotificationToMany = async (subscriptions, payload) => {
  * @param {Object} subscription - Push subscription object
  * @returns {boolean} True if subscription is valid
  */
-const validateSubscription = (subscription) => {
-  return subscription && 
-         subscription.endpoint && 
-         subscription.keys && 
-         subscription.keys.p256dh && 
-         subscription.keys.auth;
-};
+const validateSubscription = (subscription) =>
+  subscription &&
+  subscription.endpoint &&
+  subscription.keys &&
+  subscription.keys.p256dh &&
+  subscription.keys.auth;
 
 module.exports = {
   webpush,
   sendNotification,
   sendNotificationToMany,
   validateSubscription,
-}; 
+};

@@ -1,15 +1,16 @@
 const express = require('express');
+
 const router = express.Router();
+const speakeasy = require('speakeasy');
+const qrcode = require('qrcode');
+const jwt = require('jsonwebtoken');
 const { authenticate, requireEmailVerification } = require('../middleware/auth');
 const { AppError } = require('../utils/errors');
 const logger = require('../utils/logger');
 const authController = require('../controllers/authController');
 const passport = require('../config/passport');
 const { verifyEmail } = require('../controllers/authController');
-const speakeasy = require('speakeasy');
-const qrcode = require('qrcode');
 const { User } = require('../models');
-const jwt = require('jsonwebtoken');
 const { generateTokens } = require('../utils/tokenUtils');
 
 /**
@@ -162,6 +163,48 @@ router.get('/verify-email', verifyEmail);
  *               $ref: '#/components/schemas/Error'
  */
 router.post('/verify-email', verifyEmail);
+
+/**
+ * @swagger
+ * /api/auth/resend-verification:
+ *   post:
+ *     summary: Resend verification email
+ *     description: Resend email verification link to user's email address
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 description: User's email address
+ *     responses:
+ *       200:
+ *         description: Verification email sent successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Success'
+ *       400:
+ *         description: Email already verified
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       404:
+ *         description: User not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
+router.post('/resend-verification', authController.resendVerificationEmail);
 
 /**
  * @swagger
@@ -434,14 +477,16 @@ router.post('/2fa/verify', authenticate, async (req, res, next) => {
       secret: user.twoFASecret,
       encoding: 'base32',
       token: code,
-      window: 1
+      window: 1,
     });
     if (!verified) return res.status(400).json({ message: 'Invalid 2FA code' });
     // Optionally, mark 2FA as verified in user profile
     await User.update({ twoFAEnabled: true }, { where: { id: req.user.id } });
     res.json({ message: '2FA verified' });
+    
   } catch (error) {
     next(error);
+    
   }
 });
 
@@ -487,7 +532,8 @@ router.get('/oauth/google', passport.authenticate('google', { scope: ['profile',
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.get('/oauth/google/callback',
+router.get(
+  '/oauth/google/callback',
   passport.authenticate('google', { session: false, failureRedirect: '/api/auth/oauth/failure' }),
   (req, res) => {
     // Issue your JWT here and send to frontend
@@ -540,7 +586,8 @@ router.get('/oauth/github', passport.authenticate('github', { scope: ['user:emai
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.get('/oauth/github/callback',
+router.get(
+  '/oauth/github/callback',
   passport.authenticate('github', { session: false, failureRedirect: '/api/auth/oauth/failure' }),
   (req, res) => {
     // Issue your JWT here and send to frontend
@@ -635,42 +682,44 @@ router.post('/logout', authenticate, (req, res) => {
 router.post('/refresh', async (req, res, next) => {
   try {
     const { refreshToken } = req.body;
-    
+
     if (!refreshToken) {
       return res.status(400).json({
         success: false,
-        message: 'Refresh token is required'
+        message: 'Refresh token is required',
       });
     }
-    
+
     // Verify refresh token
     const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
-    
+
     // Get user
     const user = await User.findByPk(decoded.id);
     if (!user) {
       return res.status(401).json({
         success: false,
-        message: 'Invalid refresh token'
+        message: 'Invalid refresh token',
       });
     }
-    
+
     // Generate new tokens
     const { accessToken, refreshToken: newRefreshToken } = generateTokens(user.id);
-    
+
     res.json({
       success: true,
       accessToken,
-      refreshToken: newRefreshToken
+      refreshToken: newRefreshToken,
     });
+    
   } catch (error) {
     if (error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError') {
       return res.status(401).json({
         success: false,
-        message: 'Invalid or expired refresh token'
+        message: 'Invalid or expired refresh token',
       });
     }
     next(error);
+    
   }
 });
 

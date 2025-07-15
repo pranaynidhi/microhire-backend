@@ -1,7 +1,7 @@
-const File = require('../models/File');
-const User = require('../models/User');
 const fs = require('fs');
 const path = require('path');
+const File = require('../models/File');
+const User = require('../models/User');
 
 const uploadController = {
   uploadResume: async (req, res) => {
@@ -9,13 +9,13 @@ const uploadController = {
       if (!req.file) {
         return res.status(400).json({
           success: false,
-          message: 'No file uploaded'
+          message: 'No file uploaded',
         });
       }
 
       // Delete previous resume if exists
       const existingResume = await File.findOne({
-        where: { userId: req.user.id, type: 'resume', isActive: true }
+        where: { userId: req.user.id, type: 'resume', isActive: true },
       });
 
       if (existingResume) {
@@ -33,7 +33,7 @@ const uploadController = {
         mimetype: req.file.mimetype,
         size: req.file.size,
         type: 'resume',
-        userId: req.user.id
+        userId: req.user.id,
       });
 
       // Update user's resumeUrl
@@ -45,13 +45,13 @@ const uploadController = {
       res.status(201).json({
         success: true,
         message: 'Resume uploaded successfully',
-        data: { file }
+        data: { file },
       });
     } catch (error) {
       console.error('Upload resume error:', error);
       res.status(500).json({
         success: false,
-        message: 'Failed to upload resume'
+        message: 'Failed to upload resume',
       });
     }
   },
@@ -61,20 +61,20 @@ const uploadController = {
       if (!req.file) {
         return res.status(400).json({
           success: false,
-          message: 'No file uploaded'
+          message: 'No file uploaded',
         });
       }
 
       if (req.user.role !== 'business') {
         return res.status(403).json({
           success: false,
-          message: 'Only businesses can upload logos'
+          message: 'Only businesses can upload logos',
         });
       }
 
       // Delete previous logo if exists
       const existingLogo = await File.findOne({
-        where: { userId: req.user.id, type: 'logo', isActive: true }
+        where: { userId: req.user.id, type: 'logo', isActive: true },
       });
 
       if (existingLogo) {
@@ -91,7 +91,7 @@ const uploadController = {
         mimetype: req.file.mimetype,
         size: req.file.size,
         type: 'logo',
-        userId: req.user.id
+        userId: req.user.id,
       });
 
       // Update user's logoUrl
@@ -103,13 +103,13 @@ const uploadController = {
       res.status(201).json({
         success: true,
         message: 'Logo uploaded successfully',
-        data: { file }
+        data: { file },
       });
     } catch (error) {
       console.error('Upload logo error:', error);
       res.status(500).json({
         success: false,
-        message: 'Failed to upload logo'
+        message: 'Failed to upload logo',
       });
     }
   },
@@ -119,7 +119,7 @@ const uploadController = {
       if (!req.files || req.files.length === 0) {
         return res.status(400).json({
           success: false,
-          message: 'No files uploaded'
+          message: 'No files uploaded',
         });
       }
 
@@ -132,7 +132,7 @@ const uploadController = {
           mimetype: file.mimetype,
           size: file.size,
           type: 'portfolio',
-          userId: req.user.id
+          userId: req.user.id,
         });
         files.push(createdFile);
       }
@@ -140,13 +140,13 @@ const uploadController = {
       res.status(201).json({
         success: true,
         message: 'Portfolio files uploaded successfully',
-        data: { files }
+        data: { files },
       });
     } catch (error) {
       console.error('Upload portfolio error:', error);
       res.status(500).json({
         success: false,
-        message: 'Failed to upload portfolio files'
+        message: 'Failed to upload portfolio files',
       });
     }
   },
@@ -154,17 +154,17 @@ const uploadController = {
   deleteFile: async (req, res) => {
     try {
       const file = await File.findOne({
-        where: { 
-          id: req.params.fileId, 
+        where: {
+          id: req.params.fileId,
           userId: req.user.id,
-          isActive: true 
-        }
+          isActive: true,
+        },
       });
 
       if (!file) {
         return res.status(404).json({
           success: false,
-          message: 'File not found'
+          message: 'File not found',
         });
       }
 
@@ -177,26 +177,20 @@ const uploadController = {
 
       // Update user fields if necessary
       if (file.type === 'resume') {
-        await User.update(
-          { resumeUrl: null },
-          { where: { id: req.user.id } }
-        );
+        await User.update({ resumeUrl: null }, { where: { id: req.user.id } });
       } else if (file.type === 'logo') {
-        await User.update(
-          { logoUrl: null },
-          { where: { id: req.user.id } }
-        );
+        await User.update({ logoUrl: null }, { where: { id: req.user.id } });
       }
 
       res.json({
         success: true,
-        message: 'File deleted successfully'
+        message: 'File deleted successfully',
       });
     } catch (error) {
       console.error('Delete file error:', error);
       res.status(500).json({
         success: false,
-        message: 'Failed to delete file'
+        message: 'Failed to delete file',
       });
     }
   },
@@ -204,25 +198,25 @@ const uploadController = {
   getUserFiles: async (req, res) => {
     try {
       const files = await File.findAll({
-        where: { 
+        where: {
           userId: req.user.id,
-          isActive: true
+          isActive: true,
         },
-        order: [['createdAt', 'DESC']]
+        order: [['createdAt', 'DESC']],
       });
 
       res.json({
         success: true,
-        data: { files }
+        data: { files },
       });
     } catch (error) {
       console.error('Get user files error:', error);
       res.status(500).json({
         success: false,
-        message: 'Failed to fetch user files'
+        message: 'Failed to fetch user files',
       });
     }
-  }
+  },
 };
 
 module.exports = uploadController;
