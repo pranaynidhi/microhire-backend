@@ -1,3 +1,4 @@
+/* global console */
 // If you get MODULE_NOT_FOUND for 'web-push', run: npm install web-push
 const webpush = require('web-push');
 

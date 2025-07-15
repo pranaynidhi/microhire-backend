@@ -1,9 +1,8 @@
 const { Op } = require('sequelize');
-const { Internship, User, Application } = require('../models');
+const { Internship, User } = require('../models');
 const withTransaction = require('../utils/transaction');
 const cache = require('../utils/cache');
 const { AppError } = require('../utils/errors');
-const logger = require('../utils/logger');
 
 class InternshipService {
   static async createInternship(data, companyId) {

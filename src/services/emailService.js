@@ -1,3 +1,4 @@
+/* global console */
 const nodemailer = require('nodemailer');
 
 class EmailService {

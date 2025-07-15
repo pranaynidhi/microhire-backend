@@ -35,7 +35,7 @@ const User = sequelize.define(
       validate: {
         len: [8, 255],
         is: {
-          args: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?])[A-Za-z\d!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]{8,}$/,
+          args: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\]{};':"|,.<>/?])[A-Za-z\d!@#$%^&*()_+\-=\]{};':"|,.<>/?]{8,}$/,
           msg: 'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character',
         },
       },
@@ -161,8 +161,8 @@ User.prototype.getPublicProfile = function () {
   return userObject;
 };
 
-User.prototype.comparePassword = async function (candidatePassword) {
-  return await bcrypt.compare(candidatePassword, this.password);
+User.prototype.comparePassword = function (candidatePassword) {
+  return bcrypt.compare(candidatePassword, this.password);
 };
 
 module.exports = User;
