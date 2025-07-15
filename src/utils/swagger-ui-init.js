@@ -1,9 +1,12 @@
+// This file is intended to be run in the browser only.
+/* global window, document, SwaggerUIBundle, SwaggerUIStandalonePreset */
 window.onload = function () {
   // Helper to read cookie value
   function getCookie(name) {
     const value = `; ${document.cookie}`;
     const parts = value.split(`; ${name}=`);
     if (parts.length === 2) return parts.pop().split(';').shift();
+    return undefined;
   }
 
   // Add requestInterceptor to inject CSRF token

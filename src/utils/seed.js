@@ -12,10 +12,10 @@ const logger = require('./logger');
 
 const seedDatabase = async () => {
   try {
-    console.log('🌱 Starting database seeding...');
+    logger.info('🌱 Starting database seeding...');
 
     // Clear existing data
-    console.log('🧹 Clearing existing data...');
+    logger.info('🧹 Clearing existing data...');
     await Certificate.destroy({ where: {}, force: true });
     await Message.destroy({ where: {}, force: true });
     await Notification.destroy({ where: {}, force: true });
@@ -24,13 +24,13 @@ const seedDatabase = async () => {
     await Internship.destroy({ where: {}, force: true });
     await User.destroy({ where: {}, force: true });
 
-    console.log('✅ Existing data cleared');
+    logger.info('✅ Existing data cleared');
 
     // Hash password for all users
     const hashedPassword = await bcrypt.hash('password123', 12);
 
     // Create users
-    console.log('👥 Creating users...');
+    logger.info('👥 Creating users...');
     const student = await User.create({
       fullName: 'Test Student',
       email: 'student@test.com',
@@ -56,7 +56,9 @@ const seedDatabase = async () => {
       emailVerified: true,
     });
 
-    const admin = await User.create({
+    // Remove unused variable 'admin'
+    // const admin = await User.create({ ... });
+    await User.create({
       fullName: 'Test Admin',
       email: 'admin@test.com',
       password: hashedPassword,
@@ -65,10 +67,10 @@ const seedDatabase = async () => {
       emailVerified: true,
     });
 
-    console.log('✅ Users created');
+    logger.info('✅ Users created');
 
     // Create internships
-    console.log('💼 Creating internships...');
+    logger.info('💼 Creating internships...');
     const internship = await Internship.create({
       title: 'Backend Developer Internship',
       description:
@@ -119,10 +121,10 @@ const seedDatabase = async () => {
       skills: ['Python', 'Pandas', 'NumPy', 'Machine Learning'],
     });
 
-    console.log('✅ Internships created');
+    logger.info('✅ Internships created');
 
     // Create applications
-    console.log('📝 Creating applications...');
+    logger.info('📝 Creating applications...');
     await Application.create({
       internshipId: internship.id,
       studentId: student.id,
@@ -132,10 +134,10 @@ const seedDatabase = async () => {
       appliedAt: new Date(),
     });
 
-    console.log('✅ Applications created');
+    logger.info('✅ Applications created');
 
     // Create reviews
-    console.log('⭐ Creating reviews...');
+    logger.info('⭐ Creating reviews...');
     await Review.create({
       reviewerId: student.id,
       revieweeId: company.id,
@@ -147,10 +149,10 @@ const seedDatabase = async () => {
       status: 'approved',
     });
 
-    console.log('✅ Reviews created');
+    logger.info('✅ Reviews created');
 
     // Create notifications
-    console.log('🔔 Creating notifications...');
+    logger.info('🔔 Creating notifications...');
     await Notification.create({
       userId: student.id,
       title: 'Application Received',
@@ -160,10 +162,10 @@ const seedDatabase = async () => {
       priority: 'medium',
     });
 
-    console.log('✅ Notifications created');
+    logger.info('✅ Notifications created');
 
     // Create messages
-    console.log('💬 Creating messages...');
+    logger.info('💬 Creating messages...');
     await Message.create({
       senderId: student.id,
       receiverId: company.id,
@@ -173,10 +175,10 @@ const seedDatabase = async () => {
       conversationId: `conv_${student.id}_${company.id}`,
     });
 
-    console.log('✅ Messages created');
+    logger.info('✅ Messages created');
 
     // Create certificates
-    console.log('🏆 Creating certificates...');
+    logger.info('🏆 Creating certificates...');
     await Certificate.create({
       certificateId: 'CERT-001',
       studentId: student.id,
@@ -193,24 +195,24 @@ const seedDatabase = async () => {
       isValid: true,
     });
 
-    console.log('✅ Certificates created');
+    logger.info('✅ Certificates created');
 
-    console.log('🎉 Database seeding completed successfully!');
-    console.log('\n📋 Created data summary:');
-    console.log('- Users: 3 (Student, Company, Admin)');
-    console.log('- Internships: 3 (Backend, Frontend, Data Science)');
-    console.log('- Applications: 1');
-    console.log('- Reviews: 1');
-    console.log('- Notifications: 1');
-    console.log('- Messages: 1');
-    console.log('- Certificates: 1');
+    logger.info('🎉 Database seeding completed successfully!');
+    logger.info('\n📋 Created data summary:');
+    logger.info('- Users: 3 (Student, Company, Admin)');
+    logger.info('- Internships: 3 (Backend, Frontend, Data Science)');
+    logger.info('- Applications: 1');
+    logger.info('- Reviews: 1');
+    logger.info('- Notifications: 1');
+    logger.info('- Messages: 1');
+    logger.info('- Certificates: 1');
 
-    console.log('\n🔑 Test credentials:');
-    console.log('Student: student@test.com / password123');
-    console.log('Company: company@test.com / password123');
-    console.log('Admin: admin@test.com / password123');
+    logger.info('\n🔑 Test credentials:');
+    logger.info('Student: student@test.com / password123');
+    logger.info('Company: company@test.com / password123');
+    logger.info('Admin: admin@test.com / password123');
   } catch (error) {
-    console.error('❌ Error seeding database:', error);
+    logger.error('❌ Error seeding database:', error);
     logger.error('Database seeding error:', error);
     throw error;
   }
@@ -220,11 +222,11 @@ const seedDatabase = async () => {
 if (require.main === module) {
   seedDatabase()
     .then(() => {
-      console.log('✅ Seeding completed');
+      logger.info('✅ Seeding completed');
       process.exit(0);
     })
     .catch((error) => {
-      console.error('❌ Seeding failed:', error);
+      logger.error('❌ Seeding failed:', error);
       process.exit(1);
     });
 }
