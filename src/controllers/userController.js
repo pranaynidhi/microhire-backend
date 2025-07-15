@@ -1,6 +1,7 @@
 const { User, Internship, Application } = require('../models');
+const logger = require('../utils/logger');
 
-const getProfile = async (req, res) => {
+const getProfile = (req, res) => {
   try {
     res.json({
       success: true,
@@ -9,7 +10,7 @@ const getProfile = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('Get profile error:', error);
+    logger.error('Get profile error:', error);
     res.status(500).json({
       success: false,
       message: 'Internal server error.',
@@ -56,10 +57,10 @@ const updateProfile = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('Update profile error:', error);
+    logger.error('Update profile error:', error);
 
     if (error.name === 'SequelizeValidationError') {
-      return res.status(400).json({
+      res.status(400).json({
         success: false,
         message: 'Validation error.',
         errors: error.errors.map((err) => ({
@@ -79,7 +80,7 @@ const updateProfile = async (req, res) => {
 const getMyApplications = async (req, res) => {
   try {
     if (req.user.role !== 'student') {
-      return res.status(403).json({
+      res.status(403).json({
         success: false,
         message: 'Only students can view applications.',
       });
@@ -110,7 +111,7 @@ const getMyApplications = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('Get applications error:', error);
+    logger.error('Get applications error:', error);
     res.status(500).json({
       success: false,
       message: 'Internal server error.',
@@ -121,7 +122,7 @@ const getMyApplications = async (req, res) => {
 const getMyInternships = async (req, res) => {
   try {
     if (req.user.role !== 'business') {
-      return res.status(403).json({
+      res.status(403).json({
         success: false,
         message: 'Only businesses can view posted internships.',
       });
@@ -152,7 +153,7 @@ const getMyInternships = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('Get internships error:', error);
+    logger.error('Get internships error:', error);
     res.status(500).json({
       success: false,
       message: 'Internal server error.',

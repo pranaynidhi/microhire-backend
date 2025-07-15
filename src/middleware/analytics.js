@@ -1,3 +1,5 @@
+const crypto = require('crypto');
+const logger = require('../utils/logger');
 const Analytics = require('../models/Analytics');
 
 const trackEvent = (eventType) => async (req, res, next) => {
@@ -31,7 +33,7 @@ const trackEvent = (eventType) => async (req, res, next) => {
 
     await Analytics.create(analyticsData);
   } catch (error) {
-    console.error('Analytics tracking error:', error);
+    logger.error('Analytics tracking error:', error);
     // Don't fail the request if analytics fails
   }
   next();

@@ -32,7 +32,7 @@ const SystemSettings = sequelize.define(
     },
   },
   {
-    tableName: 'SystemSettings',
+    tableName: 'systemsettings',
     timestamps: true,
   }
 );

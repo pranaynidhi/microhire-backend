@@ -21,7 +21,7 @@ const adminController = {
       const users = await User.findAndCountAll({
         where: whereClause,
         attributes: { exclude: ['password'] },
-        limit: parseInt(limit),
+        limit: parseInt(limit, 10),
         offset,
         order: [['createdAt', 'DESC']],
       });
@@ -31,10 +31,10 @@ const adminController = {
         data: {
           users: users.rows,
           pagination: {
-            currentPage: parseInt(page),
+            currentPage: parseInt(page, 10),
             totalPages: Math.ceil(users.count / limit),
             totalItems: users.count,
-            itemsPerPage: parseInt(limit),
+            itemsPerPage: parseInt(limit, 10),
           },
         },
       });
@@ -59,7 +59,7 @@ const adminController = {
       const users = await User.findAndCountAll({
         where: whereClause,
         attributes: { exclude: ['password'] },
-        limit: parseInt(limit),
+        limit: parseInt(limit, 10),
         offset,
         order: [['createdAt', 'DESC']],
       });
@@ -69,10 +69,10 @@ const adminController = {
         data: {
           users: users.rows,
           pagination: {
-            currentPage: parseInt(page),
+            currentPage: parseInt(page, 10),
             totalPages: Math.ceil(users.count / limit),
             totalItems: users.count,
-            itemsPerPage: parseInt(limit),
+            itemsPerPage: parseInt(limit, 10),
           },
         },
       });
@@ -92,10 +92,11 @@ const adminController = {
 
       const user = await User.findByPk(userId);
       if (!user) {
-        return res.status(404).json({
+        res.status(404).json({
           success: false,
           message: 'User not found',
         });
+        return;
       }
 
       await user.update({
@@ -145,7 +146,7 @@ const adminController = {
           },
         ],
         order: [['createdAt', 'DESC']],
-        limit: parseInt(limit),
+        limit: parseInt(limit, 10),
         offset,
       });
 
@@ -154,10 +155,10 @@ const adminController = {
         data: {
           internships: internships.rows,
           pagination: {
-            currentPage: parseInt(page),
+            currentPage: parseInt(page, 10),
             totalPages: Math.ceil(internships.count / limit),
             totalItems: internships.count,
-            itemsPerPage: parseInt(limit),
+            itemsPerPage: parseInt(limit, 10),
           },
         },
       });
@@ -177,10 +178,11 @@ const adminController = {
 
       const internship = await Internship.findByPk(internshipId);
       if (!internship) {
-        return res.status(404).json({
+        res.status(404).json({
           success: false,
           message: 'Internship not found',
         });
+        return;
       }
 
       await internship.update({
@@ -235,7 +237,7 @@ const adminController = {
           },
         ],
         order: [['createdAt', 'DESC']],
-        limit: parseInt(limit),
+        limit: parseInt(limit, 10),
         offset,
       });
 
@@ -244,10 +246,10 @@ const adminController = {
         data: {
           reports: reports.rows,
           pagination: {
-            currentPage: parseInt(page),
+            currentPage: parseInt(page, 10),
             totalPages: Math.ceil(reports.count / limit),
             totalItems: reports.count,
-            itemsPerPage: parseInt(limit),
+            itemsPerPage: parseInt(limit, 10),
           },
         },
       });
@@ -267,10 +269,11 @@ const adminController = {
 
       const report = await Report.findByPk(reportId);
       if (!report) {
-        return res.status(404).json({
+        res.status(404).json({
           success: false,
           message: 'Report not found',
         });
+        return;
       }
 
       // Take action based on admin decision
@@ -503,10 +506,11 @@ const adminController = {
         attributes: { exclude: ['password'] },
       });
       if (!user) {
-        return res.status(404).json({
+        res.status(404).json({
           success: false,
           message: 'User not found',
         });
+        return;
       }
       res.json({
         success: true,
@@ -526,10 +530,11 @@ const adminController = {
       const { role } = req.body;
       const user = await User.findByPk(req.params.id);
       if (!user) {
-        return res.status(404).json({
+        res.status(404).json({
           success: false,
           message: 'User not found',
         });
+        return;
       }
       await user.update({ role });
       res.json({
@@ -550,10 +555,11 @@ const adminController = {
     try {
       const user = await User.findByPk(req.params.id);
       if (!user) {
-        return res.status(404).json({
+        res.status(404).json({
           success: false,
           message: 'User not found',
         });
+        return;
       }
       await user.update({ isActive: false });
       res.json({
@@ -574,10 +580,11 @@ const adminController = {
     try {
       const user = await User.findByPk(req.params.id);
       if (!user) {
-        return res.status(404).json({
+        res.status(404).json({
           success: false,
           message: 'User not found',
         });
+        return;
       }
       await user.update({ isActive: true });
       res.json({
@@ -598,10 +605,11 @@ const adminController = {
     try {
       const user = await User.findByPk(req.params.id);
       if (!user) {
-        return res.status(404).json({
+        res.status(404).json({
           success: false,
           message: 'User not found',
         });
+        return;
       }
       await user.destroy();
       res.json({
@@ -621,10 +629,11 @@ const adminController = {
     try {
       const user = await User.findByPk(req.params.id);
       if (!user) {
-        return res.status(404).json({
+        res.status(404).json({
           success: false,
           message: 'User not found',
         });
+        return;
       }
       await user.update({
         isActive: false,
@@ -648,10 +657,11 @@ const adminController = {
     try {
       const user = await User.findByPk(req.params.id);
       if (!user) {
-        return res.status(404).json({
+        res.status(404).json({
           success: false,
           message: 'User not found',
         });
+        return;
       }
       await user.update({
         isActive: true,
@@ -675,10 +685,11 @@ const adminController = {
     try {
       const internship = await Internship.findByPk(req.params.id);
       if (!internship) {
-        return res.status(404).json({
+        res.status(404).json({
           success: false,
           message: 'Internship not found',
         });
+        return;
       }
       await internship.destroy();
       res.json({

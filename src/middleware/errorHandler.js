@@ -1,8 +1,9 @@
-const { AppError, ErrorTypes } = require('../utils/errors');
 const logger = require('../utils/logger');
 
+/* global setTimeout, console */
+
 // Global error handler
-const errorHandler = (err, req, res, next) => {
+const errorHandler = (err, req, res) => {
   err.statusCode = err.statusCode || 500;
   err.status = err.status || 'error';
 
@@ -36,24 +37,22 @@ const errorHandler = (err, req, res, next) => {
       stack: err.stack,
       path: req.path
     });
-  } else {
+  } else if (err.isOperational) {
     // Production error response
-    if (err.isOperational) {
-      res.status(err.statusCode).json({
-        success: false,
-        status: err.status,
-        message: err.message,
-        errors: err.errors
-      });
-    } else {
-      // Programming or unknown errors
-      logger.error('Unexpected error:', err);
-      res.status(500).json({
-        success: false,
-        status: 'error',
-        message: 'Something went wrong'
-      });
-    }
+    res.status(err.statusCode).json({
+      success: false,
+      status: err.status,
+      message: err.message,
+      errors: err.errors
+    });
+  } else {
+    // Programming or unknown errors
+    logger.error('Unexpected error:', err);
+    res.status(500).json({
+      success: false,
+      status: 'error',
+      message: 'Something went wrong'
+    });
   }
 };
 

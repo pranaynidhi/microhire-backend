@@ -554,10 +554,11 @@ const analyticsController = {
       const { startDate, endDate } = req.query;
 
       if (!startDate || !endDate) {
-        return res.status(400).json({
+        res.status(400).json({
           success: false,
           message: 'Start date and end date are required',
         });
+        return null;
       }
 
       const stats = await AnalyticsService.getCustomDateRangeStats(
@@ -569,12 +570,14 @@ const analyticsController = {
         success: true,
         data: stats,
       });
+      return stats;
     } catch (error) {
       logger.error('Get custom date range stats error:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to fetch custom date range statistics',
       });
+      return null;
     }
   },
 
@@ -583,10 +586,11 @@ const analyticsController = {
       const { startDate, endDate, format = 'csv' } = req.query;
 
       if (!startDate || !endDate) {
-        return res.status(400).json({
+        res.status(400).json({
           success: false,
           message: 'Start date and end date are required',
         });
+        return null;
       }
 
       const data = await AnalyticsService.exportAnalytics(
@@ -598,19 +602,22 @@ const analyticsController = {
       if (format === 'csv') {
         res.setHeader('Content-Type', 'text/csv');
         res.setHeader('Content-Disposition', 'attachment; filename=analytics.csv');
-        return res.send(data);
+        res.send(data);
+        return data;
       }
 
       res.json({
         success: true,
         data,
       });
+      return data;
     } catch (error) {
       logger.error('Export analytics error:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to export analytics',
       });
+      return null;
     }
   },
 };
@@ -618,13 +625,13 @@ const analyticsController = {
 // Add stubs if missing
 const getPlatformAnalytics =
   analyticsController.getOverview ||
-  (async (req, res) => res.status(501).json({ success: false, message: 'Not implemented' }));
+  ((req, res) => res.status(501).json({ success: false, message: 'Not implemented' }));
 const getUserAnalytics =
   analyticsController.getUserAnalytics ||
-  (async (req, res) => res.status(501).json({ success: false, message: 'Not implemented' }));
+  ((req, res) => res.status(501).json({ success: false, message: 'Not implemented' }));
 const getCompanyAnalytics =
   analyticsController.getCompanyAnalytics ||
-  (async (req, res) => res.status(501).json({ success: false, message: 'Not implemented' }));
+  ((req, res) => res.status(501).json({ success: false, message: 'Not implemented' }));
 
 module.exports = {
   ...analyticsController,

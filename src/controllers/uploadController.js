@@ -2,6 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const File = require('../models/File');
 const User = require('../models/User');
+const logger = require('../utils/logger');
 
 const uploadController = {
   uploadResume: async (req, res) => {
@@ -48,11 +49,12 @@ const uploadController = {
         data: { file },
       });
     } catch (error) {
-      console.error('Upload resume error:', error);
+      logger.error('Upload resume error:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to upload resume',
       });
+      return;
     }
   },
 
@@ -106,11 +108,12 @@ const uploadController = {
         data: { file },
       });
     } catch (error) {
-      console.error('Upload logo error:', error);
+      logger.error('Upload logo error:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to upload logo',
       });
+      return;
     }
   },
 
@@ -143,11 +146,12 @@ const uploadController = {
         data: { files },
       });
     } catch (error) {
-      console.error('Upload portfolio error:', error);
+      logger.error('Upload portfolio error:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to upload portfolio files',
       });
+      return;
     }
   },
 
@@ -187,11 +191,12 @@ const uploadController = {
         message: 'File deleted successfully',
       });
     } catch (error) {
-      console.error('Delete file error:', error);
+      logger.error('Delete file error:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to delete file',
       });
+      return;
     }
   },
 
@@ -210,11 +215,12 @@ const uploadController = {
         data: { files },
       });
     } catch (error) {
-      console.error('Get user files error:', error);
+      logger.error('Get user files error:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to fetch user files',
       });
+      return;
     }
   },
 };

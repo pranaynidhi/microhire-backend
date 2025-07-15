@@ -1,3 +1,4 @@
+/* global setInterval */
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
@@ -66,6 +67,7 @@ const fileFilter = (req, file, cb) => {
     logger.error('Error in file filter:', error);
     cb(error, false);
   }
+  return null;
 };
 
 // Configure multer
@@ -78,7 +80,7 @@ const upload = multer({
 });
 
 // Upload middleware
-const uploadMiddleware = (fieldName) => async (req, res, next) => {
+const uploadMiddleware = (fieldName) => (req, res, next) => {
   try {
     // Handle single file upload
     upload.single(fieldName)(req, res, (err) => {
@@ -106,15 +108,17 @@ const uploadMiddleware = (fieldName) => async (req, res, next) => {
       };
 
       next();
+      return null;
     });
   } catch (error) {
     logger.error('Error in upload middleware:', error);
     next(error);
   }
+  return null;
 };
 
 // Delete file middleware
-const deleteFileMiddleware = async (req, res, next) => {
+const deleteFileMiddleware = (req, res, next) => {
   try {
     const { filename } = req.params;
 
@@ -136,6 +140,7 @@ const deleteFileMiddleware = async (req, res, next) => {
     logger.error('Error in delete file middleware:', error);
     next(error);
   }
+  return null;
 };
 
 // Cleanup old files
@@ -159,6 +164,7 @@ const cleanupOldFiles = async () => {
   } catch (error) {
     logger.error('File cleanup error:', error);
   }
+  return null;
 };
 
 // Run cleanup every 24 hours (only in production)

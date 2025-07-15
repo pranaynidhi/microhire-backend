@@ -134,10 +134,11 @@ const certificateController = {
       });
 
       if (!certificate || !certificate.isValid) {
-        return res.status(404).json({
+        res.status(404).json({
           success: false,
           message: 'Certificate not found',
         });
+        return;
       }
 
       res.json({
@@ -225,7 +226,9 @@ const certificateController = {
     } catch (error) {
       logger.error('Verify certificate error:', error);
       res.status(500).json({ success: false, message: 'Internal server error' });
+      return null;
     }
+    return null;
   },
 
   getUserCertificates: async (req, res) => {
@@ -278,10 +281,11 @@ const certificateController = {
       });
 
       if (!certificate) {
-        return res.status(404).json({
+        res.status(404).json({
           success: false,
           message: 'Certificate not found or not authorized',
         });
+        return null;
       }
 
       const shareToken = crypto.randomBytes(32).toString('hex');
@@ -304,7 +308,9 @@ const certificateController = {
         success: false,
         message: 'Failed to generate share link',
       });
+      return null;
     }
+    return null;
   },
 
   revokeCertificate: async (req, res) => {
@@ -320,10 +326,11 @@ const certificateController = {
       });
 
       if (!certificate) {
-        return res.status(404).json({
+        res.status(404).json({
           success: false,
           message: 'Certificate not found or not authorized',
         });
+        return null;
       }
 
       await certificate.update({
@@ -355,7 +362,9 @@ const certificateController = {
         success: false,
         message: 'Failed to revoke certificate',
       });
+      return null;
     }
+    return null;
   },
 
   getCertificateAnalytics: async (req, res) => {
@@ -370,10 +379,11 @@ const certificateController = {
       });
 
       if (!certificate) {
-        return res.status(404).json({
+        res.status(404).json({
           success: false,
           message: 'Certificate not found or not authorized',
         });
+        return null;
       }
 
       // Get view statistics
@@ -404,7 +414,9 @@ const certificateController = {
         success: false,
         message: 'Failed to fetch certificate analytics',
       });
+      return null;
     }
+    return null;
   },
 };
 

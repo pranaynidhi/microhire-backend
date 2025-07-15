@@ -8,6 +8,7 @@ const adminAuth = (req, res, next) => {
       message: 'Admin access required',
     });
   }
+  return null;
 };
 
 module.exports = adminAuth;

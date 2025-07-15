@@ -36,6 +36,7 @@ const isCompany = (req, res, next) => {
     return next(new AppError('Access denied. Company role required', 403));
   }
   next();
+  return null;
 };
 
 // Middleware to check if user is a student
@@ -44,6 +45,7 @@ const isStudent = (req, res, next) => {
     return next(new AppError('Access denied. Student role required', 403));
   }
   next();
+  return null;
 };
 
 // Middleware to check if email is verified
@@ -52,6 +54,7 @@ const requireEmailVerification = (req, res, next) => {
     return next(new AppError('Email verification required', 403));
   }
   next();
+  return null;
 };
 
 // Middleware to check if user is an admin
@@ -60,6 +63,7 @@ const requireAdmin = (req, res, next) => {
     return next(new AppError('Access denied. Admin role required', 403));
   }
   next();
+  return null;
 };
 
 module.exports = {
