@@ -1,7 +1,7 @@
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
-const { Op } = require('sequelize');
+const logger = require('../utils/logger');
 const User = require('../models/User');
 const emailService = require('../services/emailService');
 
@@ -85,7 +85,7 @@ const register = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('Registration error:', error);
+    logger.error(error);
 
     if (error.name === 'SequelizeValidationError') {
       return res.status(400).json({
@@ -161,7 +161,7 @@ const refreshToken = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('Refresh token error:', error);
+    logger.error('Refresh token error:', error);
     res.status(401).json({
       success: false,
       message: 'Invalid refresh token',
@@ -202,7 +202,7 @@ const login = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('Login error:', error);
+    logger.error('Login error:', error);
     res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };
@@ -242,7 +242,7 @@ const resendVerificationEmail = async (req, res) => {
       message: 'Verification email sent successfully. Please check your inbox.',
     });
   } catch (error) {
-    console.error('Resend verification email error:', error);
+    logger.error('Resend verification email error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to send verification email',

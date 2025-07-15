@@ -3,8 +3,6 @@ const express = require('express');
 const router = express.Router();
 const { authenticate, requireEmailVerification } = require('../middleware/auth');
 const { uploadMiddleware, deleteFileMiddleware } = require('../middleware/upload');
-const { AppError } = require('../utils/errors');
-const logger = require('../utils/logger');
 const uploadController = require('../controllers/uploadController');
 
 /**

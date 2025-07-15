@@ -2,8 +2,6 @@ const express = require('express');
 
 const router = express.Router();
 const { authenticate, requireEmailVerification } = require('../middleware/auth');
-const { AppError } = require('../utils/errors');
-const logger = require('../utils/logger');
 const notificationController = require('../controllers/notificationController');
 
 /**

@@ -5,12 +5,9 @@ const router = express.Router();
 const {
   authenticate,
   isStudent,
-  isCompany,
   requireEmailVerification,
   requireAdmin,
 } = require('../middleware/auth');
-const { AppError } = require('../utils/errors');
-const logger = require('../utils/logger');
 const reviewController = require('../controllers/reviewController');
 
 /**

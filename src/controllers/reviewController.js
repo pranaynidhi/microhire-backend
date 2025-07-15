@@ -145,7 +145,7 @@ const reviewController = {
         },
       });
     } catch (error) {
-      console.error('Get user reviews error:', error);
+      logger.error('Get user reviews error:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to fetch reviews',
@@ -195,7 +195,7 @@ const reviewController = {
         },
       });
     } catch (error) {
-      console.error('Get company reviews error:', error);
+      logger.error('Get company reviews error:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to fetch company reviews',
@@ -248,7 +248,7 @@ const reviewController = {
         data: { review: updatedReview },
       });
     } catch (error) {
-      console.error('Update review error:', error);
+      logger.error('Update review error:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to update review',
@@ -279,7 +279,7 @@ const reviewController = {
         message: 'Review deleted successfully',
       });
     } catch (error) {
-      console.error('Delete review error:', error);
+      logger.error('Delete review error:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to delete review',
@@ -367,7 +367,7 @@ const reviewController = {
         },
       });
     } catch (error) {
-      console.error('Get review stats error:', error);
+      logger.error('Get review stats error:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to fetch review statistics',
@@ -431,7 +431,7 @@ const reviewController = {
         message: 'Review reported successfully',
       });
     } catch (error) {
-      console.error('Report review error:', error);
+      logger.error('Report review error:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to report review',
@@ -491,7 +491,7 @@ const reviewController = {
         },
       });
     } catch (error) {
-      console.error('Get review reports error:', error);
+      logger.error('Get review reports error:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to fetch review reports',
@@ -527,7 +527,7 @@ const reviewController = {
         data: { review },
       });
     } catch (error) {
-      console.error('Moderate review error:', error);
+      logger.error('Moderate review error:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to moderate review',
@@ -616,7 +616,7 @@ const getAllReviews = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('Get all reviews error:', error);
+    logger.error('Get all reviews error:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch reviews' });
   }
 };
@@ -635,7 +635,7 @@ const getReviewById = async (req, res) => {
     }
     res.json({ success: true, data: { review } });
   } catch (error) {
-    console.error('Get review by ID error:', error);
+    logger.error('Get review by ID error:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch review' });
   }
 };

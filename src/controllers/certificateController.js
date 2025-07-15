@@ -1,7 +1,6 @@
 const Certificate = require('../models/Certificate');
 const User = require('../models/User');
 const Internship = require('../models/Internship');
-const Application = require('../models/Application');
 const crypto = require('crypto');
 const Notification = require('../models/Notification');
 const CertificateView = require('../models/CertificateView');
@@ -146,7 +145,7 @@ const certificateController = {
         data: { certificate },
       });
     } catch (error) {
-      console.error('Get certificate error:', error);
+      logger.error('Get certificate error:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to fetch certificate',
@@ -256,7 +255,7 @@ const certificateController = {
         data: { certificates },
       });
     } catch (error) {
-      console.error('Get user certificates error:', error);
+      logger.error('Get user certificates error:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to fetch certificates',
@@ -300,7 +299,7 @@ const certificateController = {
         },
       });
     } catch (error) {
-      console.error('Generate share link error:', error);
+      logger.error('Generate share link error:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to generate share link',
@@ -351,7 +350,7 @@ const certificateController = {
         message: 'Certificate revoked successfully',
       });
     } catch (error) {
-      console.error('Revoke certificate error:', error);
+      logger.error('Revoke certificate error:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to revoke certificate',
@@ -400,7 +399,7 @@ const certificateController = {
         },
       });
     } catch (error) {
-      console.error('Get certificate analytics error:', error);
+      logger.error('Get certificate analytics error:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to fetch certificate analytics',

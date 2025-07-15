@@ -1,8 +1,7 @@
 const { Op } = require('sequelize');
-const { Internship, User, Application } = require('../models');
+const { Internship, User } = require('../models');
 const withTransaction = require('../utils/transaction');
 const cache = require('../utils/cache');
-const { AppError, ErrorTypes } = require('../utils/errors');
 const logger = require('../utils/logger');
 
 const createInternship = async (req, res) => {
@@ -101,7 +100,7 @@ const getAllInternships = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('Get internships error:', error);
+    logger.error('Get internships error:', error);
     res.status(500).json({
       success: false,
       message: 'Internal server error.',
@@ -137,7 +136,7 @@ const getInternshipById = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('Get internship error:', error);
+    logger.error('Get internship error:', error);
     res.status(500).json({
       success: false,
       message: 'Internal server error.',

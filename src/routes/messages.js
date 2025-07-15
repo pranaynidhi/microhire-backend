@@ -3,8 +3,6 @@ const express = require('express');
 const router = express.Router();
 const { Op } = require('sequelize');
 const { authenticate, requireEmailVerification } = require('../middleware/auth');
-const { AppError } = require('../utils/errors');
-const logger = require('../utils/logger');
 const messageController = require('../controllers/messageController');
 const { Conversation, Message } = require('../models');
 
@@ -398,10 +396,12 @@ router.post('/conversations', authenticate, requireEmailVerification, async (req
       success: true,
       message: 'Conversation created and message sent',
       conversation,
-      message: newMessage,
+      newMessage,
     });
+    
   } catch (error) {
     next(error);
+    
   }
 });
 
@@ -503,10 +503,12 @@ router.put('/:messageId', authenticate, requireEmailVerification, async (req, re
     res.json({
       success: true,
       message: 'Message updated successfully',
-      message,
+      updatedMessage: message,
     });
+    
   } catch (error) {
     next(error);
+    
   }
 });
 
@@ -579,8 +581,10 @@ router.delete('/:messageId', authenticate, requireEmailVerification, async (req,
       success: true,
       message: 'Message deleted successfully',
     });
+    
   } catch (error) {
     next(error);
+    
   }
 });
 

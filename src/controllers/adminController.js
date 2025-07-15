@@ -6,6 +6,7 @@ const Application = require('../models/Application');
 const Report = require('../models/Report');
 const Review = require('../models/Review');
 const SystemSettings = require('../models/SystemSettings');
+const logger = require('../utils/logger');
 
 const adminController = {
   getUsers: async (req, res) => {
@@ -38,7 +39,7 @@ const adminController = {
         },
       });
     } catch (error) {
-      console.error('Get users error:', error);
+      logger.error('Get users error:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to fetch users',
@@ -76,7 +77,7 @@ const adminController = {
         },
       });
     } catch (error) {
-      console.error('Get all users error:', error);
+      logger.error('Get all users error:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to fetch users',
@@ -108,7 +109,7 @@ const adminController = {
         data: { user },
       });
     } catch (error) {
-      console.error('Update user status error:', error);
+      logger.error('Update user status error:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to update user status',
@@ -161,7 +162,7 @@ const adminController = {
         },
       });
     } catch (error) {
-      console.error('Get internships error:', error);
+      logger.error('Get internships error:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to fetch internships',
@@ -193,7 +194,7 @@ const adminController = {
         data: { internship },
       });
     } catch (error) {
-      console.error('Moderate internship error:', error);
+      logger.error('Moderate internship error:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to moderate internship',
@@ -251,7 +252,7 @@ const adminController = {
         },
       });
     } catch (error) {
-      console.error('Get reports error:', error);
+      logger.error('Get reports error:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to fetch reports',
@@ -295,7 +296,7 @@ const adminController = {
         data: { report },
       });
     } catch (error) {
-      console.error('Resolve report error:', error);
+      logger.error('Resolve report error:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to resolve report',
@@ -448,7 +449,7 @@ const adminController = {
         },
       });
     } catch (error) {
-      console.error('Get dashboard overview error:', error);
+      logger.error('Get dashboard overview error:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to fetch dashboard overview',
@@ -464,7 +465,7 @@ const adminController = {
         data: { settings },
       });
     } catch (error) {
-      console.error('Get system settings error:', error);
+      logger.error('Get system settings error:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to fetch system settings',
@@ -488,7 +489,7 @@ const adminController = {
         message: 'System settings updated successfully',
       });
     } catch (error) {
-      console.error('Update system settings error:', error);
+      logger.error('Update system settings error:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to update system settings',
@@ -512,7 +513,7 @@ const adminController = {
         data: { user },
       });
     } catch (error) {
-      console.error('Get user by ID error:', error);
+      logger.error('Get user by ID error:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to fetch user',
@@ -537,7 +538,7 @@ const adminController = {
         data: { user },
       });
     } catch (error) {
-      console.error('Update user role error:', error);
+      logger.error('Update user role error:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to update user role',
@@ -561,7 +562,7 @@ const adminController = {
         data: { user },
       });
     } catch (error) {
-      console.error('Suspend user error:', error);
+      logger.error('Suspend user error:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to suspend user',
@@ -585,7 +586,7 @@ const adminController = {
         data: { user },
       });
     } catch (error) {
-      console.error('Unsuspend user error:', error);
+      logger.error('Unsuspend user error:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to unsuspend user',
@@ -608,7 +609,7 @@ const adminController = {
         message: 'User deleted successfully',
       });
     } catch (error) {
-      console.error('Delete user error:', error);
+      logger.error('Delete user error:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to delete user',
@@ -635,7 +636,7 @@ const adminController = {
         data: { user },
       });
     } catch (error) {
-      console.error('Ban user error:', error);
+      logger.error('Ban user error:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to ban user',
@@ -662,7 +663,7 @@ const adminController = {
         data: { user },
       });
     } catch (error) {
-      console.error('Unban user error:', error);
+      logger.error('Unban user error:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to unban user',
@@ -685,7 +686,7 @@ const adminController = {
         message: 'Internship deleted successfully',
       });
     } catch (error) {
-      console.error('Delete internship error:', error);
+      logger.error('Delete internship error:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to delete internship',

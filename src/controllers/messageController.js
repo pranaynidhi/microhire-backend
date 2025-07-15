@@ -2,6 +2,8 @@ const { Op } = require('sequelize');
 const path = require('path');
 const fs = require('fs');
 const { Message, User } = require('../models');
+const { sequelize } = require('../models');
+const logger = require('../utils/logger');
 
 const sendMessage = async (req, res) => {
   try {
@@ -64,7 +66,7 @@ const sendMessage = async (req, res) => {
       data: { message },
     });
   } catch (error) {
-    console.error('Send message error:', error);
+    logger.error('Send message error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to send message',
@@ -79,7 +81,7 @@ const getConversation = async (req, res) => {
     const { page = 1, limit = 50 } = req.query;
 
     const offset = (page - 1) * limit;
-    const conversationId = Message.generateConversationId(currentUserId, parseInt(userId));
+    const conversationId = Message.generateConversationId(currentUserId, parseInt(userId, 10));
 
     const messages = await Message.findAndCountAll({
       where: {
@@ -99,8 +101,8 @@ const getConversation = async (req, res) => {
         },
       ],
       order: [['createdAt', 'DESC']],
-      limit: parseInt(limit),
-      offset: parseInt(offset),
+      limit: parseInt(limit, 10),
+      offset: parseInt(offset, 10),
     });
 
     // Mark messages as read
@@ -123,15 +125,15 @@ const getConversation = async (req, res) => {
       data: {
         messages: messages.rows.reverse(), // Reverse to show oldest first
         pagination: {
-          currentPage: parseInt(page),
+          currentPage: parseInt(page, 10),
           totalPages: Math.ceil(messages.count / limit),
           totalItems: messages.count,
-          itemsPerPage: parseInt(limit),
+          itemsPerPage: parseInt(limit, 10),
         },
       },
     });
   } catch (error) {
-    console.error('Get conversation error:', error);
+    logger.error('Get conversation error:', error);
     res.status(500).json({
       success: false,
       message: 'Internal server error.',
@@ -212,7 +214,7 @@ const getConversations = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('Get conversations error:', error);
+    logger.error('Get conversations error:', error);
     res.status(500).json({
       success: false,
       message: 'Internal server error.',
@@ -244,7 +246,7 @@ const markAsRead = async (req, res) => {
       message: 'Messages marked as read.',
     });
   } catch (error) {
-    console.error('Mark as read error:', error);
+    logger.error('Mark as read error:', error);
     res.status(500).json({
       success: false,
       message: 'Internal server error.',
@@ -305,7 +307,7 @@ const editMessage = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('Edit message error:', error);
+    logger.error('Edit message error:', error);
     res.status(500).json({
       success: false,
       message: 'Internal server error.',
@@ -358,7 +360,7 @@ const deleteMessage = async (req, res) => {
       message: 'Message deleted successfully',
     });
   } catch (error) {
-    console.error('Delete message error:', error);
+    logger.error('Delete message error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to delete message',

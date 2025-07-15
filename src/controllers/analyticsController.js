@@ -1,5 +1,5 @@
 const { Op } = require('sequelize');
-const Analytics = require('../models/Analytics');
+const logger = require('../utils/logger');
 const User = require('../models/User');
 const Internship = require('../models/Internship');
 const Application = require('../models/Application');
@@ -262,7 +262,7 @@ const analyticsController = {
         data: stats,
       });
     } catch (error) {
-      console.error('Get dashboard stats error:', error);
+      logger.error('Get dashboard stats error:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to fetch dashboard statistics',
@@ -339,7 +339,7 @@ const analyticsController = {
         },
       });
     } catch (error) {
-      console.error('Get analytics overview error:', error);
+      logger.error('Get analytics overview error:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to fetch analytics overview',
@@ -396,7 +396,7 @@ const analyticsController = {
         },
       });
     } catch (error) {
-      console.error('Get internship analytics error:', error);
+      logger.error('Get internship analytics error:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to fetch internship analytics',
@@ -453,7 +453,7 @@ const analyticsController = {
         },
       });
     } catch (error) {
-      console.error('Get application analytics error:', error);
+      logger.error('Get application analytics error:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to fetch application analytics',
@@ -525,7 +525,7 @@ const analyticsController = {
         },
       });
     } catch (error) {
-      console.error('Get user analytics error:', error);
+      logger.error('Get user analytics error:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to fetch user analytics',
@@ -541,7 +541,7 @@ const analyticsController = {
         data: stats,
       });
     } catch (error) {
-      console.error('Get real-time stats error:', error);
+      logger.error('Get real-time stats error:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to fetch real-time statistics',
@@ -570,7 +570,7 @@ const analyticsController = {
         data: stats,
       });
     } catch (error) {
-      console.error('Get custom date range stats error:', error);
+      logger.error('Get custom date range stats error:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to fetch custom date range statistics',
@@ -606,7 +606,7 @@ const analyticsController = {
         data,
       });
     } catch (error) {
-      console.error('Export analytics error:', error);
+      logger.error('Export analytics error:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to export analytics',

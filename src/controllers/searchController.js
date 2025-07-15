@@ -4,6 +4,7 @@ const Application = require('../models/Application');
 const { Op } = require('sequelize');
 const sequelize = require('../config/database');
 const SearchHistory = require('../models/SearchHistory');
+const logger = require('../utils/logger');
 
 const searchController = {
   advancedSearch: async (req, res) => {
@@ -74,7 +75,7 @@ const searchController = {
           attributes: ['id', 'companyName', 'email', 'logoUrl']
         }],
         order: [[sortBy, sortOrder.toUpperCase()]],
-        limit: parseInt(limit),
+        limit: parseInt(limit, 10),
         offset: offset
       });
 
@@ -83,10 +84,10 @@ const searchController = {
         data: {
           internships: internships.rows,
           pagination: {
-            currentPage: parseInt(page),
+            currentPage: parseInt(page, 10),
             totalPages: Math.ceil(internships.count / limit),
             totalItems: internships.count,
-            itemsPerPage: parseInt(limit)
+            itemsPerPage: parseInt(limit, 10)
           },
           filters: {
             query,
@@ -101,12 +102,14 @@ const searchController = {
           }
         }
       });
+      return;
     } catch (error) {
-      console.error('Advanced search error:', error);
+      logger.error('Advanced search error:', error);
       res.status(500).json({
         success: false,
         message: 'Search failed'
       });
+      return;
     }
   },
 
@@ -203,7 +206,7 @@ const searchController = {
         }
       });
     } catch (error) {
-      console.error('Get recommendations error:', error);
+      logger.error('Get recommendations error:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to fetch recommendations'
@@ -247,7 +250,7 @@ const searchController = {
         data: { similarInternships }
       });
     } catch (error) {
-      console.error('Get similar internships error:', error);
+      logger.error('Get similar internships error:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to fetch similar internships'
@@ -310,7 +313,7 @@ const searchController = {
         data: { suggestions }
       });
     } catch (error) {
-      console.error('Get search suggestions error:', error);
+      logger.error('Get search suggestions error:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to fetch search suggestions'
@@ -348,7 +351,7 @@ const searchController = {
         data: { search }
       });
     } catch (error) {
-      console.error('Save search error:', error);
+      logger.error('Save search error:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to save search'
@@ -364,7 +367,7 @@ const searchController = {
       const searches = await SearchHistory.findAndCountAll({
         where: { userId: req.user.id },
         order: [['createdAt', 'DESC']],
-        limit: parseInt(limit),
+        limit: parseInt(limit, 10),
         offset: offset
       });
 
@@ -373,15 +376,15 @@ const searchController = {
         data: {
           searches: searches.rows,
           pagination: {
-            currentPage: parseInt(page),
+            currentPage: parseInt(page, 10),
             totalPages: Math.ceil(searches.count / limit),
             totalItems: searches.count,
-            itemsPerPage: parseInt(limit)
+            itemsPerPage: parseInt(limit, 10)
           }
         }
       });
     } catch (error) {
-      console.error('Get search history error:', error);
+      logger.error('Get search history error:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to fetch search history'
@@ -404,7 +407,7 @@ const searchController = {
         data: { searches }
       });
     } catch (error) {
-      console.error('Get saved searches error:', error);
+      logger.error('Get saved searches error:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to fetch saved searches'
@@ -445,7 +448,7 @@ const searchController = {
         message: 'Search click tracked successfully'
       });
     } catch (error) {
-      console.error('Track search click error:', error);
+      logger.error('Track search click error:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to track search click'
@@ -475,7 +478,7 @@ const searchController = {
         where: whereClause,
         attributes: ['id', 'companyName', 'email', 'logoUrl', 'description', 'industry', 'website', 'location'],
         order: [['companyName', 'ASC']],
-        limit: parseInt(limit),
+        limit: parseInt(limit, 10),
         offset: offset
       });
 
@@ -484,15 +487,15 @@ const searchController = {
         data: {
           companies: companies.rows,
           pagination: {
-            currentPage: parseInt(page),
+            currentPage: parseInt(page, 10),
             totalPages: Math.ceil(companies.count / limit),
             totalItems: companies.count,
-            itemsPerPage: parseInt(limit)
+            itemsPerPage: parseInt(limit, 10)
           }
         }
       });
     } catch (error) {
-      console.error('Search companies error:', error);
+      logger.error('Search companies error:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to search companies'
@@ -523,7 +526,7 @@ const searchController = {
         where: whereClause,
         attributes: ['id', 'fullName', 'email', 'profilePicture', 'skills', 'education', 'university', 'graduationYear'],
         order: [['fullName', 'ASC']],
-        limit: parseInt(limit),
+        limit: parseInt(limit, 10),
         offset: offset
       });
 
@@ -532,15 +535,15 @@ const searchController = {
         data: {
           students: students.rows,
           pagination: {
-            currentPage: parseInt(page),
+            currentPage: parseInt(page, 10),
             totalPages: Math.ceil(students.count / limit),
             totalItems: students.count,
-            itemsPerPage: parseInt(limit)
+            itemsPerPage: parseInt(limit, 10)
           }
         }
       });
     } catch (error) {
-      console.error('Search students error:', error);
+      logger.error('Search students error:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to search students'

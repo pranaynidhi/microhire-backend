@@ -2,6 +2,7 @@ const { Op } = require('sequelize');
 const { Notification, User } = require('../models');
 const emailService = require('../services/emailService');
 const { getRealtimeService } = require('../services/realtimeService');
+const logger = require('../utils/logger');
 
 const createNotification = async (userId, title, message, type, metadata = {}) => {
   try {
@@ -22,7 +23,7 @@ const createNotification = async (userId, title, message, type, metadata = {}) =
       realtimeService.sendNotificationToUser(userId, notification);
     } catch (error) {
       // Ignore realtime service errors in case it's not initialized
-      console.log('Realtime service not available:', error.message);
+      logger.warn('Realtime service not available:', error.message);
     }
 
     // Send email notification if user has email
@@ -30,7 +31,7 @@ const createNotification = async (userId, title, message, type, metadata = {}) =
       try {
         await emailService.sendEmail(user.email, title, `<h2>${title}</h2><p>${message}</p>`);
       } catch (error) {
-        console.error(
+        logger.error(
           'Send email notification error:',
           error instanceof Error ? error.stack : JSON.stringify(error)
         );
@@ -39,7 +40,7 @@ const createNotification = async (userId, title, message, type, metadata = {}) =
 
     return notification;
   } catch (error) {
-    console.error(
+    logger.error(
       'Create notification error:',
       error instanceof Error ? error.stack : JSON.stringify(error)
     );
@@ -65,8 +66,8 @@ const getNotifications = async (req, res) => {
     const { count, rows: notifications } = await Notification.findAndCountAll({
       where: whereClause,
       order: [['createdAt', 'DESC']],
-      limit: parseInt(limit),
-      offset: parseInt(offset),
+      limit: parseInt(limit, 10),
+      offset: parseInt(offset, 10),
     });
 
     res.json({
@@ -74,15 +75,15 @@ const getNotifications = async (req, res) => {
       data: {
         notifications,
         pagination: {
-          currentPage: parseInt(page),
+          currentPage: parseInt(page, 10),
           totalPages: Math.ceil(count / limit),
           totalItems: count,
-          itemsPerPage: parseInt(limit),
+          itemsPerPage: parseInt(limit, 10),
         },
       },
     });
   } catch (error) {
-    console.error('Get notifications error:', error);
+    logger.error('Get notifications error:', error);
     res.status(500).json({
       success: false,
       message: 'Internal server error.',
@@ -116,7 +117,7 @@ const markAsRead = async (req, res) => {
       message: 'Notification marked as read.',
     });
   } catch (error) {
-    console.error('Mark notification as read error:', error);
+    logger.error('Mark notification as read error:', error);
     res.status(500).json({
       success: false,
       message: 'Internal server error.',
@@ -146,7 +147,7 @@ const markAllAsRead = async (req, res) => {
       message: 'All notifications marked as read.',
     });
   } catch (error) {
-    console.error('Mark all notifications as read error:', error);
+    logger.error('Mark all notifications as read error:', error);
     res.status(500).json({
       success: false,
       message: 'Internal server error.',
@@ -173,7 +174,7 @@ const getUnreadCount = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('Get unread count error:', error);
+    logger.error('Get unread count error:', error);
     res.status(500).json({
       success: false,
       message: 'Internal server error.',
@@ -192,7 +193,7 @@ const deleteNotification = async (req, res) => {
     await notification.destroy();
     res.json({ success: true, message: 'Notification deleted.' });
   } catch (error) {
-    console.error('Delete notification error:', error);
+    logger.error('Delete notification error:', error);
     res.status(500).json({ success: false, message: 'Internal server error.' });
   }
 };
@@ -203,7 +204,7 @@ const deleteAllNotifications = async (req, res) => {
     await Notification.destroy({ where: { userId } });
     res.json({ success: true, message: 'All notifications deleted.' });
   } catch (error) {
-    console.error('Delete all notifications error:', error);
+    logger.error('Delete all notifications error:', error);
     res.status(500).json({ success: false, message: 'Internal server error.' });
   }
 };
