@@ -13,9 +13,9 @@ class AnalyticsService {
       logger.info(
         'User activity tracked:',
         JSON.stringify({
-          userId,
-          action,
-          metadata,
+        userId,
+        action,
+        metadata,
           timestamp: new Date(),
         })
       );
@@ -50,7 +50,7 @@ class AnalyticsService {
         totalReviews: reviews.length,
         averageRating:
           reviews.length > 0
-            ? reviews.reduce((acc, review) => acc + review.rating, 0) / reviews.length
+          ? reviews.reduce((acc, review) => acc + review.rating, 0) / reviews.length 
             : 0,
       };
     } catch (error) {
@@ -62,24 +62,24 @@ class AnalyticsService {
   // Get company analytics
   static async getCompanyAnalytics(companyId) {
     try {
-      const company = await User.findOne({
-        where: {
-          id: companyId,
+      const company = await User.findOne({ 
+        where: { 
+          id: companyId, 
           role: 'company',
         },
       });
-
+      
       if (!company) {
         throw new AppError('Company not found', 404);
       }
 
       const [internships, applications, reviews] = await Promise.all([
         Internship.findAll({ where: { companyId } }),
-        Application.findAll({
+        Application.findAll({ 
           where: { companyId },
           include: [{ model: Internship, where: { companyId } }],
         }),
-        Review.findAll({
+        Review.findAll({ 
           where: { companyId },
           include: [{ model: Internship, where: { companyId } }],
         }),
@@ -92,7 +92,7 @@ class AnalyticsService {
         totalReviews: reviews.length,
         averageRating:
           reviews.length > 0
-            ? reviews.reduce((acc, review) => acc + review.rating, 0) / reviews.length
+          ? reviews.reduce((acc, review) => acc + review.rating, 0) / reviews.length 
             : 0,
       };
     } catch (error) {
@@ -106,12 +106,12 @@ class AnalyticsService {
     try {
       const [totalUsers, totalCompanies, totalInternships, totalApplications, totalReviews] =
         await Promise.all([
-          User.count({ where: { role: 'student' } }),
-          User.count({ where: { role: 'company' } }),
-          Internship.count(),
-          Application.count(),
+        User.count({ where: { role: 'student' } }),
+        User.count({ where: { role: 'company' } }),
+        Internship.count(),
+        Application.count(),
           Review.count(),
-        ]);
+      ]);
 
       const averageRating = await Review.findAll({
         attributes: [[sequelize.fn('AVG', sequelize.col('rating')), 'averageRating']],
@@ -162,4 +162,4 @@ class AnalyticsService {
   }
 }
 
-module.exports = AnalyticsService;
+module.exports = AnalyticsService; 

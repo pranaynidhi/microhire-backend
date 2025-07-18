@@ -95,7 +95,7 @@ beforeAll(async () => {
   try {
     await sequelize.sync({ force: true });
   } catch (error) {
-    console.error('Database sync failed:', error);
+    logger.error('Database sync failed:', error);
     throw error;
   }
 }, 30000); // 30 second timeout
@@ -107,7 +107,7 @@ afterAll(async () => {
   try {
     await sequelize.close();
   } catch (error) {
-    console.error('Database close failed:', error);
+    logger.error('Database close failed:', error);
   }
   // Close Redis connection if available
   if (redis && typeof redis.quit === 'function') {
@@ -122,7 +122,7 @@ afterEach(async () => {
   try {
     await sequelize.truncate({ cascade: true });
   } catch (error) {
-    console.error('Database truncate failed:', error);
+    logger.error('Database truncate failed:', error);
   }
 });
 

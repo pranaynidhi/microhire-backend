@@ -3,13 +3,13 @@ const logger = require('../utils/logger');
 require('dotenv').config();
 
 // Debug: Log the database configuration
-console.log('🔍 Database Config Debug:');
-console.log('DB_HOST:', process.env.DB_HOST);
-console.log('DB_PORT:', process.env.DB_PORT);
-console.log('DB_NAME:', process.env.DB_NAME);
-console.log('DB_USER:', process.env.DB_USER);
-console.log('DB_PASSWORD:', process.env.DB_PASSWORD ? '***SET***' : '***NOT SET***');
-console.log('NODE_ENV:', process.env.NODE_ENV);
+logger.debug('Database Config Debug:');
+logger.debug('DB_HOST:', process.env.DB_HOST);
+logger.debug('DB_PORT:', process.env.DB_PORT);
+logger.debug('DB_NAME:', process.env.DB_NAME);
+logger.debug('DB_USER:', process.env.DB_USER);
+logger.debug('DB_PASSWORD:', process.env.DB_PASSWORD ? '***SET***' : '***NOT SET***');
+logger.debug('NODE_ENV:', process.env.NODE_ENV);
 
 const sequelize = new Sequelize(process.env.DB_NAME, process.env.DB_USER, process.env.DB_PASSWORD, {
   host: process.env.DB_HOST,
@@ -31,22 +31,19 @@ const sequelize = new Sequelize(process.env.DB_NAME, process.env.DB_USER, proces
 
 const connectDB = async () => {
   try {
-    console.log('🔌 Attempting to connect to database...');
+    logger.info('Attempting to connect to database...');
     await sequelize.authenticate();
-    console.log('✅ Database connection established successfully');
     logger.info('Database connection established successfully');
 
     // Sync database (in development)
     if (process.env.NODE_ENV === 'development') {
-      console.log('🔄 Syncing database in development mode...');
+      logger.info('Syncing database in development mode...');
       await sequelize.sync({ alter: true });
-      console.log('✅ Database synchronized');
       logger.info('Database synchronized');
     }
 
     // Handle connection events
     sequelize.connectionManager.on('disconnect', () => {
-      console.log('⚠️ Database disconnected. Attempting to reconnect...');
       logger.warn('Database disconnected. Attempting to reconnect...');
       setTimeout(connectDB, 5000);
     });
@@ -55,27 +52,24 @@ const connectDB = async () => {
     process.on('SIGINT', async () => {
       try {
         await sequelize.close();
-        console.log('🔌 Database connection closed through app termination');
         logger.info('Database connection closed through app termination');
         if (process.env.NODE_ENV === 'test') {
           // Do not exit during tests
-          console.error('Test mode: would call process.exit');
+          logger.error('Test mode: would call process.exit');
         } else {
           process.exit(0);
         }
       } catch (err) {
-        console.error('❌ Error during database connection closure:', err);
         logger.error('Error during database connection closure:', err);
         if (process.env.NODE_ENV === 'test') {
           // Do not exit during tests
-          console.error('Test mode: would call process.exit');
+          logger.error('Test mode: would call process.exit');
         } else {
           process.exit(1);
         }
       }
     });
   } catch (error) {
-    console.error('❌ Error connecting to database:', error);
     logger.error('Error connecting to database:', error);
     // Retry connection after 5 seconds
     setTimeout(connectDB, 5000);

@@ -2,6 +2,7 @@ const request = require('supertest');
 const { server } = require('./setupTest');
 const { User, Internship, Application } = require('../src/models');
 const { generateTokens } = require('../src/controllers/authController');
+const logger = require('../src/utils/logger');
 let studentToken, companyToken, adminToken;
 let student, company, admin;
 
@@ -58,7 +59,7 @@ afterAll(async () => {
     if (admin) await admin.destroy();
   } catch (error) {
     // Ignore cleanup errors due to connection issues
-    console.log('Cleanup error (ignored):', error.message);
+    logger.info('Cleanup error (ignored):', error.message);
   }
 });
 

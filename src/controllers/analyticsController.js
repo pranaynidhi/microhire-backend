@@ -463,73 +463,65 @@ const analyticsController = {
 
   getUserAnalytics: async (req, res) => {
     try {
-      // User registration trends
-      const monthlyRegistrations = await User.findAll({
-        attributes: [
-          [sequelize.fn('DATE_FORMAT', sequelize.col('createdAt'), '%Y-%m'), 'month'],
-          'role',
-          [sequelize.fn('COUNT', sequelize.col('id')), 'count'],
-        ],
-        where: {
-          createdAt: {
-            [Op.gte]: new Date(Date.now() - 12 * 30 * 24 * 60 * 60 * 1000),
-          },
-        },
-        group: [sequelize.fn('DATE_FORMAT', sequelize.col('createdAt'), '%Y-%m'), 'role'],
-        order: [[sequelize.fn('DATE_FORMAT', sequelize.col('createdAt'), '%Y-%m'), 'ASC']],
-      });
-
-      // Active users (users who have applied or posted in last 30 days)
-      const activeStudents = await User.count({
-        where: {
-          role: 'student',
-        },
-        include: [
-          {
-            model: Application,
-            where: {
-              createdAt: {
-                [Op.gte]: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
-              },
-            },
-            required: true,
-          },
-        ],
-      });
-
-      const activeBusinesses = await User.count({
-        where: {
-          role: 'business',
-        },
-        include: [
-          {
-            model: Internship,
-            where: {
-              createdAt: {
-                [Op.gte]: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
-              },
-            },
-            required: true,
-          },
-        ],
-      });
-
+      const { user } = req;
+      // Example: return application stats for the user
+      const totalApplications = await Application.count({ where: { studentId: user.id } });
+      const accepted = await Application.count({ where: { studentId: user.id, status: 'accepted' } });
+      const rejected = await Application.count({ where: { studentId: user.id, status: 'rejected' } });
+      const pending = await Application.count({ where: { studentId: user.id, status: 'pending' } });
       res.json({
         success: true,
         data: {
-          monthlyRegistrations,
-          activeUsers: {
-            students: activeStudents,
-            businesses: activeBusinesses,
-          },
-        },
+          totalApplications,
+          accepted,
+          rejected,
+          pending
+        }
       });
     } catch (error) {
       logger.error('Get user analytics error:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Failed to fetch user analytics',
+      res.status(500).json({ success: false, message: 'Failed to fetch user analytics' });
+    }
+  },
+
+  getCompanyAnalytics: async (req, res) => {
+    try {
+      const { user } = req;
+      // Example: return internship and application stats for the company
+      const totalInternships = await Internship.count({ where: { companyId: user.id } });
+      const totalApplications = await Application.count({
+        include: [{ model: Internship, where: { companyId: user.id } }]
       });
+      res.json({
+        success: true,
+        data: {
+          totalInternships,
+          totalApplications
+        }
+      });
+    } catch (error) {
+      logger.error('Get company analytics error:', error);
+      res.status(500).json({ success: false, message: 'Failed to fetch company analytics' });
+    }
+  },
+
+  getPlatformAnalytics: async (req, res) => {
+    try {
+      // Example: return platform-wide stats
+      const totalUsers = await User.count();
+      const totalInternships = await Internship.count();
+      const totalApplications = await Application.count();
+      res.json({
+        success: true,
+        data: {
+          totalUsers,
+          totalInternships,
+          totalApplications
+        }
+      });
+    } catch (error) {
+      logger.error('Get platform analytics error:', error);
+      res.status(500).json({ success: false, message: 'Failed to fetch platform analytics' });
     }
   },
 
@@ -622,20 +614,4 @@ const analyticsController = {
   },
 };
 
-// Add stubs if missing
-const getPlatformAnalytics =
-  analyticsController.getOverview ||
-  ((req, res) => res.status(501).json({ success: false, message: 'Not implemented' }));
-const getUserAnalytics =
-  analyticsController.getUserAnalytics ||
-  ((req, res) => res.status(501).json({ success: false, message: 'Not implemented' }));
-const getCompanyAnalytics =
-  analyticsController.getCompanyAnalytics ||
-  ((req, res) => res.status(501).json({ success: false, message: 'Not implemented' }));
-
-module.exports = {
-  ...analyticsController,
-  getPlatformAnalytics,
-  getUserAnalytics,
-  getCompanyAnalytics,
-};
+module.exports = analyticsController;

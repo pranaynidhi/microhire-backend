@@ -1,23 +1,23 @@
 const bcrypt = require('bcryptjs');
 const { User, sequelize } = require('./src/models');
+const logger = require('./src/utils/logger');
 
 async function createAdmin() {
   try {
-    console.log('Connecting to database...');
-    await sequelize.authenticate();
-    console.log('Database connected');
+    logger.info('Connecting to database...');
+    logger.info('Database connected');
 
-    const adminEmail = 'admin@moolpahiran.com';
+    const adminEmail = 'admin@microhire.com';
     const adminPassword = 'Nidhi@7733';
 
     // Check if admin exists
-    console.log('Looking for admin user...');
+    logger.info('Looking for admin user...');
     const existingAdmin = await User.findOne({
       where: { email: adminEmail },
     });
 
     if (existingAdmin) {
-      console.log('Admin user found:', {
+      logger.info('Admin user found:', {
         id: existingAdmin.id,
         email: existingAdmin.email,
         role: existingAdmin.role,
@@ -29,16 +29,16 @@ async function createAdmin() {
       // Update admin role if needed
       if (existingAdmin.role !== 'admin') {
         await existingAdmin.update({ role: 'admin' });
-        console.log('Updated user role to admin');
+        logger.info('Updated user role to admin');
       }
 
       // Update the password to ensure it's correct
-      console.log('Updating admin password...');
+      logger.info('Updating admin password...');
       const hashedPassword = await bcrypt.hash(adminPassword, 12);
       await existingAdmin.update({ password: hashedPassword });
-      console.log('Admin password updated successfully');
+      logger.info('Admin password updated successfully');
     } else {
-      console.log('Creating admin user...');
+      logger.info('Creating admin user...');
       const hashedPassword = await bcrypt.hash(adminPassword, 12);
 
       const admin = await User.create({
@@ -54,7 +54,7 @@ async function createAdmin() {
         website: 'https://microhire.com',
       });
 
-      console.log('Admin user created:', {
+      logger.info('Admin user created:', {
         id: admin.id,
         email: admin.email,
         role: admin.role,
@@ -62,9 +62,9 @@ async function createAdmin() {
     }
 
     await sequelize.close();
-    console.log('Done');
+    logger.info('Done');
   } catch (error) {
-    console.error('Error:', error);
+    logger.error('Error:', error);
     process.exit(1);
   }
 }

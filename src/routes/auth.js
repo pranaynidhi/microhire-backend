@@ -89,11 +89,12 @@ router.get('/me', authenticate, async (req, res) => {
 router.post('/role', authenticate, async (req, res, next) => {
   try {
     const { role } = req.body;
-    if (!['student', 'company'].includes(role)) {
-      throw new AppError('Invalid role', 400);
+    if (!['student', 'company', 'business'].includes(role)) {
+      return res.status(400).json({ success: false, message: 'Invalid role' });
     }
-
-    res.json({ message: 'Role updated successfully' });
+    // Update the user's role in the database
+    await req.user.update({ role });
+    res.json({ success: true, message: 'Role updated successfully', data: { user: req.user } });
   } catch (error) {
     next(error);
   }

@@ -1,6 +1,7 @@
 require('dotenv').config();
 const bcrypt = require('bcryptjs');
 const { User } = require('./src/models');
+const logger = require('./src/utils/logger');
 
 async function createAdmin() {
   try {
@@ -10,7 +11,7 @@ async function createAdmin() {
     });
 
     if (existingAdmin) {
-      console.log('Admin already exists:', existingAdmin.email);
+      logger.info('Admin already exists:', existingAdmin.email);
       // Update password to ensure it's correct
       const hashedPassword = await bcrypt.hash('Nidhi@7733', 12);
       await existingAdmin.update({
@@ -18,7 +19,7 @@ async function createAdmin() {
         emailVerified: true,
         isActive: true,
       });
-      console.log('Admin password updated');
+      logger.info('Admin password updated');
     } else {
       // Create new admin
       const hashedPassword = await bcrypt.hash('Nidhi@7733', 12);
@@ -34,7 +35,7 @@ async function createAdmin() {
         companyDescription: 'Platform administrator for MicroHire',
         website: 'https://microhire.com',
       });
-      console.log('Admin created:', admin.email);
+      logger.info('Admin created:', admin.email);
     }
 
     // Test login
@@ -43,15 +44,14 @@ async function createAdmin() {
     });
 
     const passwordMatch = await bcrypt.compare('Nidhi@7733', admin.password);
-    console.log('Password verification:', passwordMatch ? 'SUCCESS' : 'FAILED');
-    console.log('Admin details:', {
+    logger.info('Password verification:', passwordMatch ? 'SUCCESS' : 'FAILED');
+    logger.info('Admin details:', {
+      id: admin.id,
       email: admin.email,
       role: admin.role,
-      isActive: admin.isActive,
-      emailVerified: admin.emailVerified,
     });
   } catch (error) {
-    console.error('Error:', error);
+    logger.error('Error:', error);
   }
   process.exit(0);
 }

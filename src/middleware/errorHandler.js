@@ -39,20 +39,20 @@ const errorHandler = (err, req, res) => {
     });
   } else if (err.isOperational) {
     // Production error response
-    res.status(err.statusCode).json({
-      success: false,
-      status: err.status,
-      message: err.message,
-      errors: err.errors
-    });
-  } else {
-    // Programming or unknown errors
-    logger.error('Unexpected error:', err);
-    res.status(500).json({
-      success: false,
-      status: 'error',
-      message: 'Something went wrong'
-    });
+      res.status(err.statusCode).json({
+        success: false,
+        status: err.status,
+        message: err.message,
+        errors: err.errors
+      });
+    } else {
+      // Programming or unknown errors
+      logger.error('Unexpected error:', err);
+      res.status(500).json({
+        success: false,
+        status: 'error',
+        message: 'Something went wrong'
+      });
   }
 };
 

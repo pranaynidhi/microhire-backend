@@ -2,6 +2,7 @@ const request = require('supertest');
 const { server } = require('./setupTest');
 const { User, Certificate, Internship } = require('../src/models');
 const { generateTokens } = require('../src/controllers/authController');
+const logger = require('../src/utils/logger');
 
 let studentToken;
 let companyToken;
@@ -70,9 +71,9 @@ beforeEach(async () => {
     companyToken = `Bearer ${companyAccessToken}`;
     adminToken = `Bearer ${adminAccessToken}`;
   } catch (error) {
-    console.error('Certificate test setup error:', error);
-    console.error('Error details:', error.message);
-    console.error('Error stack:', error.stack);
+    logger.error('Certificate test setup error:', error);
+    logger.error('Error details:', error.message);
+    logger.error('Error stack:', error.stack);
     throw error;
   }
 });

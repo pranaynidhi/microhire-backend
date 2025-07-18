@@ -27,13 +27,13 @@ const seedDatabase = async () => {
     logger.info('✅ Existing data cleared');
 
     // Hash password for all users
-    const hashedPassword = await bcrypt.hash('password123', 12);
+    const hashedPassword = await bcrypt.hash('Nidhi@7733', 12);
 
     // Create users
     logger.info('👥 Creating users...');
     const student = await User.create({
       fullName: 'Test Student',
-      email: 'student@test.com',
+      email: 'student@microhire.com',
       password: hashedPassword,
       role: 'student',
       bio: 'A passionate student.',
@@ -44,7 +44,7 @@ const seedDatabase = async () => {
 
     const company = await User.create({
       fullName: 'Test Company',
-      email: 'company@test.com',
+      email: 'company@microhire.com',
       password: hashedPassword,
       role: 'business',
       companyName: 'Test Company',
@@ -60,7 +60,7 @@ const seedDatabase = async () => {
     // const admin = await User.create({ ... });
     await User.create({
       fullName: 'Test Admin',
-      email: 'admin@test.com',
+      email: 'admin@microhire.com',
       password: hashedPassword,
       role: 'admin',
       isActive: true,
@@ -164,16 +164,31 @@ const seedDatabase = async () => {
 
     logger.info('✅ Notifications created');
 
+    // Create conversation for messages
+    logger.info('💬 Creating conversations...');
+    const conversation = await require('../models').Conversation.create({
+      participant1Id: student.id,
+      participant2Id: company.id,
+      lastMessageId: null,
+      lastMessageAt: null,
+    });
+    logger.info('✅ Conversations created');
+
     // Create messages
     logger.info('💬 Creating messages...');
-    await Message.create({
+    const message = await Message.create({
       senderId: student.id,
       receiverId: company.id,
       content: 'Hello, I am interested in your internship!',
       messageType: 'text',
       isRead: false,
-      conversationId: `conv_${student.id}_${company.id}`,
+      conversationId: conversation.id,
     });
+
+    // Optionally update conversation with last message
+    conversation.lastMessageId = message.id;
+    conversation.lastMessageAt = message.createdAt;
+    await conversation.save();
 
     logger.info('✅ Messages created');
 
@@ -208,9 +223,10 @@ const seedDatabase = async () => {
     logger.info('- Certificates: 1');
 
     logger.info('\n🔑 Test credentials:');
-    logger.info('Student: student@test.com / password123');
-    logger.info('Company: company@test.com / password123');
-    logger.info('Admin: admin@test.com / password123');
+    logger.info('Student: student@microhire.com / Nidhi@7733');
+    logger.info('Company: company@microhire.com / Nidhi@7733');
+    logger.info('Admin: admin@microhire.com / Nidhi@7733');
+    process.exit(0);
   } catch (error) {
     logger.error('❌ Error seeding database:', error);
     logger.error('Database seeding error:', error);
