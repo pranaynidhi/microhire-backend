@@ -1,14 +1,9 @@
-'use strict';
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/database');
 
-const { Model, DataTypes } = require('sequelize');
-
-class Review extends Model {
-  // Associations are defined in src/models/associations.js
-}
-
-// Export a function that returns the model definition
-module.exports = (sequelize) => {
-  Review.init({
+const Review = sequelize.define(
+  'Review',
+  {
     id: {
       type: DataTypes.INTEGER,
       primaryKey: true,
@@ -19,7 +14,7 @@ module.exports = (sequelize) => {
       allowNull: false,
       field: 'reviewer_id',
       references: {
-        model: 'users', // Must match the actual table name in the database
+        model: 'users',
         key: 'id',
       },
     },
@@ -28,7 +23,7 @@ module.exports = (sequelize) => {
       allowNull: false,
       field: 'reviewee_id',
       references: {
-        model: 'users', // Must match the actual table name in the database
+        model: 'users',
         key: 'id',
       },
     },
@@ -81,9 +76,8 @@ module.exports = (sequelize) => {
       allowNull: true,
       field: 'last_reported_at',
     },
-  }, {
-    sequelize,
-    modelName: 'Review',
+  },
+  {
     tableName: 'reviews',
     timestamps: true,
     underscored: true,
@@ -99,7 +93,7 @@ module.exports = (sequelize) => {
         fields: ['report_count'],
       },
     ],
-  });
-  
-  return Review;
-};
+  }
+);
+
+module.exports = Review;

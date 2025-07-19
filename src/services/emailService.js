@@ -17,7 +17,7 @@ class EmailService {
   async sendEmail(to, subject, html) {
     try {
       const info = await this.transporter.sendMail({
-        from: `"MicroHire" <${process.env.SMTP_FROM}>`,
+        from: `${process.env.FROM_NAME} <${process.env.SMTP_FROM}>`,
         to,
         subject,
         html,

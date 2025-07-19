@@ -1,23 +1,9 @@
-'use strict';
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/database');
 
-const { Model, DataTypes } = require('sequelize');
-
-class Internship extends Model {
-  /**
-   * Helper method for defining associations.
-   * This method is not part of Sequelize lifecycle.
-   * The `models/index` file will call this method automatically.
-   */
-  static associate(models) {
-    // Define associations here
-    // Example:
-    // this.belongsTo(models.User, { foreignKey: 'userId', as: 'user' });
-  }
-}
-
-// Export a function that returns the model definition
-module.exports = (sequelize) => {
-  Internship.init({
+const Internship = sequelize.define(
+  'Internship',
+  {
     id: {
       type: DataTypes.INTEGER,
       primaryKey: true,
@@ -75,7 +61,7 @@ module.exports = (sequelize) => {
       type: DataTypes.INTEGER,
       allowNull: false,
       references: {
-        model: 'users', // Must match the actual table name in the database
+        model: 'users',
         key: 'id',
       },
       field: 'company_id',
@@ -84,7 +70,7 @@ module.exports = (sequelize) => {
       type: DataTypes.INTEGER,
       allowNull: true,
       references: {
-        model: 'users', // Must match the actual table name in the database
+        model: 'users',
         key: 'id',
       },
       field: 'student_id',
@@ -109,13 +95,12 @@ module.exports = (sequelize) => {
       defaultValue: 50,
       field: 'max_applicants',
     },
-  }, {
-    sequelize,
-    modelName: 'Internship',
+  },
+  {
     tableName: 'internships',
     timestamps: true,
     underscored: true,
-  });
-  
-  return Internship;
-};
+  }
+);
+
+module.exports = Internship;

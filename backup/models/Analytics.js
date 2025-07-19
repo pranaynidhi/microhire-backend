@@ -1,23 +1,9 @@
-'use strict';
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/database');
 
-const { Model, DataTypes } = require('sequelize');
-
-class Analytics extends Model {
-  /**
-   * Helper method for defining associations.
-   * This method is not part of Sequelize lifecycle.
-   * The `models/index` file will call this method automatically.
-   */
-  static associate(models) {
-    // Define associations here
-    // Example:
-    // this.belongsTo(models.User, { foreignKey: 'userId', as: 'user' });
-  }
-}
-
-// Export a function that returns the model definition
-module.exports = (sequelize) => {
-  Analytics.init({
+const Analytics = sequelize.define(
+  'Analytics',
+  {
     id: {
       type: DataTypes.INTEGER,
       primaryKey: true,
@@ -55,7 +41,7 @@ module.exports = (sequelize) => {
       allowNull: true,
       field: 'user_id',
       references: {
-        model: 'users', // Must match the actual table name in the database
+        model: 'users',
         key: 'id',
       },
     },
@@ -104,13 +90,12 @@ module.exports = (sequelize) => {
       type: DataTypes.STRING,
       allowNull: true,
     },
-  }, {
-    sequelize,
-    modelName: 'Analytics',
+  },
+  {
     tableName: 'analytics',
     timestamps: true,
     underscored: true,
-  });
-  
-  return Analytics;
-};
+  }
+);
+
+module.exports = Analytics;

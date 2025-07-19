@@ -9,9 +9,10 @@ const csrf = require('csurf');
 const specs = require('./config/swagger');
 const errorHandler = require('./middleware/errorHandler');
 const logger = require('./utils/logger');
-const { applySecurityMiddleware, applyRateLimit } = require('./middleware/security');
+const { applySecurityMiddleware, applyRateLimit, rateLimits } = require('./middleware/security');
 const passport = require('./config/passport');
 const { AppError } = require('./utils/errors');
+const { sequelize, initializeDatabase } = require('./models');
 
 // Import database and models
 require('./models');
@@ -52,13 +53,11 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // Attach Socket.io to requests
 app.use(middleware);
 
-// Apply security middleware
-applySecurityMiddleware(app);
-
-// Apply rate limiters
-app.use(applyRateLimit);
-
+// Apply cookie parser first
 app.use(cookieParser());
+
+// Apply security middleware (includes rate limiting)
+applySecurityMiddleware(app);
 
 // Add CSRF protection
 
@@ -119,32 +118,35 @@ app.use((req, res, next) => {
   next();
 });
 
-// Routes
+// Import routes
 const authRoutes = require('./routes/auth');
+const twoFactorRoutes = require('./routes/twoFactor');
 const userRoutes = require('./routes/users');
 const internshipRoutes = require('./routes/internships');
 const applicationRoutes = require('./routes/applications');
 const messageRoutes = require('./routes/messages');
 const notificationRoutes = require('./routes/notifications');
-const uploadRoutes = require('./routes/upload');
 const reviewRoutes = require('./routes/reviews');
-const certificateRoutes = require('./routes/certificates');
-const analyticsRoutes = require('./routes/analytics');
-const adminRoutes = require('./routes/admin');
+const uploadRoutes = require('./routes/upload');
 const searchRoutes = require('./routes/search');
+const adminRoutes = require('./routes/admin');
+const analyticsRoutes = require('./routes/analytics');
+const certificateRoutes = require('./routes/certificates');
 
+// Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/2fa', twoFactorRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/internships', internshipRoutes);
 app.use('/api/applications', applicationRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/notifications', notificationRoutes);
-app.use('/api/upload', uploadRoutes);
 app.use('/api/reviews', reviewRoutes);
-app.use('/api/certificates', certificateRoutes);
-app.use('/api/analytics', analyticsRoutes);
-app.use('/api/admin', adminRoutes);
+app.use('/api/uploads', uploadRoutes);
 app.use('/api/search', searchRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/analytics', analyticsRoutes);
+app.use('/api/certificates', certificateRoutes);
 
 app.use('/uploads', express.static('uploads'));
 
@@ -233,16 +235,87 @@ process.on('uncaughtException', (err) => {
 // Start server
 const startServer = async () => {
   try {
-    await initializeDatabase();
-    app.use(passport.initialize());
-    server.listen(PORT, () => {
-      logger.info(`Server running on port ${PORT}`);
+    console.log('Starting server initialization...');
+    
+    // Initialize database
+    console.log('Initializing database...');
+    try {
+      await initializeDatabase();
+      console.log('✓ Database initialized successfully');
+    } catch (dbError) {
+      console.error('✗ Failed to initialize database:', dbError);
+      throw dbError;
+    }
+    
+    // Initialize Passport
+    console.log('Initializing Passport...');
+    try {
+      app.use(passport.initialize());
+      console.log('✓ Passport initialized successfully');
+    } catch (passportError) {
+      console.error('✗ Failed to initialize Passport:', passportError);
+      throw passportError;
+    }
+    
+    // Start the server
+    console.log(`Starting HTTP server on port ${PORT}...`);
+    return new Promise((resolve, reject) => {
+      server.listen(PORT, '0.0.0.0')
+        .on('listening', () => {
+          console.log(`✓ Server is running on http://localhost:${PORT}`);
+          logger.info(`Server running on port ${PORT}`);
+          resolve();
+        })
+        .on('error', (err) => {
+          console.error('✗ Failed to start server:', err);
+          logger.error('Failed to start server:', {
+            message: err.message,
+            code: err.code,
+            syscall: err.syscall,
+            port: PORT
+          });
+          reject(err);
+        });
     });
+    
   } catch (error) {
-    logger.error('Failed to start server:', error);
-    process.exit(1);
+    console.error('❌ Critical error during server startup:', error);
+    logger.error('Critical error during server startup:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name,
+      code: error.code,
+      syscall: error.syscall
+    });
+    
+    // Give some time for logs to be written before exiting
+    setTimeout(() => process.exit(1), 500);
   }
 };
+
+// Handle unhandled promise rejections
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('⚠️ Unhandled Rejection at:', promise, 'reason:', reason);
+  logger.error('Unhandled Rejection at:', { 
+    promise, 
+    reason: reason instanceof Error ? {
+      message: reason.message,
+      stack: reason.stack,
+      name: reason.name
+    } : reason
+  });});
+
+// Handle uncaught exceptions
+process.on('uncaughtException', (error) => {
+  console.error('⚠️ Uncaught Exception:', error);
+  logger.error('Uncaught Exception:', {
+    message: error.message,
+    stack: error.stack,
+    name: error.name
+  });
+  // Don't exit immediately, allow the process to finish current operations
+  setTimeout(() => process.exit(1), 500);
+});
 
 if (require.main === module) {
   startServer();

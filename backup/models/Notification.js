@@ -1,23 +1,9 @@
-'use strict';
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/database');
 
-const { Model, DataTypes } = require('sequelize');
-
-class Notification extends Model {
-  /**
-   * Helper method for defining associations.
-   * This method is not part of Sequelize lifecycle.
-   * The `models/index` file will call this method automatically.
-   */
-  static associate(models) {
-    // Define associations here
-    // Example:
-    // this.belongsTo(models.User, { foreignKey: 'userId', as: 'user' });
-  }
-}
-
-// Export a function that returns the model definition
-module.exports = (sequelize) => {
-  Notification.init({
+const Notification = sequelize.define(
+  'Notification',
+  {
     id: {
       type: DataTypes.INTEGER,
       primaryKey: true,
@@ -28,7 +14,7 @@ module.exports = (sequelize) => {
       allowNull: false,
       field: 'user_id',
       references: {
-        model: 'users', // Must match the actual table name in the database
+        model: 'users',
         key: 'id',
       },
     },
@@ -87,12 +73,11 @@ module.exports = (sequelize) => {
       allowNull: true,
       field: 'expires_at',
     },
-  }, {
-    sequelize,
-    modelName: 'Notification',
-    tableName: 'notifications',
+  },
+  {
     timestamps: true,
     underscored: true,
+    tableName: 'notifications',
     indexes: [
       {
         fields: ['user_id', 'is_read'],
@@ -104,7 +89,7 @@ module.exports = (sequelize) => {
         fields: ['created_at'],
       },
     ],
-  });
-  
-  return Notification;
-};
+  }
+);
+
+module.exports = Notification;

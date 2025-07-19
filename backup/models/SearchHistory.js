@@ -1,23 +1,9 @@
-'use strict';
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/database');
 
-const { Model, DataTypes } = require('sequelize');
-
-class SearchHistory extends Model {
-  /**
-   * Helper method for defining associations.
-   * This method is not part of Sequelize lifecycle.
-   * The `models/index` file will call this method automatically.
-   */
-  static associate(models) {
-    // Define associations here
-    // Example:
-    // this.belongsTo(models.User, { foreignKey: 'userId', as: 'user' });
-  }
-}
-
-// Export a function that returns the model definition
-module.exports = (sequelize) => {
-  SearchHistory.init({
+const SearchHistory = sequelize.define(
+  'SearchHistory',
+  {
     id: {
       type: DataTypes.INTEGER,
       primaryKey: true,
@@ -28,7 +14,7 @@ module.exports = (sequelize) => {
       allowNull: false,
       field: 'user_id',
       references: {
-        model: 'users', // Must match the actual table name in the database
+        model: 'users',
         key: 'id',
       },
     },
@@ -60,9 +46,8 @@ module.exports = (sequelize) => {
       allowNull: true,
       field: 'saved_name',
     },
-  }, {
-    sequelize,
-    modelName: 'SearchHistory',
+  },
+  {
     tableName: 'search_histories',
     timestamps: true,
     underscored: true,
@@ -74,7 +59,7 @@ module.exports = (sequelize) => {
         fields: ['is_saved'],
       },
     ],
-  });
-  
-  return SearchHistory;
-};
+  }
+);
+
+module.exports = SearchHistory;

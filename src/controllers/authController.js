@@ -6,11 +6,11 @@ const User = require('../models/User');
 const emailService = require('../services/emailService');
 
 const generateTokens = (userId) => {
-  const accessToken = jwt.sign({ userId }, process.env.JWT_SECRET, {
+  const accessToken = jwt.sign({ id: userId }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_ACCESS_EXPIRES_IN || '1d',
   });
 
-  const refreshToken = jwt.sign({ userId }, process.env.JWT_REFRESH_SECRET, {
+  const refreshToken = jwt.sign({ id: userId }, process.env.JWT_REFRESH_SECRET, {
     expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d',
   });
 
@@ -142,7 +142,7 @@ const refreshToken = async (req, res) => {
     }
 
     const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
-    const user = await User.findByPk(decoded.userId);
+    const user = await User.findByPk(decoded.id);
 
     if (!user || !user.isActive) {
       return res.status(401).json({
@@ -169,7 +169,7 @@ const refreshToken = async (req, res) => {
   }
 };
 
-const login = async (req, res) => {
+const login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
     const user = await User.findOne({ where: { email } });
@@ -191,7 +191,37 @@ const login = async (req, res) => {
     if (!isMatch) {
       return res.status(401).json({ success: false, message: 'Invalid credentials' });
     }
+
+    // Check if 2FA is enabled
+    if (user.twoFAEnabled) {
+      // Generate a temporary token that only allows 2FA verification
+      const tempToken = jwt.sign(
+        { 
+          userId: user.id,
+          twoFAPending: true,
+          email: user.email
+        },
+        process.env.JWT_SECRET,
+        { expiresIn: '5m' } // Short expiration for 2FA verification
+      );
+
+      return res.status(200).json({
+        success: true,
+        message: '2FA verification required',
+        data: {
+          twoFARequired: true,
+          tempToken,
+          email: user.email
+        }
+      });
+    }
+
+    // If 2FA is not enabled, generate regular tokens
     const { accessToken, refreshToken } = generateTokens(user.id);
+    
+    // Update last login time
+    await user.update({ lastLogin: new Date() });
+    
     res.json({
       success: true,
       message: 'Login successful',

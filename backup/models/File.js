@@ -1,23 +1,9 @@
-'use strict';
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/database');
 
-const { Model, DataTypes } = require('sequelize');
-
-class File extends Model {
-  /**
-   * Helper method for defining associations.
-   * This method is not part of Sequelize lifecycle.
-   * The `models/index` file will call this method automatically.
-   */
-  static associate(models) {
-    // Define associations here
-    // Example:
-    // this.belongsTo(models.User, { foreignKey: 'userId', as: 'user' });
-  }
-}
-
-// Export a function that returns the model definition
-module.exports = (sequelize) => {
-  File.init({
+const File = sequelize.define(
+  'File',
+  {
     id: {
       type: DataTypes.INTEGER,
       primaryKey: true,
@@ -52,9 +38,8 @@ module.exports = (sequelize) => {
       type: DataTypes.INTEGER,
       allowNull: false,
       field: 'user_id',
-      // Explicitly set the table name to match the User model's configuration
       references: {
-        model: 'users', // Must match the actual table name in the database
+        model: 'users',
         key: 'id',
       },
     },
@@ -63,13 +48,12 @@ module.exports = (sequelize) => {
       defaultValue: true,
       field: 'is_active',
     },
-  }, {
-    sequelize,
-    modelName: 'File',
+  },
+  {
     tableName: 'files',
     timestamps: true,
     underscored: true,
-  });
-  
-  return File;
-};
+  }
+);
+
+module.exports = File;

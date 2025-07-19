@@ -1,23 +1,9 @@
-'use strict';
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/database');
 
-const { Model, DataTypes } = require('sequelize');
-
-class Report extends Model {
-  /**
-   * Helper method for defining associations.
-   * This method is not part of Sequelize lifecycle.
-   * The `models/index` file will call this method automatically.
-   */
-  static associate(models) {
-    // Define associations here
-    // Example:
-    // this.belongsTo(models.User, { foreignKey: 'userId', as: 'user' });
-  }
-}
-
-// Export a function that returns the model definition
-module.exports = (sequelize) => {
-  Report.init({
+const Report = sequelize.define(
+  'Report',
+  {
     id: {
       type: DataTypes.INTEGER,
       primaryKey: true,
@@ -28,7 +14,7 @@ module.exports = (sequelize) => {
       allowNull: false,
       field: 'reporter_id',
       references: {
-        model: 'users', // Must match the actual table name in the database
+        model: 'users',
         key: 'id',
       },
     },
@@ -37,7 +23,7 @@ module.exports = (sequelize) => {
       allowNull: true,
       field: 'reported_user_id',
       references: {
-        model: 'users', // Must match the actual table name in the database
+        model: 'users',
         key: 'id',
       },
     },
@@ -46,7 +32,7 @@ module.exports = (sequelize) => {
       allowNull: true,
       field: 'reported_internship_id',
       references: {
-        model: 'internships', // Must match the actual table name in the database (lowercase)
+        model: 'internships',
         key: 'id',
       },
     },
@@ -88,17 +74,16 @@ module.exports = (sequelize) => {
       allowNull: true,
       field: 'resolved_by',
       references: {
-        model: 'users', // Must match the actual table name in the database
+        model: 'users',
         key: 'id',
       },
     },
-  }, {
-    sequelize,
-    modelName: 'Report',
+  },
+  {
     tableName: 'reports',
     timestamps: true,
     underscored: true,
-  });
-  
-  return Report;
-};
+  }
+);
+
+module.exports = Report;

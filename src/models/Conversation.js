@@ -1,9 +1,23 @@
-const { DataTypes } = require('sequelize');
-const { sequelize } = require('../config/database');
+'use strict';
 
-const Conversation = sequelize.define(
-  'Conversation',
-  {
+const { Model, DataTypes } = require('sequelize');
+
+class Conversation extends Model {
+  /**
+   * Helper method for defining associations.
+   * This method is not part of Sequelize lifecycle.
+   * The `models/index` file will call this method automatically.
+   */
+  static associate(models) {
+    // Define associations here
+    // Example:
+    // this.belongsTo(models.User, { foreignKey: 'userId', as: 'user' });
+  }
+}
+
+// Export a function that returns the model definition
+module.exports = (sequelize) => {
+  Conversation.init({
     id: {
       type: DataTypes.INTEGER,
       primaryKey: true,
@@ -14,7 +28,7 @@ const Conversation = sequelize.define(
       allowNull: false,
       field: 'participant1_id',
       references: {
-        model: 'users',
+        model: 'users', // Must match the actual table name in the database
         key: 'id',
       },
     },
@@ -23,7 +37,7 @@ const Conversation = sequelize.define(
       allowNull: false,
       field: 'participant2_id',
       references: {
-        model: 'users',
+        model: 'users', // Must match the actual table name in the database
         key: 'id',
       },
     },
@@ -31,18 +45,20 @@ const Conversation = sequelize.define(
       type: DataTypes.INTEGER,
       allowNull: true,
       field: 'last_message_id',
-      references: {
-        model: 'messages',
-        key: 'id',
-      },
+      // Temporarily removing the foreign key constraint to resolve the missing 'messages' table issue
+      // references: {
+      //   model: 'messages',
+      //   key: 'id',
+      // },
     },
     lastMessageAt: {
       type: DataTypes.DATE,
       allowNull: true,
       field: 'last_message_at',
     },
-  },
-  {
+  }, {
+    sequelize,
+    modelName: 'Conversation',
     tableName: 'conversations',
     timestamps: true,
     underscored: true,
@@ -53,7 +69,7 @@ const Conversation = sequelize.define(
         fields: ['participant1_id', 'participant2_id'],
       },
     ],
-  }
-);
-
-module.exports = Conversation;
+  });
+  
+  return Conversation;
+};

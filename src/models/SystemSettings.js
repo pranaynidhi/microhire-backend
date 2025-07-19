@@ -1,9 +1,23 @@
-const { DataTypes } = require('sequelize');
-const { sequelize } = require('../config/database');
+'use strict';
 
-const SystemSettings = sequelize.define(
-  'SystemSettings',
-  {
+const { Model, DataTypes } = require('sequelize');
+
+class SystemSettings extends Model {
+  /**
+   * Helper method for defining associations.
+   * This method is not part of Sequelize lifecycle.
+   * The `models/index` file will call this method automatically.
+   */
+  static associate(models) {
+    // Define associations here
+    // Example:
+    // this.belongsTo(models.User, { foreignKey: 'userId', as: 'user' });
+  }
+}
+
+// Export a function that returns the model definition
+module.exports = (sequelize) => {
+  SystemSettings.init({
     id: {
       type: DataTypes.INTEGER,
       primaryKey: true,
@@ -30,11 +44,12 @@ const SystemSettings = sequelize.define(
       type: DataTypes.BOOLEAN,
       defaultValue: false,
     },
-  },
-  {
-    tableName: 'systemsettings',
+  }, {
+    sequelize,
+    modelName: 'SystemSettings',
+    tableName: 'system_settings',
     timestamps: true,
-  }
-);
-
-module.exports = SystemSettings;
+  });
+  
+  return SystemSettings;
+};

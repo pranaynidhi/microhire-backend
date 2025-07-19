@@ -12,6 +12,7 @@ const passport = require('../config/passport');
 const { verifyEmail } = require('../controllers/authController');
 const { User } = require('../models');
 const { generateTokens } = require('../utils/tokenUtils');
+const { blacklistToken } = require('../services/tokenService');
 
 /**
  * @swagger
@@ -633,9 +634,81 @@ router.get('/oauth/failure', (req, res) => {
  *       401:
  *         $ref: '#/components/responses/UnauthorizedError'
  */
-router.post('/logout', authenticate, (req, res) => {
-  // In a real implementation, you might want to blacklist the token
-  res.json({ success: true, message: 'Logout successful' });
+/**
+ * @swagger
+ * /api/auth/logout:
+ *   post:
+ *     summary: Logout user
+ *     description: Logout the current user and invalidate their refresh token
+ *     tags: [Auth]
+ *     security: [ { bearerAuth: [] } ]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - refreshToken
+ *             properties:
+ *               refreshToken:
+ *                 type: string
+ *                 description: The refresh token to invalidate
+ *     responses:
+ *       200:
+ *         description: Logout successful
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Success'
+ *       400:
+ *         description: Invalid request - refresh token is required
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
+ *       500:
+ *         description: Server error during logout
+ */
+router.post('/logout', authenticate, async (req, res, next) => {
+  try {
+    const { refreshToken } = req.body;
+    
+    if (!refreshToken) {
+      return res.status(400).json({
+        success: false,
+        message: 'Refresh token is required for logout'
+      });
+    }
+    
+    // Blacklist the refresh token
+    const success = await blacklistToken(refreshToken, req.user.id, 'logout');
+    
+    if (!success) {
+      logger.warn('Failed to blacklist refresh token during logout', { 
+        userId: req.user.id 
+      });
+      // Continue with logout even if blacklisting fails to avoid user lockout
+    }
+    
+    // Clear the HTTP-only cookie if using cookies for refresh tokens
+    res.clearCookie('refreshToken', {
+      path: '/api/auth/refresh',
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict'
+    });
+    
+    res.json({ 
+      success: true, 
+      message: 'Logout successful. All sessions have been terminated.'
+    });
+    
+  } catch (error) {
+    logger.error('Logout error', { 
+      error: error.message, 
+      userId: req.user?.id 
+    });
+    next(error);
+  }
 });
 
 /**

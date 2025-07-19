@@ -1,9 +1,23 @@
-const { DataTypes } = require('sequelize');
-const { sequelize } = require('../config/database');
+'use strict';
 
-const Bookmark = sequelize.define(
-  'Bookmark',
-  {
+const { Model, DataTypes } = require('sequelize');
+
+class Bookmark extends Model {
+  /**
+   * Helper method for defining associations.
+   * This method is not part of Sequelize lifecycle.
+   * The `models/index` file will call this method automatically.
+   */
+  static associate(models) {
+    // Define associations here
+    // Example:
+    // this.belongsTo(models.User, { foreignKey: 'userId', as: 'user' });
+  }
+}
+
+// Export a function that returns the model definition
+module.exports = (sequelize) => {
+  Bookmark.init({
     id: {
       type: DataTypes.INTEGER,
       primaryKey: true,
@@ -14,7 +28,7 @@ const Bookmark = sequelize.define(
       type: DataTypes.INTEGER,
       allowNull: false,
       references: {
-        model: 'users',
+        model: 'users', // Must match the actual table name in the database
         key: 'id',
       },
       field: 'user_id',
@@ -23,13 +37,15 @@ const Bookmark = sequelize.define(
       type: DataTypes.INTEGER,
       allowNull: false,
       references: {
-        model: 'internships',
+        model: 'internships', // Must match the actual table name in the database (lowercase)
         key: 'id',
       },
       field: 'internship_id',
     },
-  },
-  {
+  }, {
+    sequelize,
+    modelName: 'Bookmark',
+    tableName: 'bookmarks',
     tableName: 'bookmarks',
     timestamps: true,
     paranoid: true,
@@ -40,7 +56,7 @@ const Bookmark = sequelize.define(
         fields: ['user_id', 'internship_id'],
       },
     ],
-  }
-);
-
-module.exports = Bookmark;
+  });
+  
+  return Bookmark;
+};

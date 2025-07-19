@@ -1,23 +1,9 @@
-'use strict';
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/database');
 
-const { Model, DataTypes } = require('sequelize');
-
-class CertificateView extends Model {
-  /**
-   * Helper method for defining associations.
-   * This method is not part of Sequelize lifecycle.
-   * The `models/index` file will call this method automatically.
-   */
-  static associate(models) {
-    // Define associations here
-    // Example:
-    // this.belongsTo(models.User, { foreignKey: 'userId', as: 'user' });
-  }
-}
-
-// Export a function that returns the model definition
-module.exports = (sequelize) => {
-  CertificateView.init({
+const CertificateView = sequelize.define(
+  'CertificateView',
+  {
     id: {
       type: DataTypes.INTEGER,
       primaryKey: true,
@@ -47,13 +33,12 @@ module.exports = (sequelize) => {
       allowNull: true,
       field: 'user_agent',
     },
-  }, {
-    sequelize,
-    modelName: 'CertificateView',
+  },
+  {
     tableName: 'certificate_views',
     timestamps: true,
     underscored: true,
-  });
-  
-  return CertificateView;
-};
+  }
+);
+
+module.exports = CertificateView;

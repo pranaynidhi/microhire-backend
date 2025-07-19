@@ -1,23 +1,9 @@
-'use strict';
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/database');
 
-const { Model, DataTypes } = require('sequelize');
-
-class Interview extends Model {
-  /**
-   * Helper method for defining associations.
-   * This method is not part of Sequelize lifecycle.
-   * The `models/index` file will call this method automatically.
-   */
-  static associate(models) {
-    // Define associations here
-    // Example:
-    // this.belongsTo(models.User, { foreignKey: 'userId', as: 'user' });
-  }
-}
-
-// Export a function that returns the model definition
-module.exports = (sequelize) => {
-  Interview.init({
+const Interview = sequelize.define(
+  'Interview',
+  {
     id: {
       type: DataTypes.INTEGER,
       primaryKey: true,
@@ -73,14 +59,13 @@ module.exports = (sequelize) => {
       },
       field: 'rating',
     },
-  }, {
-    sequelize,
-    modelName: 'Interview',
+  },
+  {
     tableName: 'interviews',
     timestamps: true,
     paranoid: true,
     underscored: true,
-  });
-  
-  return Interview;
-};
+  }
+);
+
+module.exports = Interview;

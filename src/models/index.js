@@ -1,238 +1,217 @@
-/* global console */
+'use strict';
+
+const fs = require('fs');
+const path = require('path');
+const { Sequelize, DataTypes } = require('sequelize');
+const logger = require('../utils/logger');
+const basename = path.basename(__filename);
 const { sequelize } = require('../config/database');
-const User = require('./User');
-const Internship = require('./Internship');
-const Application = require('./Application');
-const Notification = require('./Notification');
-const Message = require('./Messages');
-const File = require('./File');
-const Review = require('./Review');
-const Certificate = require('./Certificate');
-const Analytics = require('./Analytics');
-const Report = require('./Report');
-const ReviewReport = require('./ReviewReport');
-const CertificateView = require('./CertificateView');
-const SearchHistory = require('./SearchHistory');
-const SystemSettings = require('./SystemSettings');
-const Bookmark = require('./Bookmark');
-const Interview = require('./Interview');
-const Conversation = require('./Conversation');
+const setupAssociations = require('./associations');
 
-// Define associations
-User.hasMany(Internship, {
-  foreignKey: 'companyId',
-  as: 'internships',
-  onDelete: 'CASCADE',
-});
+const db = {};
 
-Internship.belongsTo(User, {
-  foreignKey: 'companyId',
-  as: 'company',
-});
+// Get all model files
+const modelFiles = fs.readdirSync(__dirname)
+  .filter(file => {
+    return (
+      file.indexOf('.') !== 0 &&
+      file !== basename &&
+      file.slice(-3) === '.js' &&
+      file.indexOf('.test.js') === -1 &&
+      file !== 'BaseModel.js' &&
+      file !== 'associations.js'
+    );
+  });
 
-Internship.belongsTo(User, {
-  foreignKey: 'studentId',
-  as: 'student',
-});
+console.log(`\nLoading ${modelFiles.length} models...`);
 
-User.hasMany(Application, {
-  foreignKey: 'studentId',
-  as: 'applications',
-  onDelete: 'CASCADE',
-});
-
-Application.belongsTo(User, {
-  foreignKey: 'studentId',
-  as: 'student',
-});
-
-Internship.hasMany(Application, {
-  foreignKey: 'internshipId',
-  as: 'applications',
-  onDelete: 'CASCADE',
-});
-
-Application.belongsTo(Internship, {
-  foreignKey: 'internshipId',
-  as: 'internship',
-});
-
-// Message associations
-User.hasMany(Message, {
-  foreignKey: 'senderId',
-  as: 'sentMessages',
-  onDelete: 'CASCADE',
-});
-
-User.hasMany(Message, {
-  foreignKey: 'receiverId',
-  as: 'receivedMessages',
-  onDelete: 'CASCADE',
-});
-
-Message.belongsTo(User, {
-  foreignKey: 'senderId',
-  as: 'sender',
-});
-
-Message.belongsTo(User, {
-  foreignKey: 'receiverId',
-  as: 'receiver',
-});
-
-// Notification associations
-User.hasMany(Notification, {
-  foreignKey: 'userId',
-  as: 'notifications',
-  onDelete: 'CASCADE',
-});
-
-Notification.belongsTo(User, {
-  foreignKey: 'userId',
-  as: 'user',
-});
-
-User.hasMany(File, {
-  foreignKey: 'userId',
-  as: 'files',
-});
-
-File.belongsTo(User, {
-  foreignKey: 'userId',
-  as: 'user',
-});
-User.hasMany(Review, {
-  foreignKey: 'reviewerId',
-  as: 'givenReviews',
-});
-
-User.hasMany(Review, {
-  foreignKey: 'revieweeId',
-  as: 'receivedReviews',
-});
-
-Review.belongsTo(User, { foreignKey: 'reviewerId', as: 'reviewer' });
-Review.belongsTo(User, { foreignKey: 'revieweeId', as: 'reviewee' });
-Review.belongsTo(Internship, { foreignKey: 'internshipId', as: 'internship' });
-
-User.hasMany(Certificate, { foreignKey: 'studentId', as: 'certificates' });
-User.hasMany(Certificate, { foreignKey: 'companyId', as: 'issuedCertificates' });
-Certificate.belongsTo(User, { foreignKey: 'studentId', as: 'student' });
-Certificate.belongsTo(User, { foreignKey: 'companyId', as: 'company' });
-Certificate.belongsTo(Internship, { foreignKey: 'internshipId', as: 'internship' });
-
-User.hasMany(Analytics, { foreignKey: 'userId', as: 'analytics' });
-Analytics.belongsTo(User, { foreignKey: 'userId', as: 'user' });
-
-User.hasMany(Report, { foreignKey: 'reporterId', as: 'reportsMade' });
-User.hasMany(Report, { foreignKey: 'reportedUserId', as: 'reportsReceived' });
-Report.belongsTo(User, { foreignKey: 'reporterId', as: 'reporter' });
-Report.belongsTo(User, { foreignKey: 'reportedUserId', as: 'reportedUser' });
-Report.belongsTo(Internship, { foreignKey: 'reportedInternshipId', as: 'reportedInternship' });
-
-// Bookmark associations
-User.hasMany(Bookmark, {
-  foreignKey: 'userId',
-  as: 'bookmarks',
-  onDelete: 'CASCADE',
-});
-
-Internship.hasMany(Bookmark, {
-  foreignKey: 'internshipId',
-  as: 'bookmarks',
-  onDelete: 'CASCADE',
-});
-
-Bookmark.belongsTo(User, {
-  foreignKey: 'userId',
-  as: 'user',
-});
-
-Bookmark.belongsTo(Internship, {
-  foreignKey: 'internshipId',
-  as: 'internship',
-});
-
-// Interview associations
-Application.hasMany(Interview, {
-  foreignKey: 'applicationId',
-  as: 'interviews',
-  onDelete: 'CASCADE',
-});
-
-Interview.belongsTo(Application, {
-  foreignKey: 'applicationId',
-  as: 'application',
-});
-
-// Conversation associations
-User.hasMany(Conversation, {
-  foreignKey: 'participant1Id',
-  as: 'conversationsAsParticipant1',
-});
-
-User.hasMany(Conversation, {
-  foreignKey: 'participant2Id',
-  as: 'conversationsAsParticipant2',
-});
-
-Conversation.belongsTo(User, {
-  foreignKey: 'participant1Id',
-  as: 'participant1',
-});
-
-Conversation.belongsTo(User, {
-  foreignKey: 'participant2Id',
-  as: 'participant2',
-});
-
-Conversation.belongsTo(Message, {
-  foreignKey: 'lastMessageId',
-  as: 'lastMessage',
-});
-
-Conversation.hasMany(Message, {
-  foreignKey: 'conversationId',
-  as: 'messages',
-});
-
-// Update Message associations to use conversationId
-Message.belongsTo(Conversation, {
-  foreignKey: 'conversationId',
-  as: 'conversation',
-});
-
-// Sync database (for migrations)
-const syncDatabase = async () => {
+// First pass: Initialize all models
+modelFiles.forEach(file => {
   try {
-    await sequelize.authenticate();
-    console.log('✅ Database connection established successfully.');
-
-    // Use force: true to drop and recreate all tables
-    // This resolves circular dependency issues during table creation
-    await sequelize.sync({ force: true });
-    console.log('✅ Database synchronized successfully.');
-    process.exit(0);
-  } catch (error) {
-    console.error('❌ Unable to connect to the database:', error);
-    if (process.env.NODE_ENV === 'test') {
-      throw error;
-    } else {
-      process.exit(1);
+    console.log(`- Loading model: ${file}`);
+    
+    // Import the model function
+    const modelModule = require(path.join(__dirname, file));
+    
+    if (typeof modelModule !== 'function') {
+      throw new Error(`Model ${file} does not export a function`);
     }
+    
+    // Initialize the model
+    const model = modelModule(sequelize, DataTypes);
+    
+    if (!model || !model.name) {
+      throw new Error(`Model ${file} did not return a valid model instance`);
+    }
+    
+    // Add to db object
+    db[model.name] = model;
+    console.log(`  ✓ Loaded model: ${model.name}`);
+    
+  } catch (error) {
+    console.error(`❌ Error loading model ${file}:`, error.message);
+    throw error; // Stop execution on model loading error
+  }
+});
+
+console.log('\nSetting up model associations...');
+
+// Second pass: Set up associations
+Object.keys(db).forEach(modelName => {
+  try {
+    if (typeof db[modelName].associate === 'function') {
+      console.log(`- Setting up associations for: ${modelName}`);
+      db[modelName].associate(db);
+    }
+  } catch (error) {
+    console.error(`❌ Error setting up associations for ${modelName}:`, error.message);
+    throw error; // Stop execution on association error
+  }
+});
+
+// Set up associations using our centralized associations file
+console.log('\nSetting up centralized associations...');
+try {
+  setupAssociations(db);
+  console.log('✓ Centralized associations set up successfully');
+} catch (error) {
+  console.error('❌ Error setting up centralized associations:', error.message);
+  throw error;
+}
+
+// Add models to exports
+db.sequelize = sequelize;
+db.Sequelize = Sequelize;
+
+console.log('\n✅ Database models loaded successfully!\n');
+
+// Database synchronization function with ordered table creation
+const syncDatabase = async (options = {}) => {
+  const syncOptions = {
+    force: false,
+    alter: process.env.NODE_ENV !== 'production',
+    ...options
+  };
+
+  // If not forcing sync, just do a regular sync
+  if (!syncOptions.force) {
+    await sequelize.sync(syncOptions);
+    logger.info('Database synchronized successfully');
+    return true;
+  }
+
+  // For force sync, we need to handle table creation order
+  try {
+    // First, drop all tables
+    await sequelize.dropAllSchemas();
+    logger.info('Dropped all schemas');
+
+    // Then create tables in the correct order to satisfy foreign key constraints
+    // Start with models that have no dependencies, then work our way up
+    const modelOrder = [
+      'User',                    // Base model with no foreign keys
+      'SystemSettings',          // Independent settings
+      'File',                    // Depends on User
+      'Internship',              // Depends on User (company)
+      'Application',             // Depends on User (student) and Internship
+      'Review',                  // Depends on User (reviewer and reviewee) and Internship
+      'ReviewReport',            // Depends on Review and User
+      'Certificate',             // Depends on User (student) and Internship
+      'CertificateView',         // Depends on Certificate and User
+      'Conversation',            // Depends on User (participants)
+      'Message',                 // Depends on Conversation and User
+      'Notification',            // Depends on User
+      'Bookmark',                // Depends on User and Internship
+      'SearchHistory',           // Depends on User
+      'Analytics',               // Depends on User
+      'Report',                  // Depends on User
+      'BlacklistedToken'         // Depends on User
+    ];
+
+    // Create each model's table individually
+    for (const modelName of modelOrder) {
+      if (db[modelName]) {
+        logger.info(`Creating table for model: ${modelName}`);
+        await db[modelName].sync({ force: true });
+      } else {
+        logger.warn(`Model ${modelName} not found in db object`);
+      }
+    }
+
+    // Now that all tables exist, set up associations
+    logger.info('Setting up model associations...');
+    await setupAssociations(db);
+    
+    // Sync all models again to ensure associations are properly set
+    await sequelize.sync({ alter: true });
+    
+    logger.info('Database synchronized successfully with ordered table creation');
+    return true;
+  } catch (error) {
+    logger.error('Database synchronization failed:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name
+    });
+    throw error;
   }
 };
 
-// Initialize database connection (for server startup)
+// Initialize database connection
 const initializeDatabase = async () => {
   try {
-    await sequelize.authenticate();
-    console.log('✅ Database connection established successfully.');
-
-    // Ensure admin account exists
-    await ensureAdminAccount();
+    // First, ensure the database exists
+    try {
+      await sequelize.authenticate();
+      logger.info('Database connection has been established successfully.');
+    } catch (error) {
+      logger.error('Failed to connect to the database. Please ensure the database exists and the credentials are correct.');
+      throw error;
+    }
+    
+    // Sync database based on environment
+    if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') {
+      logger.info(`Syncing database in ${process.env.NODE_ENV} mode with force:true...`);
+      try {
+        // Use force:true to drop and recreate all tables
+        await syncDatabase({ force: true });
+        logger.info('Database synchronized successfully with force: true');
+        
+        // After syncing, set up model associations
+        setupAssociations(db);
+        
+        // Create admin user and seed data in development
+        if (process.env.NODE_ENV === 'development') {
+          await ensureAdminAccount();
+          // Run seed data if in development
+          try {
+            const seedDatabase = require('../utils/seed');
+            await seedDatabase();
+            logger.info('Development seed data created successfully');
+          } catch (seedError) {
+            logger.error('Error seeding development data:', seedError);
+            // Don't throw error for seed failure, as the app can still run
+          }
+        }
+        
+        return true;
+      } catch (syncError) {
+        logger.error('Failed to sync database:', syncError);
+        throw syncError;
+      }
+    } else {
+      // In production, just sync without dropping tables
+      logger.info('Syncing database in production mode with alter:true...');
+      await syncDatabase({ alter: true });
+      setupAssociations(db);
+      return true;
+    }
   } catch (error) {
-    console.error('❌ Unable to connect to the database:', error);
+    logger.error('Database initialization failed:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name
+    });
     throw error;
   }
 };
@@ -241,98 +220,34 @@ const initializeDatabase = async () => {
 const ensureAdminAccount = async () => {
   try {
     const adminEmail = process.env.ADMIN_EMAIL || 'admin@microhire.com';
-    const adminPassword = process.env.ADMIN_PASSWORD || 'Admin@123';
-
-    const existingAdmin = await User.findOne({
-      where: {
-        email: adminEmail,
-        role: 'admin',
-      },
-    });
-
-    if (!existingAdmin) {
-      await User.create({
-        fullName: 'System Administrator',
+    const adminPassword = process.env.ADMIN_PASSWORD || 'Nidhi@7733';
+    
+    const [admin] = await db.User.findOrCreate({
+      where: { email: adminEmail },
+      defaults: {
+        fullName: 'Admin User',
         email: adminEmail,
         password: adminPassword,
         role: 'admin',
         emailVerified: true,
-        isActive: true,
-        companyName: 'MicroHire Platform',
-        contactPerson: 'System Admin',
-        companyDescription: 'Platform administrator for MicroHire',
-        website: 'https://microhire.com',
-      });
-
-      console.log('✅ Admin account created successfully');
-      console.log(`📧 Admin Email: ${adminEmail}`);
-      console.log(`🔑 Admin Password: ${adminPassword}`);
-      console.log('⚠️  Please change the admin password after first login!');
-    } else {
-      console.log('✅ Admin account already exists');
+        isActive: true
+      }
+    });
+    
+    if (admin) {
+      logger.info('Admin user ensured');
     }
+    
+    return admin;
   } catch (error) {
-    console.error('❌ Error ensuring admin account:', error);
+    logger.error('Error ensuring admin account:', error);
+    throw error;
   }
 };
 
-// Add these indexes to the models
+// Add utility functions to exports
+db.syncDatabase = syncDatabase;
+db.initializeDatabase = initializeDatabase;
+db.ensureAdminAccount = ensureAdminAccount;
 
-// User model indexes
-User.addHook('afterSync', async () => {
-  await sequelize.query('CREATE INDEX idx_users_email ON Users(email);').catch(() => {});
-  await sequelize.query('CREATE INDEX idx_users_role ON Users(role);').catch(() => {});
-  await sequelize.query('CREATE INDEX idx_users_is_active ON Users(isActive);').catch(() => {});
-});
-
-// Internship model indexes
-Internship.addHook('afterSync', async () => {
-  await sequelize
-    .query('CREATE INDEX idx_internships_company ON Internships(companyId);')
-    .catch(() => {});
-  await sequelize
-    .query('CREATE INDEX idx_internships_status ON Internships(status);')
-    .catch(() => {});
-  await sequelize
-    .query('CREATE INDEX idx_internships_deadline ON Internships(deadline);')
-    .catch(() => {});
-  await sequelize
-    .query('CREATE INDEX idx_internships_category ON Internships(category);')
-    .catch(() => {});
-});
-
-// Application model indexes
-Application.addHook('afterSync', async () => {
-  await sequelize
-    .query('CREATE INDEX idx_applications_student ON Applications(studentId);')
-    .catch(() => {});
-  await sequelize
-    .query('CREATE INDEX idx_applications_internship ON Applications(internshipId);')
-    .catch(() => {});
-  await sequelize
-    .query('CREATE INDEX idx_applications_status ON Applications(status);')
-    .catch(() => {});
-});
-
-module.exports = {
-  sequelize,
-  User,
-  Internship,
-  Application,
-  Message,
-  Notification,
-  File,
-  Review,
-  Certificate,
-  Analytics,
-  Report,
-  ReviewReport,
-  CertificateView,
-  SearchHistory,
-  SystemSettings,
-  Bookmark,
-  Interview,
-  Conversation,
-  syncDatabase,
-  initializeDatabase,
-};
+module.exports = db;
