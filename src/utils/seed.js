@@ -26,15 +26,12 @@ const seedDatabase = async () => {
 
     logger.info('✅ Existing data cleared');
 
-    // Hash password for all users
-    const hashedPassword = await bcrypt.hash('Nidhi@7733', 12);
-
     // Create users
     logger.info('👥 Creating users...');
     const student = await User.create({
       fullName: 'Test Student',
       email: 'student@microhire.com',
-      password: hashedPassword,
+      password: 'Nidhi@7733',
       role: 'student',
       bio: 'A passionate student.',
       skills: 'JavaScript,Node.js,SQL',
@@ -45,7 +42,7 @@ const seedDatabase = async () => {
     const company = await User.create({
       fullName: 'Test Company',
       email: 'company@microhire.com',
-      password: hashedPassword,
+      password: 'Nidhi@7733',
       role: 'business',
       companyName: 'Test Company',
       contactPerson: 'John Doe',
@@ -61,7 +58,7 @@ const seedDatabase = async () => {
     await User.create({
       fullName: 'Test Admin',
       email: 'admin@microhire.com',
-      password: hashedPassword,
+      password: 'Nidhi@7733',
       role: 'admin',
       isActive: true,
       emailVerified: true,

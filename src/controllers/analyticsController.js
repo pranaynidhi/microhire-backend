@@ -507,16 +507,98 @@ const analyticsController = {
 
   getPlatformAnalytics: async (req, res) => {
     try {
-      // Example: return platform-wide stats
+      // Top-level counts
       const totalUsers = await User.count();
       const totalInternships = await Internship.count();
       const totalApplications = await Application.count();
+
+      // User role distribution
+      const userRoleStats = await User.findAll({
+        attributes: ['role', [sequelize.fn('COUNT', sequelize.col('id')), 'count']],
+        group: ['role'],
+      });
+
+      // Application status distribution
+      const applicationStats = await Application.findAll({
+        attributes: ['status', [sequelize.fn('COUNT', sequelize.col('id')), 'count']],
+        group: ['status'],
+      });
+
+      // Internship categories
+      const categoryStats = await Internship.findAll({
+        attributes: ['category', [sequelize.fn('COUNT', sequelize.col('id')), 'count']],
+        group: ['category'],
+      });
+
+      // Internship types
+      const typeStats = await Internship.findAll({
+        attributes: ['type', [sequelize.fn('COUNT', sequelize.col('id')), 'count']],
+        group: ['type'],
+      });
+
+      // Internship locations
+      const locationStats = await Internship.findAll({
+        attributes: ['location', [sequelize.fn('COUNT', sequelize.col('id')), 'count']],
+        group: ['location'],
+      });
+
+      // Monthly internship posting trends
+      const monthlyTrends = await Internship.findAll({
+        attributes: [
+          [sequelize.fn('DATE_FORMAT', sequelize.col('createdAt'), '%Y-%m'), 'month'],
+          [sequelize.fn('COUNT', sequelize.col('id')), 'count'],
+        ],
+        group: [sequelize.fn('DATE_FORMAT', sequelize.col('createdAt'), '%Y-%m')],
+        order: [[sequelize.fn('DATE_FORMAT', sequelize.col('createdAt'), '%Y-%m'), 'ASC']],
+      });
+
+      // Monthly application trends
+      const monthlyApplications = await Application.findAll({
+        attributes: [
+          [sequelize.fn('DATE_FORMAT', sequelize.col('createdAt'), '%Y-%m'), 'month'],
+          [sequelize.fn('COUNT', sequelize.col('id')), 'count'],
+        ],
+        group: [sequelize.fn('DATE_FORMAT', sequelize.col('createdAt'), '%Y-%m')],
+        order: [[sequelize.fn('DATE_FORMAT', sequelize.col('createdAt'), '%Y-%m'), 'ASC']],
+      });
+
+      // Recent users
+      const recentUsers = await User.findAll({
+        attributes: ['id', 'fullName', 'email', 'role', 'createdAt'],
+        order: [['createdAt', 'DESC']],
+        limit: 5,
+      });
+
+      // Top internships by application count
+      const topInternships = await Internship.findAll({
+        attributes: [
+          'id',
+          'title',
+          [sequelize.fn('COUNT', sequelize.col('applications.id')), 'applicationCount'],
+        ],
+        include: [{
+          model: Application,
+          as: 'applications',
+          attributes: [],
+        }],
+        group: ['Internship.id'],
+        order: [[sequelize.literal('applicationCount'), 'DESC']],
+        limit: 5,
+      });
+
       res.json({
         success: true,
         data: {
-          totalUsers,
-          totalInternships,
-          totalApplications
+          overview: { totalUsers, totalInternships, totalApplications },
+          userRoleStats,
+          applicationStats,
+          categoryStats,
+          typeStats,
+          locationStats,
+          monthlyTrends,
+          monthlyApplications,
+          recentUsers,
+          topInternships
         }
       });
     } catch (error) {

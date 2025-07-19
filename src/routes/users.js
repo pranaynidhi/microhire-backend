@@ -488,11 +488,8 @@ router.put('/me/password', authenticate, async (req, res, next) => {
       });
     }
 
-    // Hash new password
-    const hashedNewPassword = await bcrypt.hash(newPassword, 12);
-
     // Update password
-    await user.update({ password: hashedNewPassword });
+    await user.update({ password: newPassword });
 
     res.json({
       success: true,

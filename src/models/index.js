@@ -251,13 +251,10 @@ const ensureAdminAccount = async () => {
     });
 
     if (!existingAdmin) {
-      const bcrypt = require('bcryptjs');
-      const hashedPassword = await bcrypt.hash(adminPassword, 12);
-
       await User.create({
         fullName: 'System Administrator',
         email: adminEmail,
-        password: hashedPassword,
+        password: adminPassword,
         role: 'admin',
         emailVerified: true,
         isActive: true,

@@ -14,7 +14,7 @@ const passport = require('./config/passport');
 const { AppError } = require('./utils/errors');
 
 // Import database and models
-const { initializeDatabase } = require('./models');
+require('./models');
 const { initializeSocket } = require('./config/socket');
 const { initializeRealtimeService } = require('./services/realtimeService');
 const attachSocket = require('./middleware/socketMiddleware');
