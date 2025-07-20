@@ -17,6 +17,7 @@ const { sequelize, initializeDatabase } = require('./models');
 const { initializeSocket } = require('./config/socket');
 const { initializeRealtimeService } = require('./services/realtimeService');
 const attachSocket = require('./middleware/socketMiddleware');
+const { initScheduledTasks } = require('./tasks');
 
 const app = express();
 const server = http.createServer(app);
@@ -240,6 +241,16 @@ const startServer = async () => {
     try {
       await initializeDatabase();
       console.log('✓ Database initialized successfully');
+      
+      // Initialize scheduled tasks
+      console.log('Initializing scheduled tasks...');
+      try {
+        initScheduledTasks();
+        console.log('✓ Scheduled tasks initialized successfully');
+      } catch (schedulerError) {
+        console.error('✗ Failed to initialize scheduled tasks:', schedulerError);
+        throw schedulerError;
+      }
     } catch (dbError) {
       console.error('✗ Failed to initialize database:', dbError);
       throw dbError;
