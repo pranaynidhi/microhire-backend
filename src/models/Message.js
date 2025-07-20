@@ -2,52 +2,58 @@
 
 const { Model, DataTypes } = require('sequelize');
 
-class Bookmark extends Model {
+class Message extends Model {
   // Associations are defined in src/models/associations.js
 }
 
 // Export a function that returns the model definition
 module.exports = (sequelize) => {
-  Bookmark.init({
+  Message.init({
     id: {
       type: DataTypes.INTEGER,
       primaryKey: true,
       autoIncrement: true,
-      field: 'id',
     },
-    userId: {
+    conversationId: {
       type: DataTypes.INTEGER,
       allowNull: false,
+      field: 'conversation_id',
       references: {
-        model: 'users', // Must match the actual table name in the database
+        model: 'conversations',
         key: 'id',
       },
-      field: 'user_id',
     },
-    internshipId: {
+    senderId: {
       type: DataTypes.INTEGER,
       allowNull: false,
+      field: 'sender_id',
       references: {
-        model: 'internships', // Must match the actual table name in the database (lowercase)
+        model: 'users',
         key: 'id',
       },
-      field: 'internship_id',
+    },
+    content: {
+      type: DataTypes.TEXT,
+      allowNull: false,
+    },
+    read: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+    },
+    readAt: {
+      type: DataTypes.DATE,
+      allowNull: true,
+      field: 'read_at',
     },
   }, {
     sequelize,
-    modelName: 'Bookmark',
-    tableName: 'bookmarks',
-    tableName: 'bookmarks',
+    modelName: 'Message',
+    tableName: 'messages',
     timestamps: true,
-    paranoid: true,
     underscored: true,
-    indexes: [
-      {
-        unique: true,
-        fields: ['user_id', 'internship_id'],
-      },
-    ],
+    paranoid: false,
   });
-  
-  return Bookmark;
+
+  return Message;
 };

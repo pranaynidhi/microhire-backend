@@ -3,14 +3,7 @@
 const { Model, DataTypes } = require('sequelize');
 
 class BaseModel extends Model {
-  /**
-   * Helper method for defining associations.
-   * This method is not a part of Sequelize lifecycle.
-   * The `models/index` file will call this method automatically.
-   */
-  static associate(models) {
-    // Define associations here in child models
-  }
+  // Associations are defined in src/models/associations.js
 }
 
 // Export a function that returns the model definition

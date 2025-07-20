@@ -14,8 +14,6 @@ const passport = require('./config/passport');
 const { AppError } = require('./utils/errors');
 const { sequelize, initializeDatabase } = require('./models');
 
-// Import database and models
-require('./models');
 const { initializeSocket } = require('./config/socket');
 const { initializeRealtimeService } = require('./services/realtimeService');
 const attachSocket = require('./middleware/socketMiddleware');

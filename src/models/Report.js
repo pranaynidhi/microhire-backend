@@ -3,16 +3,7 @@
 const { Model, DataTypes } = require('sequelize');
 
 class Report extends Model {
-  /**
-   * Helper method for defining associations.
-   * This method is not part of Sequelize lifecycle.
-   * The `models/index` file will call this method automatically.
-   */
-  static associate(models) {
-    // Define associations here
-    // Example:
-    // this.belongsTo(models.User, { foreignKey: 'userId', as: 'user' });
-  }
+  // Associations are defined in src/models/associations.js
 }
 
 // Export a function that returns the model definition

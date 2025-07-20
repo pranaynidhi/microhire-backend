@@ -2,7 +2,7 @@
 const { Model, DataTypes } = require('sequelize');
 
 class BlacklistedToken extends Model {
-  // Associations are defined in src/models/associations.js
+  // Instance method to set up associations
 }
 
 // Export a function that returns the model definition
