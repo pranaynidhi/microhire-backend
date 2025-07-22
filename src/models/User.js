@@ -146,6 +146,11 @@ module.exports = (sequelize) => {
           this.setDataValue('recoveryCodes', JSON.stringify(value));
         },
       },
+      logoUrl: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        field: 'logo_url',
+      },
     },
     {
       sequelize,

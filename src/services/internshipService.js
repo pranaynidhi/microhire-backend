@@ -34,7 +34,7 @@ class InternshipService {
             {
               model: User,
               as: 'company',
-              attributes: ['id', 'companyName', 'email', 'logoUrl'],
+              attributes: ['id', 'fullName', 'email', 'logoUrl', 'role'],
             },
           ]
         : [],
@@ -123,7 +123,7 @@ class InternshipService {
         {
           model: User,
           as: 'company',
-          attributes: ['id', 'companyName', 'email', 'logoUrl'],
+          attributes: ['id', 'fullName', 'email', 'logoUrl', 'role'],
         },
       ],
       order: [['createdAt', 'DESC']],

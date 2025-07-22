@@ -24,7 +24,7 @@ const authenticate = async (req, res, next) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
     // Fetch full user object from database
-    const user = await User.findByPk(decoded.userId);
+    const user = await User.findByPk(decoded.id);
     if (!user || !user.isActive) {
       throw new AppError('User not found or inactive', 401);
     }

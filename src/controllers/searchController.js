@@ -1,9 +1,6 @@
-const Internship = require('../models/Internship');
-const User = require('../models/User');
-const Application = require('../models/Application');
+const { Internship, User, Application, SearchHistory } = require('../models');
 const { Op } = require('sequelize');
-const sequelize = require('../config/database');
-const SearchHistory = require('../models/SearchHistory');
+const { AppError } = require('../utils/errors');
 const logger = require('../utils/logger');
 
 const searchController = {
@@ -72,7 +69,7 @@ const searchController = {
         include: [{
           model: User,
           as: 'company',
-          attributes: ['id', 'companyName', 'email', 'logoUrl']
+          attributes: ['id', 'fullName', 'email', 'logoUrl', 'role']
         }],
         order: [[sortBy, sortOrder.toUpperCase()]],
         limit: parseInt(limit, 10),
@@ -124,9 +121,10 @@ const searchController = {
 
       // Get user's application history to understand preferences
       const userApplications = await Application.findAll({
-        where: { userId: req.user.id },
+        where: { student_id: req.user.id },
         include: [{
           model: Internship,
+          as: 'internship',
           attributes: ['category', 'type', 'location']
         }],
         limit: 10,
@@ -134,9 +132,9 @@ const searchController = {
       });
 
       // Extract preferences
-      const categories = userApplications.map(app => app.Internship?.category).filter(Boolean);
-      const types = userApplications.map(app => app.Internship?.type).filter(Boolean);
-      const locations = userApplications.map(app => app.Internship?.location).filter(Boolean);
+      const categories = userApplications.map(app => app.internship?.category).filter(Boolean);
+      const types = userApplications.map(app => app.internship?.type).filter(Boolean);
+      const locations = userApplications.map(app => app.internship?.location).filter(Boolean);
 
       // Get user skills for matching
       const userSkills = req.user.skills ? req.user.skills.toLowerCase().split(',').map(s => s.trim()) : [];
@@ -187,7 +185,7 @@ const searchController = {
         include: [{
           model: User,
           as: 'company',
-          attributes: ['id', 'companyName', 'email', 'logoUrl']
+          attributes: ['id', 'fullName', 'email', 'logoUrl', 'role']
         }],
         order: [['createdAt', 'DESC']],
         limit: 10
@@ -239,7 +237,7 @@ const searchController = {
         include: [{
           model: User,
           as: 'company',
-          attributes: ['id', 'companyName', 'email', 'logoUrl']
+          attributes: ['id', 'fullName', 'email', 'logoUrl', 'role']
         }],
         order: [['createdAt', 'DESC']],
         limit: 5
@@ -476,8 +474,8 @@ const searchController = {
 
       const companies = await User.findAndCountAll({
         where: whereClause,
-        attributes: ['id', 'companyName', 'email', 'logoUrl', 'description', 'industry', 'website', 'location'],
-        order: [['companyName', 'ASC']],
+        attributes: ['id', 'fullName', 'email', 'logoUrl', 'role'],
+        order: [['fullName', 'ASC']],
         limit: parseInt(limit, 10),
         offset: offset
       });
@@ -524,7 +522,7 @@ const searchController = {
 
       const students = await User.findAndCountAll({
         where: whereClause,
-        attributes: ['id', 'fullName', 'email', 'profilePicture', 'skills', 'education', 'university', 'graduationYear'],
+        attributes: ['id', 'fullName', 'email', 'logoUrl', 'role'],
         order: [['fullName', 'ASC']],
         limit: parseInt(limit, 10),
         offset: offset

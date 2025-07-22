@@ -1,52 +1,140 @@
 // Load environment variables from .env file
-require('dotenv').config();
+require('dotenv').config({ path: '.env.test' });
 
 const express = require('express');
 const http = require('http');
 const models = require('../src/models');
-
 const { sequelize } = models;
 const logger = require('../src/utils/logger');
 const errorHandler = require('../src/middleware/errorHandler');
 
 // Set test environment variables before importing modules that use them
 process.env.NODE_ENV = 'test';
-process.env.JWT_SECRET = 'test-secret';
-process.env.JWT_REFRESH_SECRET = 'test-refresh-secret';
-process.env.REDIS_URL = 'redis://localhost:6379'; // Use a test Redis instance or mock
+process.env.JWT_SECRET = 'test-secret-key';
+process.env.JWT_REFRESH_SECRET = 'test-refresh-secret-key';
+process.env.REDIS_URL = 'redis://localhost:6379/1'; // Use a different DB for tests
+process.env.PORT = 0; // Use random port for tests
 
 // Mock Redis for tests to avoid connection issues
-jest.mock('../src/utils/cache', () => ({
+const mockRedis = {
   get: jest.fn(),
   set: jest.fn(),
   del: jest.fn(),
   quit: jest.fn(),
+  on: jest.fn(),
+  connect: jest.fn().mockResolvedValue(),
+  isReady: true,
+};
+
+jest.mock('redis', () => ({
+  createClient: jest.fn().mockImplementation(() => mockRedis),
+}));
+
+// Mock nodemailer for tests
+jest.mock('nodemailer', () => ({
+  createTransport: jest.fn().mockReturnValue({
+    sendMail: jest.fn().mockResolvedValue({ messageId: 'test-message-id' }),
+    verify: jest.fn().mockResolvedValue(true),
+  }),
 }));
 
 // Mock realtime service to prevent notification errors
+const mockRealtimeService = {
+  sendNotificationToUser: jest.fn().mockResolvedValue(true),
+  sendMessageNotification: jest.fn().mockResolvedValue(true),
+  sendApplicationUpdate: jest.fn().mockResolvedValue(true),
+  broadcastInternshipUpdate: jest.fn().mockResolvedValue(true),
+  sendSystemAnnouncement: jest.fn().mockResolvedValue(true),
+  getOnlineUsersCount: jest.fn().mockReturnValue(0),
+  sendUserStatusUpdate: jest.fn().mockResolvedValue(true),
+  initialize: jest.fn().mockResolvedValue(true),
+};
+
 jest.mock('../src/services/realtimeService', () => ({
-  RealtimeService: jest.fn(),
-  initializeRealtimeService: jest.fn(() => ({
-    sendNotificationToUser: jest.fn(),
-    sendMessageNotification: jest.fn(),
-    sendApplicationUpdate: jest.fn(),
-    broadcastInternshipUpdate: jest.fn(),
-    sendSystemAnnouncement: jest.fn(),
-    getOnlineUsersCount: jest.fn(() => 0),
-    sendUserStatusUpdate: jest.fn(),
-  })),
-  getRealtimeService: jest.fn(() => ({
-    sendNotificationToUser: jest.fn(),
-    sendMessageNotification: jest.fn(),
-    sendApplicationUpdate: jest.fn(),
-    broadcastInternshipUpdate: jest.fn(),
-    sendSystemAnnouncement: jest.fn(),
-    getOnlineUsersCount: jest.fn(() => 0),
-    sendUserStatusUpdate: jest.fn(),
-  })),
+  RealtimeService: jest.fn().mockImplementation(() => mockRealtimeService),
+  initializeRealtimeService: jest.fn().mockResolvedValue(mockRealtimeService),
+  getRealtimeService: jest.fn().mockReturnValue(mockRealtimeService),
 }));
 
-const redis = require('../src/utils/cache');
+// Mock file uploads for tests
+jest.mock('../src/middleware/upload', () => ({
+  upload: {
+    single: () => (req, res, next) => next(),
+    array: () => (req, res, next) => next(),
+    fields: () => (req, res, next) => next(),
+  },
+  fileFilter: (req, file, cb) => cb(null, true),
+}));
+
+// Mock rate limiting for tests
+jest.mock('express-rate-limit', () => ({
+  rateLimit: () => (req, res, next) => next(),
+}));
+
+// Mock CSRF protection for tests
+jest.mock('csurf', () => () => (req, res, next) => {
+  req.csrfToken = () => 'test-csrf-token';
+  next();
+});
+
+// Initialize the Express app
+const app = express();
+const server = http.createServer(app);
+
+// Apply middleware
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Add request logging in development
+if (process.env.NODE_ENV === 'development') {
+  app.use((req, res, next) => {
+    logger.info(`${req.method} ${req.originalUrl}`);
+    next();
+  });
+}
+
+// Apply routes
+app.use('/api', require('../src/routes'));
+
+// Error handling middleware
+app.use(errorHandler);
+
+// Handle unhandled promise rejections
+process.on('unhandledRejection', (err) => {
+  logger.error('Unhandled Rejection:', err);
+  process.exit(1);
+});
+
+// Handle uncaught exceptions
+process.on('uncaughtException', (err) => {
+  logger.error('Uncaught Exception:', err);
+  process.exit(1);
+});
+
+// Export the server for testing
+module.exports = {
+  server,
+  app,
+  start: async () => {
+    // Sync database before starting the server
+    await sequelize.sync({ force: true });
+    
+    return new Promise((resolve) => {
+      server.listen(0, () => {
+        const { port } = server.address();
+        process.env.TEST_SERVER_URL = `http://localhost:${port}`;
+        logger.info(`Test server running on port ${port}`);
+        resolve(server);
+      });
+    });
+  },
+  close: async () => {
+    await new Promise((resolve) => server.close(resolve));
+    await sequelize.close();
+  },
+  mockRedis,
+  mockRealtimeService,
+};
 
 // Create a lightweight test app instead of importing the full server
 const app = express();

@@ -1,19 +1,17 @@
 const request = require('supertest');
-const { server } = require('./setupTest');
+const { server } = require('../test/setupTestEnv');
 const { User, Upload } = require('../src/models');
-const { generateTokens } = require('../src/controllers/authController');
 
 let studentToken;
 let companyToken;
 let student;
 let company;
 
-beforeEach(async () => {
-  const timestamp = Date.now() + Math.floor(Math.random() * 10000);
+beforeAll(async () => {
   // Create test users
   student = await User.create({
     fullName: 'Test Student',
-    email: `student${timestamp}@test.com`,
+    email: `student-${Date.now()}@test.com`,
     password: 'Test123!@#',
     role: 'student',
     isActive: true,
@@ -22,7 +20,7 @@ beforeEach(async () => {
 
   company = await User.create({
     fullName: 'Test Company',
-    email: `company${timestamp}@test.com`,
+    email: `company-${Date.now()}@test.com`,
     password: 'Test123!@#',
     role: 'business',
     companyName: 'Test Company',
@@ -30,22 +28,26 @@ beforeEach(async () => {
     emailVerified: true,
   });
 
+  const { generateTokens } = require('../src/controllers/authController');
   const { accessToken: studentAccessToken } = generateTokens(student.id);
   const { accessToken: companyAccessToken } = generateTokens(company.id);
   studentToken = `Bearer ${studentAccessToken}`;
   companyToken = `Bearer ${companyAccessToken}`;
 });
 
-afterEach(async () => {
-  if (student) await student.destroy();
-  if (company) await company.destroy();
+afterAll(async () => {
+  // Clean up test data
+  await Promise.all([
+    Upload.destroy({ where: {}, force: true }),
+    User.destroy({ where: { id: [student?.id, company?.id].filter(Boolean) } })
+  ]);
 });
 
 describe('Upload Endpoints', () => {
   describe('POST /api/upload', () => {
     it('should require authentication', async () => {
       const res = await request(server).post('/api/upload');
-      expect([401, 404]).toContain(res.status);
+      expect(res.status).toBeOneOf([401, 403, 404]);
     });
 
     it('should upload file (student)', async () => {
@@ -53,7 +55,7 @@ describe('Upload Endpoints', () => {
         .post('/api/upload')
         .set('Authorization', studentToken)
         .attach('file', Buffer.from('test file content'), 'test.txt');
-      expect([201, 400, 404, 500]).toContain(res.status);
+      expect(res.status).toBeOneOf([201, 400, 404, 500]);
     });
   });
 

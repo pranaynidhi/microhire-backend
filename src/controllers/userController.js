@@ -96,7 +96,7 @@ const getMyApplications = async (req, res) => {
             {
               model: User,
               as: 'company',
-              attributes: ['id', 'companyName', 'email'],
+              attributes: ['id', 'fullName', 'email', 'role'],
             },
           ],
         },

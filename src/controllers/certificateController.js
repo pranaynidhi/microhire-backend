@@ -123,7 +123,7 @@ const certificateController = {
           {
             model: User,
             as: 'company',
-            attributes: ['id', 'companyName', 'email'],
+            attributes: ['id', 'fullName', 'role'],
           },
           {
             model: Internship,
@@ -178,7 +178,7 @@ const certificateController = {
             {
               model: User,
               as: 'company',
-              attributes: ['id', 'companyName'],
+              attributes: ['id', 'fullName', 'role'],
             },
             {
               model: Internship,
@@ -242,7 +242,7 @@ const certificateController = {
           {
             model: User,
             as: 'company',
-            attributes: ['id', 'companyName'],
+            attributes: ['id', 'fullName'],
           },
           {
             model: Internship,

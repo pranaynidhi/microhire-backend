@@ -79,7 +79,7 @@ const getAllInternships = async (req, res) => {
         {
           model: User,
           as: 'company',
-          attributes: ['id', 'companyName', 'email'],
+          attributes: ['id', 'fullName', 'email', 'role'],
         },
       ],
       limit: parseInt(limit),
@@ -117,7 +117,7 @@ const getInternshipById = async (req, res) => {
         {
           model: User,
           as: 'company',
-          attributes: ['id', 'companyName', 'email', 'companyDescription', 'website'],
+          attributes: ['id', 'fullName', 'email', 'role', 'bio'],
         },
       ],
     });
@@ -159,7 +159,7 @@ const getInternships = async (req, res) => {
         {
           model: User,
           as: 'company',
-          attributes: ['id', 'companyName', 'email'],
+          attributes: ['id', 'fullName', 'email', 'role'],
         },
       ],
       limit: parseInt(req.query.limit) || 10,

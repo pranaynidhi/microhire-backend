@@ -1,10 +1,6 @@
 const { Op } = require('sequelize');
-const Review = require('../models/Review');
-const User = require('../models/User');
-const Internship = require('../models/Internship');
-const Application = require('../models/Application');
-const ReviewReport = require('../models/ReviewReport');
-const sequelize = require('../config/database');
+const { Review, User, Internship, Application, ReviewReport } = require('../models');
+const { sequelize } = require('../config/database');
 const withTransaction = require('../utils/transaction');
 const cache = require('../utils/cache');
 const { AppError } = require('../utils/errors');
@@ -120,10 +116,11 @@ const reviewController = {
           {
             model: User,
             as: 'reviewer',
-            attributes: ['id', 'fullName', 'companyName'],
+            attributes: ['id', 'fullName'],
           },
           {
             model: Internship,
+            as: 'internship',
             attributes: ['id', 'title'],
           },
         ],
@@ -174,6 +171,7 @@ const reviewController = {
           },
           {
             model: Internship,
+            as: 'internship',
             attributes: ['id', 'title'],
           },
         ],
@@ -237,6 +235,7 @@ const reviewController = {
           },
           {
             model: Internship,
+            as: 'internship',
             attributes: ['id', 'title'],
           },
         ],

@@ -1,9 +1,7 @@
 const { Op } = require('sequelize');
 const logger = require('../utils/logger');
-const User = require('../models/User');
-const Internship = require('../models/Internship');
-const Application = require('../models/Application');
-const sequelize = require('../config/database');
+const { User, Internship, Application } = require('../models');
+const { sequelize } = require('../config/database');
 const AnalyticsService = require('../services/analyticsService');
 
 const analyticsController = {
@@ -58,7 +56,7 @@ const analyticsController = {
                 {
                   model: User,
                   as: 'company',
-                  attributes: ['companyName'],
+                  attributes: ['id', 'fullName', 'role'],
                 },
               ],
             },

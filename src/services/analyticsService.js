@@ -1,6 +1,6 @@
 const { AppError } = require('../utils/errors');
 const logger = require('../utils/logger');
-const { User, Internship, Application, Review, sequelize } = require('../models');
+const { User, Internship, Application, Review } = require('../models');
 
 class AnalyticsService {
   // Track user activity

@@ -142,7 +142,7 @@ const adminController = {
           {
             model: User,
             as: 'company',
-            attributes: ['id', 'companyName', 'email'],
+            attributes: ['id', 'fullName', 'email', 'role'],
           },
         ],
         order: [['createdAt', 'DESC']],
@@ -378,7 +378,7 @@ const adminController = {
           {
             model: User,
             as: 'company',
-            attributes: ['companyName'],
+            attributes: ['id', 'fullName', 'email', 'role'],
           },
         ],
         order: [['createdAt', 'DESC']],
