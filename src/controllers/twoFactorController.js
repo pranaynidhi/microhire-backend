@@ -1,6 +1,7 @@
 const TwoFactorService = require('../services/twoFactorService');
 const logger = require('../utils/logger');
 const { AppError } = require('../utils/errors');
+const jwt = require('jsonwebtoken');
 
 class TwoFactorController {
   /**
@@ -10,7 +11,7 @@ class TwoFactorController {
     try {
       const { user } = req;
       
-      if (user.twoFAEnabled) {
+      if (user.twoFactorEnabled) {
         return next(new AppError('2FA is already enabled', 400));
       }
 
@@ -18,7 +19,7 @@ class TwoFactorController {
       const { secret, qrCodeUrl } = await TwoFactorService.generateSecret(user);
       
       // Save the secret (not yet enabled)
-      await user.update({ twoFASecret: secret });
+      await user.update({ twoFactorSecret: secret });
 
       res.json({
         success: true,
@@ -71,7 +72,7 @@ class TwoFactorController {
     try {
       const { user } = req;
       
-      if (!user.twoFAEnabled) {
+      if (!user.twoFactorEnabled) {
         return next(new AppError('2FA is not enabled', 400));
       }
 
@@ -92,30 +93,38 @@ class TwoFactorController {
    */
   static async verifyToken(req, res, next) {
     try {
-      const { token } = req.body;
-      const { user } = req;
+      const { token, email } = req.body;
 
-      if (!token) {
-        return next(new AppError('Verification token is required', 400));
+      if (!token || !email) {
+        return next(new AppError('Verification token and email are required', 400));
       }
+
+      // Fetch the user by email
+      const { User } = require('../models');
+      const user = await User.findOne({ where: { email } });
+      if (!user) {
+        return next(new AppError('User not found', 404));
+      }
+
+      // Debug log
+      console.log('DEBUG 2FA: user.twoFactorSecret =', user.twoFactorSecret);
+      console.log('DEBUG 2FA: submitted token =', token);
 
       const isValid = TwoFactorService.verifyToken(user, token);
-      
-      if (!isValid) {
-        return next(new AppError('Invalid verification code', 400));
-      }
 
-      // Generate new tokens since 2FA was successful
-      const { accessToken, refreshToken } = generateTokens(user.id);
-      
-      res.json({
-        success: true,
-        message: '2FA verification successful',
-        data: {
-          accessToken,
-          refreshToken
-        }
-      });
+      if (isValid) {
+        console.log('DEBUG 2FA: Verification succeeded, sending tokens');
+        const { accessToken, refreshToken } = generateTokens(user.id);
+        return res.json({
+          success: true,
+          message: '2FA verification successful',
+          data: {
+            accessToken,
+            refreshToken
+          }
+        });
+      }
+      return next(new AppError('Invalid verification code', 400));
     } catch (error) {
       logger.error('2FA token verification error:', error);
       next(error);
@@ -129,7 +138,7 @@ class TwoFactorController {
     try {
       const { user } = req;
       
-      if (!user.twoFAEnabled) {
+      if (!user.twoFactorEnabled) {
         return next(new AppError('2FA is not enabled', 400));
       }
 

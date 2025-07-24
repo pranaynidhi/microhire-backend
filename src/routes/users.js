@@ -5,6 +5,9 @@ const {
   updateProfile,
   getMyApplications,
   getMyInternships,
+  exportUserData,
+  getActiveSessions,
+  revokeSession,
 } = require('../controllers/userController');
 const { authenticate, requireEmailVerification } = require('../middleware/auth');
 const webpush = require('../services/webPushService');
@@ -28,7 +31,7 @@ router.use(authenticate); // All user routes require authentication
  * /api/users/me:
  *   get:
  *     summary: Get current user's profile
- *     description: Retrieve the complete profile information of the currently authenticated user
+ *     description: Retrieve the complete profile information of the currently authenticated user, including notification and privacy settings.
  *     tags: [Users]
  *     security: [ { bearerAuth: [] } ]
  *     responses:
@@ -41,8 +44,11 @@ router.use(authenticate); // All user routes require authentication
  *               properties:
  *                 success:
  *                   type: boolean
- *                 user:
- *                   $ref: '#/components/schemas/User'
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     user:
+ *                       $ref: '#/components/schemas/User'
  *       401:
  *         $ref: '#/components/responses/UnauthorizedError'
  */
@@ -53,7 +59,7 @@ router.get('/me', getProfile);
  * /api/users/me:
  *   put:
  *     summary: Update current user's profile
- *     description: Update the profile information of the currently authenticated user
+ *     description: Update the profile information and settings of the currently authenticated user.
  *     tags: [Users]
  *     security: [ { bearerAuth: [] } ]
  *     requestBody:
@@ -65,29 +71,45 @@ router.get('/me', getProfile);
  *             properties:
  *               fullName:
  *                 type: string
- *                 description: User's full name
  *               bio:
  *                 type: string
- *                 description: User's biography
  *               skills:
  *                 type: string
- *                 description: User's skills (for students)
  *               companyName:
  *                 type: string
- *                 description: Company name (for company users)
  *               contactPerson:
  *                 type: string
- *                 description: Contact person name (for company users)
  *               companyDescription:
  *                 type: string
- *                 description: Company description (for company users)
  *               website:
  *                 type: string
- *                 format: uri
- *                 description: Company website URL (for company users)
  *               phone:
  *                 type: string
- *                 description: Phone number
+ *               education:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *               emailNewInternships:
+ *                 type: boolean
+ *               emailApplicationUpdates:
+ *                 type: boolean
+ *               emailMessages:
+ *                 type: boolean
+ *               emailMarketing:
+ *                 type: boolean
+ *               pushMessages:
+ *                 type: boolean
+ *               pushDeadlines:
+ *                 type: boolean
+ *               profileVisibility:
+ *                 type: string
+ *                 enum: [public, companies, private]
+ *               showOnlineStatus:
+ *                 type: boolean
+ *               searchEngineIndexing:
+ *                 type: boolean
+ *               location:
+ *                 type: string
  *     responses:
  *       200:
  *         description: Profile updated successfully
@@ -100,8 +122,11 @@ router.get('/me', getProfile);
  *                   type: boolean
  *                 message:
  *                   type: string
- *                 user:
- *                   $ref: '#/components/schemas/User'
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     user:
+ *                       $ref: '#/components/schemas/User'
  *       400:
  *         $ref: '#/components/responses/ValidationError'
  *       401:
@@ -359,6 +384,128 @@ router.post('/notify', async (req, res) => {
 
 /**
  * @swagger
+ * /api/users/me/data:
+ *   get:
+ *     summary: Export user data
+ *     description: Export all personal data associated with the current user's account, including applications, internships, messages, notifications, and reviews.
+ *     tags: [Users]
+ *     security: [ { bearerAuth: [] } ]
+ *     responses:
+ *       200:
+ *         description: User data exported successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 user:
+ *                   $ref: '#/components/schemas/User'
+ *                 applications:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Application'
+ *                 internships:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Internship'
+ *                 messages:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Message'
+ *                 notifications:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Notification'
+ *                 reviews:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Review'
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
+ */
+router.get('/me/data', exportUserData);
+
+/**
+ * @swagger
+ * /api/users/me/sessions:
+ *   get:
+ *     summary: Get active sessions
+ *     description: Retrieve all active sessions for the currently authenticated user.
+ *     tags: [Users]
+ *     security: [ { bearerAuth: [] } ]
+ *     responses:
+ *       200:
+ *         description: Active sessions retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     sessions:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           sessionId:
+ *                             type: string
+ *                           device:
+ *                             type: string
+ *                           ip:
+ *                             type: string
+ *                           userAgent:
+ *                             type: string
+ *                           createdAt:
+ *                             type: string
+ *                             format: date-time
+ *                           lastActive:
+ *                             type: string
+ *                             format: date-time
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
+ */
+router.get('/me/sessions', getActiveSessions);
+
+/**
+ * @swagger
+ * /api/users/me/sessions/{sessionId}:
+ *   delete:
+ *     summary: Revoke a session
+ *     description: Revoke a specific active session for the currently authenticated user.
+ *     tags: [Users]
+ *     security: [ { bearerAuth: [] } ]
+ *     parameters:
+ *       - in: path
+ *         name: sessionId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID of the session to revoke
+ *     responses:
+ *       200:
+ *         description: Session revoked successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
+ *       404:
+ *         $ref: '#/components/responses/NotFoundError'
+ */
+router.delete('/me/sessions/:sessionId', revokeSession);
+
+/**
+ * @swagger
  * /api/users/{id}:
  *   get:
  *     summary: Get user by ID
@@ -393,7 +540,7 @@ router.get('/:id', authenticate, async (req, res, next) => {
   try {
     const { id } = req.params;
     const user = await User.findByPk(id, {
-      attributes: { exclude: ['password', 'twoFASecret'] },
+      attributes: { exclude: ['password', 'twoFactorSecret'] },
     });
 
     if (!user) {

@@ -2,6 +2,7 @@ const speakeasy = require('speakeasy');
 const qrcode = require('qrcode');
 const { User } = require('../models');
 const logger = require('../utils/logger');
+const crypto = require('crypto');
 
 class TwoFactorService {
   /**
@@ -38,16 +39,22 @@ class TwoFactorService {
    * @returns {boolean} - Returns true if token is valid
    */
   static verifyToken(user, token) {
-    if (!user.twoFASecret) {
+    if (!user.twoFactorSecret) {
       throw new Error('2FA not set up for this user');
     }
 
-    return speakeasy.totp.verify({
-      secret: user.twoFASecret,
+    // Debug logging
+    console.log('DEBUG 2FA: typeof user.twoFactorSecret =', typeof user.twoFactorSecret, 'value =', user.twoFactorSecret);
+    console.log('DEBUG 2FA: typeof token =', typeof token, 'value =', token);
+
+    const result = speakeasy.totp.verify({
+      secret: user.twoFactorSecret,
       encoding: 'base32',
-      token,
+      token: String(token),
       window: 1 // Allow 1 step (30s) before/after current time
     });
+    console.log('DEBUG 2FA: speakeasy.totp.verify result =', result);
+    return result;
   }
 
   /**
@@ -58,19 +65,21 @@ class TwoFactorService {
    */
   static async enable2FA(user, token) {
     try {
-      const isValid = this.verifyToken(user, token);
+      // Fetch the latest user from DB to get the updated twoFactorSecret
+      const freshUser = await User.findByPk(user.id);
+      const isValid = this.verifyToken(freshUser, token);
       if (!isValid) {
         return false;
       }
 
-      await user.update({ 
-        twoFAEnabled: true,
-        twoFASecret: user.twoFASecret // Save the secret that was generated earlier
+      await freshUser.update({ 
+        twoFactorEnabled: true,
+        twoFactorSecret: freshUser.twoFactorSecret // Save the secret that was generated earlier
       });
 
       // Generate recovery codes
       const recoveryCodes = this.generateRecoveryCodes();
-      await user.update({ twoFARecoveryCodes: recoveryCodes });
+      await freshUser.update({ twoFARecoveryCodes: recoveryCodes });
 
       return {
         success: true,
@@ -90,8 +99,8 @@ class TwoFactorService {
   static async disable2FA(user) {
     try {
       await user.update({
-        twoFAEnabled: false,
-        twoFASecret: null,
+        twoFactorEnabled: false,
+        twoFactorSecret: null,
         twoFARecoveryCodes: null
       });
       return true;

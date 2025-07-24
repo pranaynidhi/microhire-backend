@@ -4,6 +4,7 @@ const { AppError } = require('../utils/errors');
 const logger = require('../utils/logger');
 const TwoFactorService = require('../services/twoFactorService');
 const { isTokenBlacklisted } = require('../services/tokenService');
+const sessionUtil = require('../utils/session');
 
 // JWT-based authentication middleware
 const authenticate = async (req, res, next) => {
@@ -30,7 +31,7 @@ const authenticate = async (req, res, next) => {
     }
 
     // Check if 2FA is required but not verified
-    if (user.twoFAEnabled && !decoded.twoFASuccess) {
+    if (user.twoFactorEnabled && !decoded.twoFASuccess) {
       return res.status(401).json({
         success: false,
         code: '2FA_REQUIRED',
@@ -40,6 +41,19 @@ const authenticate = async (req, res, next) => {
           email: user.email
         }
       });
+    }
+
+    // Session validation (if sessionId is provided)
+    const sessionId = req.headers['x-session-id'] || req.body.sessionId || req.query.sessionId;
+    if (sessionId) {
+      const session = await sessionUtil.getSession(sessionId);
+      if (!session || session.userId !== user.id) {
+        logger.warn('Invalid or expired session', { sessionId, userId: user.id });
+        throw new AppError('Session is invalid or expired', 401);
+      }
+      // Update lastActive
+      await sessionUtil.updateSessionLastActive(sessionId);
+      req.session = session;
     }
 
     req.user = user;
@@ -65,7 +79,7 @@ const check2FA = async (req, res, next) => {
   try {
     const user = await User.findOne({ where: { email } });
     
-    if (user && user.twoFAEnabled) {
+    if (user && user.twoFactorEnabled) {
       // Generate a temporary token that only allows 2FA verification
       const tempToken = jwt.sign(
         { 

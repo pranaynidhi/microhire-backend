@@ -280,6 +280,31 @@ const deleteApplication = async (req, res) => {
   }
 };
 
+// Get applications submitted by the current student user
+const getMyApplications = async (req, res) => {
+  try {
+    if (req.user.role !== 'student') {
+      return res.status(403).json({ success: false, message: 'Forbidden' });
+    }
+    const applications = await Application.findAll({
+      where: { studentId: req.user.id },
+      include: [
+        {
+          model: Internship,
+          as: 'internship',
+          include: [
+            { model: require('../models').User, as: 'company', attributes: ['id', 'fullName', 'logoUrl'] }
+          ]
+        }
+      ],
+      order: [['createdAt', 'DESC']]
+    });
+    res.json({ success: true, applications });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Failed to fetch applications' });
+  }
+};
+
 module.exports = {
   getAllApplications,
   getApplicationById,
@@ -287,4 +312,5 @@ module.exports = {
   updateApplicationStatus,
   deleteApplication,
   getApplicationsByInternship,
+  getMyApplications,
 };

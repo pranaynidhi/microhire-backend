@@ -52,7 +52,7 @@ const options = {
             website: { type: 'string' },
             phone: { type: 'string' },
             emailVerified: { type: 'boolean' },
-            twoFAEnabled: { type: 'boolean' },
+            twoFactorEnabled: { type: 'boolean' },
             createdAt: { type: 'string', format: 'date-time' },
             updatedAt: { type: 'string', format: 'date-time' },
           },

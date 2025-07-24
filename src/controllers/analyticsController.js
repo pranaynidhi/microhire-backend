@@ -1,6 +1,6 @@
 const { Op } = require('sequelize');
 const logger = require('../utils/logger');
-const { User, Internship, Application } = require('../models');
+const db = require('../models');
 const { sequelize } = require('../config/database');
 const AnalyticsService = require('../services/analyticsService');
 
@@ -12,32 +12,32 @@ const analyticsController = {
 
       if (user.role === 'student') {
         // Student dashboard stats
-        const totalApplications = await Application.count({
+        const totalApplications = await db.Application.count({
           where: { studentId: user.id },
         });
 
-        const pendingApplications = await Application.count({
+        const pendingApplications = await db.Application.count({
           where: {
             studentId: user.id,
             status: 'pending',
           },
         });
 
-        const interviews = await Application.count({
+        const interviews = await db.Application.count({
           where: {
             studentId: user.id,
             status: 'interviewing',
           },
         });
 
-        const offers = await Application.count({
+        const offers = await db.Application.count({
           where: {
             studentId: user.id,
             status: 'accepted',
           },
         });
 
-        const rejections = await Application.count({
+        const rejections = await db.Application.count({
           where: {
             studentId: user.id,
             status: 'rejected',
@@ -45,16 +45,16 @@ const analyticsController = {
         });
 
         // Recent applications
-        const recentApplications = await Application.findAll({
+        const recentApplications = await db.Application.findAll({
           where: { studentId: user.id },
           include: [
             {
-              model: Internship,
+              model: db.Internship,
               as: 'internship',
               attributes: ['id', 'title', 'companyId'],
               include: [
                 {
-                  model: User,
+                  model: db.User,
                   as: 'company',
                   attributes: ['id', 'fullName', 'role'],
                 },
@@ -66,7 +66,7 @@ const analyticsController = {
         });
 
         // Application status distribution
-        const statusDistribution = await Application.findAll({
+        const statusDistribution = await db.Application.findAll({
           where: { studentId: user.id },
           attributes: ['status', [sequelize.fn('COUNT', sequelize.col('id')), 'count']],
           group: ['status'],
@@ -84,43 +84,43 @@ const analyticsController = {
         };
       } else if (user.role === 'business') {
         // Business dashboard stats
-        const activeInternships = await Internship.count({
+        const activeInternships = await db.Internship.count({
           where: {
             companyId: user.id,
             status: 'active',
           },
         });
 
-        const totalInternships = await Internship.count({
+        const totalInternships = await db.Internship.count({
           where: { companyId: user.id },
         });
 
-        const totalApplications = await Application.count({
+        const totalApplications = await db.Application.count({
           include: [
             {
-              model: Internship,
+              model: db.Internship,
               as: 'internship',
               where: { companyId: user.id },
             },
           ],
         });
 
-        const pendingApplications = await Application.count({
+        const pendingApplications = await db.Application.count({
           where: { status: 'pending' },
           include: [
             {
-              model: Internship,
+              model: db.Internship,
               as: 'internship',
               where: { companyId: user.id },
             },
           ],
         });
 
-        const hiredInterns = await Application.count({
+        const hiredInterns = await db.Application.count({
           where: { status: 'accepted' },
           include: [
             {
-              model: Internship,
+              model: db.Internship,
               as: 'internship',
               where: { companyId: user.id },
             },
@@ -128,16 +128,16 @@ const analyticsController = {
         });
 
         // Recent applications to company's internships
-        const recentApplications = await Application.findAll({
+        const recentApplications = await db.Application.findAll({
           include: [
             {
-              model: Internship,
+              model: db.Internship,
               as: 'internship',
               where: { companyId: user.id },
               attributes: ['id', 'title'],
             },
             {
-              model: User,
+              model: db.User,
               as: 'student',
               attributes: ['id', 'fullName', 'email'],
             },
@@ -147,11 +147,11 @@ const analyticsController = {
         });
 
         // Top performing internships
-        const topInternships = await Internship.findAll({
+        const topInternships = await db.Internship.findAll({
           where: { companyId: user.id },
           include: [
             {
-              model: Application,
+              model: db.Application,
               as: 'applications',
               attributes: [],
             },
@@ -179,26 +179,26 @@ const analyticsController = {
         };
       } else if (user.role === 'admin') {
         // Admin dashboard stats
-        const totalUsers = await User.count();
-        const activeUsers = await User.count({
+        const totalUsers = await db.User.count();
+        const activeUsers = await db.User.count({
           where: { isActive: true },
         });
-        const studentsCount = await User.count({
+        const studentsCount = await db.User.count({
           where: { role: 'student' },
         });
-        const businessCount = await User.count({
+        const businessCount = await db.User.count({
           where: { role: 'business' },
         });
 
-        const totalInternships = await Internship.count();
-        const activeInternships = await Internship.count({
+        const totalInternships = await db.Internship.count();
+        const activeInternships = await db.Internship.count({
           where: { status: 'active' },
         });
 
-        const totalApplications = await Application.count();
+        const totalApplications = await db.Application.count();
 
         // Recent registrations
-        const recentUsers = await User.findAll({
+        const recentUsers = await db.User.findAll({
           attributes: ['id', 'fullName', 'email', 'role', 'createdAt'],
           order: [['createdAt', 'DESC']],
           limit: 5,
@@ -206,7 +206,7 @@ const analyticsController = {
 
         // Platform growth (last 30 days)
         const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-        const newUsersThisMonth = await User.count({
+        const newUsersThisMonth = await db.User.count({
           where: {
             createdAt: {
               [Op.gte]: thirtyDaysAgo,
@@ -214,7 +214,7 @@ const analyticsController = {
           },
         });
 
-        const newInternshipsThisMonth = await Internship.count({
+        const newInternshipsThisMonth = await db.Internship.count({
           where: {
             createdAt: {
               [Op.gte]: thirtyDaysAgo,
@@ -222,7 +222,7 @@ const analyticsController = {
           },
         });
 
-        const newApplicationsThisMonth = await Application.count({
+        const newApplicationsThisMonth = await db.Application.count({
           where: {
             createdAt: {
               [Op.gte]: thirtyDaysAgo,
@@ -280,12 +280,12 @@ const analyticsController = {
       }
 
       // Total counts
-      const totalUsers = await User.count();
-      const totalInternships = await Internship.count();
-      const totalApplications = await Application.count();
+      const totalUsers = await db.User.count();
+      const totalInternships = await db.Internship.count();
+      const totalApplications = await db.Application.count();
 
       // Recent activity
-      const recentUsers = await User.count({
+      const recentUsers = await db.User.count({
         where: {
           createdAt: {
             [Op.gte]: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // Last 30 days
@@ -293,7 +293,7 @@ const analyticsController = {
         },
       });
 
-      const recentInternships = await Internship.count({
+      const recentInternships = await db.Internship.count({
         where: {
           createdAt: {
             [Op.gte]: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
@@ -301,7 +301,7 @@ const analyticsController = {
         },
       });
 
-      const recentApplications = await Application.count({
+      const recentApplications = await db.Application.count({
         where: {
           createdAt: {
             [Op.gte]: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
@@ -310,13 +310,13 @@ const analyticsController = {
       });
 
       // User role distribution
-      const userRoleStats = await User.findAll({
+      const userRoleStats = await db.User.findAll({
         attributes: ['role', [sequelize.fn('COUNT', sequelize.col('id')), 'count']],
         group: ['role'],
       });
 
       // Application status distribution
-      const applicationStats = await Application.findAll({
+      const applicationStats = await db.Application.findAll({
         attributes: ['status', [sequelize.fn('COUNT', sequelize.col('id')), 'count']],
         group: ['status'],
       });
@@ -348,7 +348,7 @@ const analyticsController = {
   getInternshipAnalytics: async (req, res) => {
     try {
       // Most popular categories
-      const categoryStats = await Internship.findAll({
+      const categoryStats = await db.Internship.findAll({
         attributes: ['category', [sequelize.fn('COUNT', sequelize.col('id')), 'count']],
         group: ['category'],
         order: [[sequelize.fn('COUNT', sequelize.col('id')), 'DESC']],
@@ -356,13 +356,13 @@ const analyticsController = {
       });
 
       // Internship type distribution
-      const typeStats = await Internship.findAll({
+      const typeStats = await db.Internship.findAll({
         attributes: ['type', [sequelize.fn('COUNT', sequelize.col('id')), 'count']],
         group: ['type'],
       });
 
       // Location distribution
-      const locationStats = await Internship.findAll({
+      const locationStats = await db.Internship.findAll({
         attributes: ['location', [sequelize.fn('COUNT', sequelize.col('id')), 'count']],
         group: ['location'],
         order: [[sequelize.fn('COUNT', sequelize.col('id')), 'DESC']],
@@ -370,7 +370,7 @@ const analyticsController = {
       });
 
       // Monthly internship posting trends
-      const monthlyTrends = await Internship.findAll({
+      const monthlyTrends = await db.Internship.findAll({
         attributes: [
           [sequelize.fn('DATE_FORMAT', sequelize.col('createdAt'), '%Y-%m'), 'month'],
           [sequelize.fn('COUNT', sequelize.col('id')), 'count'],
@@ -405,13 +405,13 @@ const analyticsController = {
   getApplicationAnalytics: async (req, res) => {
     try {
       // Application success rate
-      const applicationStats = await Application.findAll({
+      const applicationStats = await db.Application.findAll({
         attributes: ['status', [sequelize.fn('COUNT', sequelize.col('id')), 'count']],
         group: ['status'],
       });
 
       // Average applications per internship
-      const avgApplications = await Application.findAll({
+      const avgApplications = await db.Application.findAll({
         attributes: [
           'internshipId',
           [sequelize.fn('COUNT', sequelize.col('id')), 'applicationCount'],
@@ -428,7 +428,7 @@ const analyticsController = {
           : 0;
 
       // Monthly application trends
-      const monthlyApplications = await Application.findAll({
+      const monthlyApplications = await db.Application.findAll({
         attributes: [
           [sequelize.fn('DATE_FORMAT', sequelize.col('createdAt'), '%Y-%m'), 'month'],
           [sequelize.fn('COUNT', sequelize.col('id')), 'count'],
@@ -463,10 +463,10 @@ const analyticsController = {
     try {
       const { user } = req;
       // Example: return application stats for the user
-      const totalApplications = await Application.count({ where: { studentId: user.id } });
-      const accepted = await Application.count({ where: { studentId: user.id, status: 'accepted' } });
-      const rejected = await Application.count({ where: { studentId: user.id, status: 'rejected' } });
-      const pending = await Application.count({ where: { studentId: user.id, status: 'pending' } });
+      const totalApplications = await db.Application.count({ where: { studentId: user.id } });
+      const accepted = await db.Application.count({ where: { studentId: user.id, status: 'accepted' } });
+      const rejected = await db.Application.count({ where: { studentId: user.id, status: 'rejected' } });
+      const pending = await db.Application.count({ where: { studentId: user.id, status: 'pending' } });
       res.json({
         success: true,
         data: {
@@ -485,16 +485,61 @@ const analyticsController = {
   getCompanyAnalytics: async (req, res) => {
     try {
       const { user } = req;
-      // Example: return internship and application stats for the company
-      const totalInternships = await Internship.count({ where: { companyId: user.id } });
-      const totalApplications = await Application.count({
-        include: [{ model: Internship, where: { companyId: user.id } }]
+      // Total internships posted by the company
+      const totalInternships = await db.Internship.count({ where: { companyId: user.id } });
+      // Active internships
+      const activeInternships = await db.Internship.count({ where: { companyId: user.id, status: 'active' } });
+      // Total applications to company's internships
+      const totalApplications = await db.Application.count({
+        include: [{ model: db.Internship, as: 'internship', where: { companyId: user.id } }]
+      });
+      // Applications with status 'accepted' (hired interns)
+      const hiredInterns = await db.Application.count({
+        where: { status: 'accepted' },
+        include: [{ model: db.Internship, as: 'internship', where: { companyId: user.id } }]
+      });
+      // Applications with status 'pending'
+      const pendingApplications = await db.Application.count({
+        where: { status: 'pending' },
+        include: [{ model: db.Internship, as: 'internship', where: { companyId: user.id } }]
+      });
+      // Hiring rate
+      const hiringRate = totalApplications > 0 ? ((hiredInterns / totalApplications) * 100).toFixed(1) : 0;
+      // Recent applications to company's internships
+      const recentApplications = await db.Application.findAll({
+        include: [
+          { model: db.Internship, as: 'internship', where: { companyId: user.id }, attributes: ['id', 'title'] },
+          { model: db.User, as: 'student', attributes: ['id', 'fullName', 'email'] }
+        ],
+        order: [['createdAt', 'DESC']],
+        limit: 5,
+      });
+      // Top performing internships by application count
+      const topInternships = await db.Internship.findAll({
+        where: { companyId: user.id },
+        attributes: [
+          'id',
+          'title',
+          [db.sequelize.literal(`(
+            SELECT COUNT(*)
+            FROM applications AS a
+            WHERE a.internship_id = Internship.id
+          )`), 'applicationCount']
+        ],
+        order: [[db.sequelize.literal('applicationCount'), 'DESC']],
+        limit: 5,
       });
       res.json({
         success: true,
         data: {
           totalInternships,
-          totalApplications
+          activeInternships,
+          totalApplications,
+          hiredInterns,
+          pendingApplications,
+          hiringRate,
+          recentApplications,
+          topInternships
         }
       });
     } catch (error) {
@@ -506,80 +551,79 @@ const analyticsController = {
   getPlatformAnalytics: async (req, res) => {
     try {
       // Top-level counts
-      const totalUsers = await User.count();
-      const totalInternships = await Internship.count();
-      const totalApplications = await Application.count();
+      const totalUsers = await db.User.count();
+      const totalInternships = await db.Internship.count();
+      const totalApplications = await db.Application.count();
 
       // User role distribution
-      const userRoleStats = await User.findAll({
+      const userRoleStats = await db.User.findAll({
         attributes: ['role', [sequelize.fn('COUNT', sequelize.col('id')), 'count']],
         group: ['role'],
       });
 
       // Application status distribution
-      const applicationStats = await Application.findAll({
+      const applicationStats = await db.Application.findAll({
         attributes: ['status', [sequelize.fn('COUNT', sequelize.col('id')), 'count']],
         group: ['status'],
       });
 
       // Internship categories
-      const categoryStats = await Internship.findAll({
+      const categoryStats = await db.Internship.findAll({
         attributes: ['category', [sequelize.fn('COUNT', sequelize.col('id')), 'count']],
         group: ['category'],
       });
 
       // Internship types
-      const typeStats = await Internship.findAll({
+      const typeStats = await db.Internship.findAll({
         attributes: ['type', [sequelize.fn('COUNT', sequelize.col('id')), 'count']],
         group: ['type'],
       });
 
       // Internship locations
-      const locationStats = await Internship.findAll({
+      const locationStats = await db.Internship.findAll({
         attributes: ['location', [sequelize.fn('COUNT', sequelize.col('id')), 'count']],
         group: ['location'],
       });
 
       // Monthly internship posting trends
-      const monthlyTrends = await Internship.findAll({
+      const monthlyTrends = await db.Internship.findAll({
         attributes: [
-          [sequelize.fn('DATE_FORMAT', sequelize.col('createdAt'), '%Y-%m'), 'month'],
+          [sequelize.fn('DATE_FORMAT', sequelize.col('created_at'), '%Y-%m'), 'month'],
           [sequelize.fn('COUNT', sequelize.col('id')), 'count'],
         ],
-        group: [sequelize.fn('DATE_FORMAT', sequelize.col('createdAt'), '%Y-%m')],
-        order: [[sequelize.fn('DATE_FORMAT', sequelize.col('createdAt'), '%Y-%m'), 'ASC']],
+        group: [sequelize.fn('DATE_FORMAT', sequelize.col('created_at'), '%Y-%m')],
+        order: [[sequelize.fn('DATE_FORMAT', sequelize.col('created_at'), '%Y-%m'), 'ASC']],
       });
 
       // Monthly application trends
-      const monthlyApplications = await Application.findAll({
+      const monthlyApplications = await db.Application.findAll({
         attributes: [
-          [sequelize.fn('DATE_FORMAT', sequelize.col('createdAt'), '%Y-%m'), 'month'],
+          [sequelize.fn('DATE_FORMAT', sequelize.col('created_at'), '%Y-%m'), 'month'],
           [sequelize.fn('COUNT', sequelize.col('id')), 'count'],
         ],
-        group: [sequelize.fn('DATE_FORMAT', sequelize.col('createdAt'), '%Y-%m')],
-        order: [[sequelize.fn('DATE_FORMAT', sequelize.col('createdAt'), '%Y-%m'), 'ASC']],
+        group: [sequelize.fn('DATE_FORMAT', sequelize.col('created_at'), '%Y-%m')],
+        order: [[sequelize.fn('DATE_FORMAT', sequelize.col('created_at'), '%Y-%m'), 'ASC']],
       });
 
       // Recent users
-      const recentUsers = await User.findAll({
+      const recentUsers = await db.User.findAll({
         attributes: ['id', 'fullName', 'email', 'role', 'createdAt'],
         order: [['createdAt', 'DESC']],
         limit: 5,
       });
 
       // Top internships by application count
-      const topInternships = await Internship.findAll({
+      const topInternships = await db.Internship.findAll({
         attributes: [
           'id',
           'title',
-          [sequelize.fn('COUNT', sequelize.col('applications.id')), 'applicationCount'],
+          [sequelize.literal(`(
+            SELECT COUNT(*)
+            FROM applications AS a
+            WHERE a.internship_id = Internship.id AND a.deleted_at IS NULL
+          )`), 'applicationCount'],
         ],
-        include: [{
-          model: Application,
-          as: 'applications',
-          attributes: [],
-        }],
-        group: ['Internship.id'],
+        where: { deleted_at: null },
         order: [[sequelize.literal('applicationCount'), 'DESC']],
         limit: 5,
       });

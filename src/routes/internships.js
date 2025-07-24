@@ -91,6 +91,44 @@ router.get('/', authenticate, internshipController.getAllInternships);
 
 /**
  * @swagger
+ * /api/internships/me:
+ *   get:
+ *     summary: Get internships posted by the current business user
+ *     description: Retrieve a list of all internships posted by the current business user
+ *     tags: [Internships]
+ *     security: [ { bearerAuth: [] } ]
+ *     responses:
+ *       200:
+ *         description: Internships retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 internships:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Internship'
+ *                 pagination:
+ *                   type: object
+ *                   properties:
+ *                     page:
+ *                       type: integer
+ *                     limit:
+ *                       type: integer
+ *                     total:
+ *                       type: integer
+ *                     pages:
+ *                       type: integer
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
+ */
+router.get('/me', authenticate, requireEmailVerification, internshipController.getMyInternships);
+
+/**
+ * @swagger
  * /api/internships/{id}:
  *   get:
  *     summary: Get internship by ID

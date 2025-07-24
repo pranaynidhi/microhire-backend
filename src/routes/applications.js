@@ -81,6 +81,44 @@ router.get('/', authenticate, applicationController.getAllApplications);
 
 /**
  * @swagger
+ * /api/applications/me:
+ *   get:
+ *     summary: Get applications submitted by the current student user
+ *     description: Retrieve applications submitted by the currently authenticated student user.
+ *     tags: [Applications]
+ *     security: [ { bearerAuth: [] } ]
+ *     responses:
+ *       200:
+ *         description: Applications retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 applications:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Application'
+ *                 pagination:
+ *                   type: object
+ *                   properties:
+ *                     page:
+ *                       type: integer
+ *                     limit:
+ *                       type: integer
+ *                     total:
+ *                       type: integer
+ *                     pages:
+ *                       type: integer
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
+ */
+router.get('/me', authenticate, isStudent, requireEmailVerification, applicationController.getMyApplications);
+
+/**
+ * @swagger
  * /api/applications/{id}:
  *   get:
  *     summary: Get application by ID

@@ -151,6 +151,95 @@ module.exports = (sequelize) => {
         allowNull: true,
         field: 'logo_url',
       },
+      education: {
+        type: DataTypes.JSON,
+        allowNull: true,
+        field: 'education',
+        defaultValue: [],
+        get() {
+          const rawValue = this.getDataValue('education');
+          return rawValue || [];
+        },
+        set(value) {
+          this.setDataValue('education', value || []);
+        },
+      },
+      // Notification Preferences
+      emailNewInternships: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: true,
+        field: 'email_new_internships',
+      },
+      emailApplicationUpdates: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: true,
+        field: 'email_application_updates',
+      },
+      emailMessages: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: true,
+        field: 'email_messages',
+      },
+      emailMarketing: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
+        field: 'email_marketing',
+      },
+      pushMessages: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: true,
+        field: 'push_messages',
+      },
+      pushDeadlines: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: true,
+        field: 'push_deadlines',
+      },
+      // Privacy Settings
+      profileVisibility: {
+        type: DataTypes.ENUM('public', 'companies', 'private'),
+        allowNull: false,
+        defaultValue: 'public',
+        field: 'profile_visibility',
+      },
+      showOnlineStatus: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: true,
+        field: 'show_online_status',
+      },
+      searchEngineIndexing: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
+        field: 'search_engine_indexing',
+      },
+      // Location (frontend uses a single string)
+      location: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        field: 'location',
+      },
+      // Settings change history
+      settingsHistory: {
+        type: DataTypes.JSON,
+        allowNull: true,
+        defaultValue: [],
+        field: 'settings_history',
+        get() {
+          const rawValue = this.getDataValue('settingsHistory');
+          return rawValue || [];
+        },
+        set(value) {
+          this.setDataValue('settingsHistory', value || []);
+        },
+      },
     },
     {
       sequelize,

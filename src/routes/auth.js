@@ -423,7 +423,7 @@ router.post('/2fa/setup', authenticate, async (req, res, next) => {
     // Generate a secret for the user
     const secret = speakeasy.generateSecret({ length: 20, name: `MicroHire (${req.user.email})` });
     // Save the secret to the user profile (in production, encrypt this!)
-    await User.update({ twoFASecret: secret.base32 }, { where: { id: req.user.id } });
+    await User.update({ twoFactorSecret: secret.base32 }, { where: { id: req.user.id } });
     // Generate QR code for authenticator apps
     const qr = await qrcode.toDataURL(secret.otpauth_url);
     res.json({ secret: secret.base32, otpauth_url: secret.otpauth_url, qr });
@@ -474,16 +474,16 @@ router.post('/2fa/verify', authenticate, async (req, res, next) => {
     if (!code) return res.status(400).json({ message: '2FA code is required' });
     // Fetch user's 2FA secret
     const user = await User.findByPk(req.user.id);
-    if (!user || !user.twoFASecret) return res.status(400).json({ message: '2FA not set up' });
+    if (!user || !user.twoFactorSecret) return res.status(400).json({ message: '2FA not set up' });
     const verified = speakeasy.totp.verify({
-      secret: user.twoFASecret,
+      secret: user.twoFactorSecret,
       encoding: 'base32',
       token: code,
       window: 1,
     });
     if (!verified) return res.status(400).json({ message: 'Invalid 2FA code' });
     // Optionally, mark 2FA as verified in user profile
-    await User.update({ twoFAEnabled: true }, { where: { id: req.user.id } });
+    await User.update({ twoFactorEnabled: true }, { where: { id: req.user.id } });
     res.json({ message: '2FA verified' });
     
   } catch (error) {

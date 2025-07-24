@@ -81,6 +81,8 @@ class EmailService {
   }
 
   async sendApplicationNotification(company, student, internship) {
+    // Check company notification preference
+    if (company.emailNewInternships === false) return null;
     const subject = `New Application for ${internship.title}`;
     const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -114,6 +116,8 @@ class EmailService {
   }
 
   async sendApplicationStatusUpdate(student, internship, company, status) {
+    // Check student notification preference
+    if (student.emailApplicationUpdates === false) return null;
     const statusMessages = {
       accepted: {
         subject: `Congratulations! Your application has been accepted`,
@@ -171,6 +175,8 @@ class EmailService {
   }
 
   async sendDeadlineReminder(student, internships) {
+    // Check student notification preference
+    if (student.pushDeadlines === false && student.emailApplicationUpdates === false) return null;
     const subject = 'Application Deadlines Approaching';
     const internshipList = internships
       .map(
@@ -214,7 +220,9 @@ class EmailService {
     return this.sendEmail(student.email, subject, html);
   }
 
-  async sendApplicationReceivedEmail(userEmail, studentName, internshipTitle) {
+  async sendApplicationReceivedEmail(userEmail, studentName, internshipTitle, user) {
+    // Check user notification preference
+    if (user && user.emailNewInternships === false) return null;
     const subject = 'New Application Received';
     const html = `
       <h2>New Application Received</h2>
@@ -224,7 +232,9 @@ class EmailService {
     return this.sendEmail(userEmail, subject, html);
   }
 
-  async sendApplicationStatusEmail(userEmail, status, internshipTitle, companyName) {
+  async sendApplicationStatusEmail(userEmail, status, internshipTitle, companyName, user) {
+    // Check user notification preference
+    if (user && user.emailApplicationUpdates === false) return null;
     const subject = 'Application Status Update';
     const html = `
       <h2>Application Status Update</h2>
@@ -233,7 +243,9 @@ class EmailService {
     return this.sendEmail(userEmail, subject, html);
   }
 
-  async sendNewMessageEmail(userEmail, senderName) {
+  async sendNewMessageEmail(userEmail, senderName, user) {
+    // Check user notification preference
+    if (user && user.emailMessages === false) return null;
     const subject = 'New Message Received';
     const html = `
       <h2>New Message</h2>
@@ -243,7 +255,9 @@ class EmailService {
     return this.sendEmail(userEmail, subject, html);
   }
 
-  async sendDeadlineReminderEmail(userEmail, internshipTitle, daysLeft) {
+  async sendDeadlineReminderEmail(userEmail, internshipTitle, daysLeft, user) {
+    // Check user notification preference
+    if (user && user.pushDeadlines === false && user.emailApplicationUpdates === false) return null;
     const subject = 'Application Deadline Reminder';
     const html = `
       <h2>Application Deadline Reminder</h2>

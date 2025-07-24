@@ -32,6 +32,15 @@ module.exports = (sequelize) => {
         key: 'id',
       },
     },
+    receiverId: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      field: 'receiver_id',
+      references: {
+        model: 'users',
+        key: 'id',
+      },
+    },
     content: {
       type: DataTypes.TEXT,
       allowNull: false,
@@ -46,13 +55,18 @@ module.exports = (sequelize) => {
       allowNull: true,
       field: 'read_at',
     },
+    deletedAt: {
+      type: DataTypes.DATE,
+      allowNull: true,
+      field: 'deleted_at',
+    },
   }, {
     sequelize,
     modelName: 'Message',
     tableName: 'messages',
     timestamps: true,
     underscored: true,
-    paranoid: false,
+    paranoid: true,
   });
 
   return Message;

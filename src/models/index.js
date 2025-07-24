@@ -315,6 +315,11 @@ try {
     as: 'sender'
   });
 
+  db.Message.belongsTo(db.User, {
+    foreignKey: 'receiverId',
+    as: 'receiver'
+  });
+
   // ======================
   // Notification Associations
   // ======================

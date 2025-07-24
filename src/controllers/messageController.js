@@ -1,8 +1,7 @@
 const { Op } = require('sequelize');
 const path = require('path');
 const fs = require('fs');
-const { Message, User } = require('../models');
-const { sequelize } = require('../models');
+const { Message, User, Conversation } = require('../models');
 const logger = require('../utils/logger');
 
 const sendMessage = async (req, res) => {
@@ -22,33 +21,42 @@ const sendMessage = async (req, res) => {
       });
     }
 
-    // Generate conversation ID
-    const conversationId = Message.generateConversationId(senderId, receiverId);
-
-    // Handle file attachment if present
-    let fileUrl = null;
-    let fileName = null;
-    let messageType = 'text';
-
-    if (req.file) {
-      fileUrl = `/uploads/messages/${req.file.filename}`;
-      fileName = req.file.originalname;
-      messageType = 'file';
+    // Find or create conversation
+    let conversation = await Conversation.findOne({
+      where: {
+        [Op.or]: [
+          { participant1Id: senderId, participant2Id: receiverId },
+          { participant1Id: receiverId, participant2Id: senderId },
+        ],
+      },
+    });
+    if (!conversation) {
+      conversation = await Conversation.create({
+        participant1Id: senderId,
+        participant2Id: receiverId,
+        lastMessageAt: new Date(),
+      });
     }
 
+    // Create the message
     const message = await Message.create({
       senderId,
       receiverId,
       content,
-      conversationId,
-      messageType,
-      fileUrl,
-      fileName,
+      conversationId: conversation.id,
+      isRead: false,
+      isDeleted: false,
+    });
+
+    // Update conversation last message
+    await conversation.update({
+      lastMessageId: message.id,
+      lastMessageAt: message.createdAt,
     });
 
     // Emit real-time event
     if (req.io) {
-      req.io.to(`conversation_${conversationId}`).emit('new_message', {
+      req.io.to(`conversation_${conversation.id}`).emit('new_message', {
         message: {
           ...message.toJSON(),
           sender: {
@@ -76,17 +84,32 @@ const sendMessage = async (req, res) => {
 
 const getConversation = async (req, res) => {
   try {
-    const { userId } = req.params;
-    const currentUserId = req.user.id;
+    const { conversationId } = req.params;
+    const userId = req.user.id;
     const { page = 1, limit = 50 } = req.query;
-
     const offset = (page - 1) * limit;
-    const conversationId = Message.generateConversationId(currentUserId, parseInt(userId, 10));
 
+    // Check if user is a participant
+    const conversation = await Conversation.findOne({
+      where: {
+        id: conversationId,
+        [Op.or]: [
+          { participant1Id: userId },
+          { participant2Id: userId },
+        ],
+      },
+    });
+    if (!conversation) {
+      return res.status(404).json({
+        success: false,
+        message: 'Conversation not found or access denied.',
+      });
+    }
+
+    // Get messages
     const messages = await Message.findAndCountAll({
       where: {
-        conversationId,
-        isDeleted: false,
+        conversationId: conversation.id,
       },
       include: [
         {
@@ -100,7 +123,7 @@ const getConversation = async (req, res) => {
           attributes: ['id', 'fullName', 'role'],
         },
       ],
-      order: [['createdAt', 'DESC']],
+      order: [['created_at', 'DESC']],
       limit: parseInt(limit, 10),
       offset: parseInt(offset, 10),
     });
@@ -113,9 +136,9 @@ const getConversation = async (req, res) => {
       },
       {
         where: {
-          conversationId,
-          receiverId: currentUserId,
-          isRead: false,
+          conversationId: conversation.id,
+          receiverId: userId,
+          read: false,
         },
       }
     );
@@ -123,7 +146,7 @@ const getConversation = async (req, res) => {
     res.json({
       success: true,
       data: {
-        messages: messages.rows.reverse(), // Reverse to show oldest first
+        messages: messages.rows.reverse(),
         pagination: {
           currentPage: parseInt(page, 10),
           totalPages: Math.ceil(messages.count / limit),
@@ -145,63 +168,56 @@ const getConversations = async (req, res) => {
   try {
     const userId = req.user.id;
 
-    // Get all unique conversations for the user
-    const conversations = await Message.findAll({
+    // Find all conversations where the user is a participant
+    const conversations = await Conversation.findAll({
       where: {
-        [Op.or]: [{ senderId: userId }, { receiverId: userId }],
-        isDeleted: false,
+        [Op.or]: [
+          { participant1Id: userId },
+          { participant2Id: userId }
+        ]
       },
-      attributes: [
-        'conversationId',
-        [sequelize.fn('MAX', sequelize.col('createdAt')), 'lastMessageAt'],
-      ],
-      group: ['conversationId'],
-      order: [[sequelize.fn('MAX', sequelize.col('createdAt')), 'DESC']],
+      order: [['lastMessageAt', 'DESC']],
     });
 
-    // Get detailed conversation info
+    // For each conversation, get the latest message and unread count
     const conversationDetails = await Promise.all(
       conversations.map(async (conv) => {
+        // Get the latest message
         const lastMessage = await Message.findOne({
           where: {
-            conversationId: conv.conversationId,
-            isDeleted: false,
+            conversationId: conv.id,
           },
-          include: [
-            {
-              model: User,
-              as: 'sender',
-              attributes: ['id', 'fullName', 'role'],
-            },
-            {
-              model: User,
-              as: 'receiver',
-              attributes: ['id', 'fullName', 'role'],
-            },
-          ],
-          order: [['createdAt', 'DESC']],
+          order: [['created_at', 'DESC']],
         });
 
-        const otherUser =
-          lastMessage.senderId === userId ? lastMessage.receiver : lastMessage.sender;
+        // Get both participants
+        const participant1 = await User.findByPk(conv.participant1Id, {
+          attributes: ['id', 'fullName', 'role'],
+        });
+        const participant2 = await User.findByPk(conv.participant2Id, {
+          attributes: ['id', 'fullName', 'role'],
+        });
+        const participants = [participant1, participant2];
 
+        // Get unread count
         const unreadCount = await Message.count({
           where: {
-            conversationId: conv.conversationId,
+            conversationId: conv.id,
             receiverId: userId,
-            isRead: false,
-            isDeleted: false,
+            read: false,
           },
         });
 
         return {
-          conversationId: conv.conversationId,
-          otherUser,
-          lastMessage: {
-            content: lastMessage.content,
-            createdAt: lastMessage.createdAt,
-            senderId: lastMessage.senderId,
-          },
+          id: conv.id,
+          participants,
+          lastMessage: lastMessage
+            ? {
+                content: lastMessage.content,
+                createdAt: lastMessage.createdAt,
+                senderId: lastMessage.senderId,
+              }
+            : null,
           unreadCount,
         };
       })
@@ -236,7 +252,7 @@ const markAsRead = async (req, res) => {
         where: {
           conversationId,
           receiverId: userId,
-          isRead: false,
+          read: false,
         },
       }
     );
@@ -264,7 +280,6 @@ const editMessage = async (req, res) => {
       where: {
         id,
         senderId: userId,
-        isDeleted: false,
       },
     });
 
@@ -324,7 +339,6 @@ const deleteMessage = async (req, res) => {
       where: {
         id,
         [Op.or]: [{ senderId: userId }, { receiverId: userId }],
-        isDeleted: false,
       },
     });
 

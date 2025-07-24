@@ -228,6 +228,25 @@ const deleteInternship = async (req, res) => {
   }
 };
 
+// Get internships posted by the current business user
+const getMyInternships = async (req, res) => {
+  try {
+    if (req.user.role !== 'business') {
+      return res.status(403).json({ success: false, message: 'Forbidden' });
+    }
+    const internships = await Internship.findAll({
+      where: { companyId: req.user.id },
+      include: [
+        { model: User, as: 'company', attributes: ['id', 'fullName', 'logoUrl', 'email', 'role'] }
+      ],
+      order: [['createdAt', 'DESC']]
+    });
+    res.json({ success: true, internships });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Failed to fetch internships' });
+  }
+};
+
 module.exports = {
   createInternship,
   getAllInternships,
@@ -235,4 +254,5 @@ module.exports = {
   getInternships,
   updateInternship,
   deleteInternship,
+  getMyInternships,
 };

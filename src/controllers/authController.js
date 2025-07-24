@@ -4,6 +4,7 @@ const bcrypt = require('bcryptjs');
 const logger = require('../utils/logger');
 const {User} = require('../models');
 const emailService = require('../services/emailService');
+const sessionUtil = require('../utils/session');
 
 const generateTokens = (userId) => {
   const accessToken = jwt.sign({ id: userId }, process.env.JWT_SECRET, {
@@ -193,7 +194,7 @@ const login = async (req, res, next) => {
     }
 
     // Check if 2FA is enabled
-    if (user.twoFAEnabled) {
+    if (user.twoFactorEnabled) {
       // Generate a temporary token that only allows 2FA verification
       const tempToken = jwt.sign(
         { 
@@ -218,10 +219,19 @@ const login = async (req, res, next) => {
 
     // If 2FA is not enabled, generate regular tokens
     const { accessToken, refreshToken } = generateTokens(user.id);
-    
+    // Create session in Redis
+    const device = req.headers['x-device'] || 'Unknown';
+    const ip = req.ip || req.connection?.remoteAddress || 'Unknown';
+    const userAgent = req.headers['user-agent'] || 'Unknown';
+    const sessionId = await sessionUtil.createSession({
+      userId: user.id,
+      device,
+      ip,
+      userAgent,
+      refreshToken,
+    });
     // Update last login time
     await user.update({ lastLogin: new Date() });
-    
     res.json({
       success: true,
       message: 'Login successful',
@@ -229,6 +239,7 @@ const login = async (req, res, next) => {
         user: user.getPublicProfile(),
         accessToken,
         refreshToken,
+        sessionId,
       },
     });
   } catch (error) {
