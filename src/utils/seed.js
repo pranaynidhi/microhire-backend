@@ -29,7 +29,7 @@ const seedDatabase = async () => {
     // Create users
     logger.info('👥 Creating users...');
     const student = await User.create({
-      fullName: 'Test Student',
+      fullName: 'Pranay Nidhi',
       email: 'student@microhire.com',
       password: 'Nidhi@7733',
       role: 'student',
@@ -40,12 +40,12 @@ const seedDatabase = async () => {
     });
 
     const company = await User.create({
-      fullName: 'Test Company',
+      fullName: 'Softwarica College',
       email: 'company@microhire.com',
       password: 'Nidhi@7733',
       role: 'business',
-      companyName: 'Test Company',
-      contactPerson: 'John Doe',
+      companyName: 'Softwarica College',
+      contactPerson: 'Abishek Bimali',
       companyDescription: 'A leading tech company.',
       website: 'https://testcompany.com',
       phone: '1234567890',
@@ -56,7 +56,7 @@ const seedDatabase = async () => {
     // Remove unused variable 'admin'
     // const admin = await User.create({ ... });
     await User.create({
-      fullName: 'Test Admin',
+      fullName: 'Admin',
       email: 'admin@microhire.com',
       password: 'Nidhi@7733',
       role: 'admin',

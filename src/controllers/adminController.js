@@ -1,11 +1,6 @@
 // controllers/adminController.js
 const { Op } = require('sequelize');
-const User = require('../models/User');
-const Internship = require('../models/Internship');
-const Application = require('../models/Application');
-const Report = require('../models/Report');
-const Review = require('../models/Review');
-const SystemSettings = require('../models/SystemSettings');
+const { User, Internship, Application, Report, Review, SystemSettings, Certificate } = require('../models');
 const logger = require('../utils/logger');
 
 const adminController = {
@@ -702,6 +697,21 @@ const adminController = {
         success: false,
         message: 'Failed to delete internship',
       });
+    }
+  },
+
+  getCertificates: async (req, res) => {
+    try {
+      const certificates = await Certificate.findAll({
+        include: [
+          { model: User, as: 'student', attributes: ['id', 'fullName', 'email'] },
+          { model: Internship, as: 'internship', attributes: ['id', 'title'] }
+        ]
+      });
+      res.json({ success: true, data: { certificates } });
+    } catch (err) {
+      logger.error('Get certificates error:', err);
+      res.status(500).json({ success: false, message: 'Failed to fetch certificates' });
     }
   },
 };

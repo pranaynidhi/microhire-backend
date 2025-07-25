@@ -189,4 +189,12 @@ router.put(
  */
 // router.patch('/users/:id/ban', authenticate, requireAdmin, ...);
 
+router.get(
+  '/certificates',
+  authenticate,
+  requireEmailVerification,
+  adminAuth,
+  adminController.getCertificates
+);
+
 module.exports = router;

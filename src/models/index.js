@@ -346,6 +346,11 @@ try {
     as: 'review'
   });
 
+  db.Report.belongsTo(db.Internship, {
+    foreignKey: 'reportedInternshipId',
+    as: 'reportedInternship'
+  });
+
   // ======================
   // Review Associations
   // ======================
