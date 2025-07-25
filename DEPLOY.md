@@ -170,3 +170,13 @@ pm2 logs microhire-api
 ```bash
 pm2 monit
 ```
+
+### Troubleshooting
+- Ensure all environment variables are set correctly in `.env`.
+- Check database connectivity and credentials.
+- Review server logs for errors (`pm2 logs microhire-api`).
+- For CORS or API issues, verify backend and frontend URLs match.
+
+### Updating Environment Variables
+- Edit `.env` and restart the server (`pm2 restart microhire-api`).
+- Never commit sensitive variables to version control.

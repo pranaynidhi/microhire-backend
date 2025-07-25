@@ -1,5 +1,11 @@
 # Contributing to MicroHire Backend
 
+## Code of Conduct
+All contributors are expected to uphold a respectful, inclusive, and professional environment. Harassment or discrimination of any kind will not be tolerated.
+
+## Maintainer Contact
+For questions or support, contact [support@pranaynidhi.tech] or open a GitHub issue.
+
 These improvements add:
 
 1. Comprehensive logging system

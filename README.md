@@ -2,6 +2,13 @@
 
 A production-ready Node.js/Express backend for the MicroHire internship platform with comprehensive features including user management, internship listings, applications, messaging, and analytics.
 
+## Project Overview
+MicroHire is a full-stack web application that connects students with businesses for micro-internship opportunities. It features user authentication (including two-factor), role-based dashboards, internship listings, applications, real-time messaging, notifications, analytics, and a comprehensive admin panel.
+
+## Version Control & Video Demo
+- **GitHub Repository:** https://github.com/pranaynidhi/microhire-backend
+- **Video Demo:** [YOUTUBE_VIDEO_LINK]
+
 ## Features
 
 - 🔐 **Authentication & Authorization**: JWT-based auth with role-based access control
@@ -80,7 +87,7 @@ The system automatically creates an admin account on first startup:
 
 ## API Documentation
 
-The API documentation is available at `/api-docs` when the server is running.
+The API documentation is available at `/api-docs` (Swagger UI) when the server is running.
 
 ### Key Endpoints
 
@@ -101,6 +108,9 @@ The API documentation is available at `/api-docs` when the server is running.
 - **SQL Injection Protection**: Parameterized queries with Sequelize
 - **XSS Protection**: Content Security Policy headers
 - **Password Security**: Bcrypt hashing with configurable rounds
+- **Two-Factor Authentication**: Optional 2FA for enhanced account security
+- **Environment Variables**: All secrets and sensitive config are managed via environment variables
+- **Security Middleware**: Uses helmet, CORS, and other Express security best practices
 
 ## Development
 
@@ -714,6 +724,9 @@ NODE_ENV=development
 - ✅ Advanced analytics
 - ✅ Admin panel
 
+### Version 1.2.1 (July 2025)
+- Assignment submission version: documentation and security updates
+
 ---
 
 ## 🤝 API Support
@@ -745,4 +758,4 @@ NODE_ENV=development
 
 **API Version:** 1.2.0
 
-**Documentation Version:** 1.2.0
+**Documentation Version:** 1.2.1
