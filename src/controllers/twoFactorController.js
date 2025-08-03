@@ -156,7 +156,52 @@ class TwoFactorController {
   }
 
   /**
-   * Verify recovery code (for 2FA bypass)
+   * Verify recovery code (for 2FA bypass during login)
+   */
+  static async verifyRecoveryCodeLogin(req, res, next) {
+    try {
+      const { code, email } = req.body;
+
+      if (!code || !email) {
+        return next(new AppError('Recovery code and email are required', 400));
+      }
+
+      // Fetch the user by email
+      const { User } = require('../models');
+      const user = await User.findOne({ where: { email } });
+      if (!user) {
+        return next(new AppError('User not found', 404));
+      }
+
+      if (!user.twoFactorEnabled) {
+        return next(new AppError('2FA is not enabled for this user', 400));
+      }
+
+      const isValid = await TwoFactorService.verifyRecoveryCode(user, code);
+      
+      if (!isValid) {
+        return next(new AppError('Invalid recovery code', 400));
+      }
+
+      // Generate new tokens since recovery was successful
+      const { accessToken, refreshToken } = generateTokens(user.id);
+      
+      res.json({
+        success: true,
+        message: 'Recovery successful',
+        data: {
+          accessToken,
+          refreshToken
+        }
+      });
+    } catch (error) {
+      logger.error('Recovery code verification error:', error);
+      next(error);
+    }
+  }
+
+  /**
+   * Verify recovery code (for authenticated users)
    */
   static async verifyRecoveryCode(req, res, next) {
     try {
@@ -181,8 +226,7 @@ class TwoFactorController {
         message: 'Recovery successful',
         data: {
           accessToken,
-          refreshToken,
-          recoveryCodes: user.twoFARecoveryCodes // Return remaining codes
+          refreshToken
         }
       });
     } catch (error) {

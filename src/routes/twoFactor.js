@@ -179,7 +179,7 @@ router.get('/recovery-codes', authenticate, TwoFactorController.generateRecovery
  * /api/2fa/recover:
  *   post:
  *     summary: Recover account using recovery code
- *     description: Use a recovery code to bypass 2FA
+ *     description: Use a recovery code to bypass 2FA during login
  *     tags: [Two-Factor Authentication]
  *     requestBody:
  *       required: true
@@ -215,12 +215,48 @@ router.get('/recovery-codes', authenticate, TwoFactorController.generateRecovery
  *                       type: string
  *                     refreshToken:
  *                       type: string
- *                     recoveryCodes:
- *                       type: array
- *                       items:
- *                         type: string
- *                       description: Remaining recovery codes
  */
-router.post('/recover', TwoFactorController.verifyRecoveryCode);
+router.post('/recover', TwoFactorController.verifyRecoveryCodeLogin);
+
+/**
+ * @swagger
+ * /api/2fa/verify-recovery:
+ *   post:
+ *     summary: Verify recovery code (authenticated)
+ *     description: Verify a recovery code for authenticated users
+ *     tags: [Two-Factor Authentication]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - code
+ *             properties:
+ *               code:
+ *                 type: string
+ *                 description: A recovery code
+ *     responses:
+ *       200:
+ *         description: Recovery verification successful
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     accessToken:
+ *                       type: string
+ *                     refreshToken:
+ *                       type: string
+ */
+router.post('/verify-recovery', authenticate, TwoFactorController.verifyRecoveryCode);
 
 module.exports = router;
